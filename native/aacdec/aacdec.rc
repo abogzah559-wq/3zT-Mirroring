@@ -1,0 +1,31 @@
+#include <winver.h>
+#include "aacdec_ver.h"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION AACDEC_VER_NUM
+PRODUCTVERSION AACDEC_VER_NUM
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "3zT"
+            VALUE "FileDescription", "3zT Mirroring AAC decoder (FFmpeg, LGPL-2.1+)"
+            VALUE "FileVersion", AACDEC_VER_STR
+            VALUE "InternalName", "aacdec"
+            VALUE "LegalCopyright", "Copyright (C) 2026 3zT and Zenvy Zenshiro. GPL-3.0-or-later. Uses FFmpeg (LGPL-2.1-or-later)."
+            VALUE "OriginalFilename", "aacdec.dll"
+            VALUE "ProductName", "3zT Mirroring"
+            VALUE "ProductVersion", AACDEC_VER_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

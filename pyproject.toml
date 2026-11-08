@@ -1,0 +1,25 @@
+[project]
+name = "mirroring"
+version = "2.0.0"
+description = "3zT Mirroring service: mirror and control an iPhone, iPad or Android phone on Windows."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "3zT" }, { name = "Zenvy Zenshiro" }]
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "aiohttp>=3.10",
+    "pymobiledevice3>=11.49",
+    "zeroconf>=0.132",
+    "pycryptodome>=3.20",
+    "cryptography>=42",
+    "pyusb>=1.2.1",
+    "sounddevice>=0.4.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/abogzah559-wq/3zT-Mirroring"
+Support = "https://7krh-hub.pages.dev/en/support/"
+
+[project.gui-scripts]
+mirroring = "mirroring.__main__:main"

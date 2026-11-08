@@ -1,0 +1,47 @@
+// Colour tokens. Dark (soft black) is the default; Light is its twin.
+// `glass` (0..1) is clarity, set from Rust: 0 = solid (glass off),
+// 1 = fully clear (thickness 0%), in between = thicker frosted glass.
+
+export global Theme {
+    in-out property <bool> dark: true;
+    in-out property <float> glass: 1.0;
+
+    out property <color> text: dark ? #f5f5f7 : #1d1d1f;
+    out property <color> text-2: dark ? #ebebf5a6 : #3c3c4399;
+    out property <color> text-3: dark ? #ebebf580 : #3c3c4380;
+    out property <color> accent: dark ? #e6e6eb : #1d1d1f;
+    out property <color> btn: dark ? #ececf0 : #1d1d1f;
+    out property <color> btn-hover: dark ? #ffffff : #3a3a3c;
+    out property <color> btn-text: dark ? #111113 : #ffffff;
+    out property <color> accent-soft: dark ? #ffffff1f : #1d1d1f14;
+    // Surfaces lerp from solid (glass off) to glass (clarity 1). Dark glass
+    // is white light over the dark blurred desktop, like iOS.
+    // At full clarity a light dim stays (iOS dark glass dims what is behind).
+    out property <color> base: dark ? #161618.mix(#0000002e, 1 - glass) : #f2f2f7.mix(#ffffff24, 1 - glass);
+    out property <color> panel: dark ? #1e1e21.mix(#ffffff0f, 1 - glass) : #ffffff.mix(#ffffff2e, 1 - glass);
+    // Mirrored screen while streaming: calm and solid.
+    out property <color> stage: dark ? #0a0a0c.mix(#0a0a0ce0, 1 - glass) : #f2f2f7.mix(#f2f2f7e0, 1 - glass);
+    out property <color> raise: dark ? #2a2a2e.mix(#ffffff1f, 1 - glass) : #ffffff.mix(#ffffff8c, 1 - glass);
+    out property <color> hover: dark ? #ffffff2e : #ffffffd9;
+    out property <color> edge: dark ? #ffffff24 : #ffffffcc;
+    // Liquid Glass rim: specular edge from the top-left light, catching
+    // light again bottom-right where the bezel bends it back.
+    // Liquid Glass rim: a hairline that is bright where light hits (top,
+    // then a weaker bounce at the bottom) and nearly gone on the sides.
+    out property <brush> rim: glass <= 0.01 ? (dark ? #ffffff1a : #0000001a)
+        : dark ? @linear-gradient(180deg, #ffffff4d 0%, #ffffff14 22%, #ffffff08 70%, #ffffff1f 100%)
+        : @linear-gradient(180deg, #ffffffff 0%, #ffffffb3 25%, #ffffff80 70%, #ffffffd9 100%);
+    // Glass on glass (cards in a sheet) and clear-glass controls.
+    out property <color> card: dark ? #222226.mix(#ffffff0d, 1 - glass) : #ffffff.mix(#ffffff59, 1 - glass);
+    out property <color> fill: dark ? #313136.mix(#ffffff1a, 1 - glass) : #ffffff.mix(#ffffff8c, 1 - glass);
+    out property <color> fill-hover: dark ? #3d3d43.mix(#ffffff2b, 1 - glass) : #ffffff.mix(#ffffffcc, 1 - glass);
+    out property <color> line: dark ? #ffffff1a : #0000001a;
+    out property <color> shadow: dark ? #00000059 : #0000001a;
+    out property <color> ok: #2fc26b;
+    out property <color> warn: #f2a53a;
+    out property <color> bad: #ef5466;
+    out property <length> radius: 14px;
+    // Set from Rust: "Segoe Fluent Icons" (Windows 11) or "Segoe MDL2 Assets"
+    // (Windows 10, same code points).
+    in-out property <string> icons: "Segoe Fluent Icons";
+}

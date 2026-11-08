@@ -1,0 +1,12 @@
+[package]
+name = "mirror-android"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "3zT Mirroring Android: ADB host protocol client, device discovery and naming, scrcpy server pin."
+
+# Portable core: std plus `log`, no platform code except the
+# small adb server launcher in adb.rs.
+[dependencies]
+log = { workspace = true }

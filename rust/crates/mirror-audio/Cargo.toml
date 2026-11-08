@@ -1,0 +1,25 @@
+[package]
+name = "mirror-audio"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "3zT Mirroring sound output: a jitter buffer (portable) and a WASAPI backend."
+
+# The buffer logic is portable std Rust. Only `wasapi.rs` is platform code
+# (a thin backend behind one type; CoreAudio and
+# PulseAudio/PipeWire backends come with the platform ports).
+[dependencies]
+log = { workspace = true }
+
+[target.'cfg(windows)'.dependencies.windows]
+workspace = true
+features = [
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_Security",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+    "Win32_System_Threading",
+]

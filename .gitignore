@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Build output
+build/
+dist/
+release/
+rust/target/
+*.spec
+
+# Downloaded at build time (pinned in .github/workflows/build.yml)
+third_party/scrcpy/scrcpy-server-v*
+third_party/platform-tools/
+
+# Local runtime files of a source checkout
+*.log
+settings.json
+devices.json
+secrets.json
+airplay.json
+capture/
+native/playfair/*.obj
+
+# Built by the release workflow (native/)
+mirroring/aacdec.dll
+mirroring/airplay/playfair.dll
