@@ -51,6 +51,7 @@ pub fn defaults() -> Prefs {
         android_encoder: "".into(),
         update_check: true,
         update_channel: "".into(),
+        language: "".into(),
     }
 }
 
@@ -134,6 +135,7 @@ pub fn from_value(v: &Value) -> Prefs {
     b("rememberPlatform", &mut p.remember_platform);
     b("updateCheck", &mut p.update_check);
     s("updateChannel", &mut p.update_channel, &["stable", "beta"]);
+    s("language", &mut p.language, &["en", "ar"]);
     // Android picture: scrcpy server options.
     s(
         "androidMaxSize",
@@ -204,6 +206,7 @@ pub fn to_value(p: &Prefs) -> Value {
         "androidBitrate": p.android_bitrate.as_str(), "androidCodec": p.android_codec.as_str(),
         "androidProfile": p.android_profile.as_str(), "androidEncoder": p.android_encoder.as_str(),
         "updateCheck": p.update_check, "updateChannel": p.update_channel.as_str(),
+        "language": p.language.as_str(),
     })
 }
 

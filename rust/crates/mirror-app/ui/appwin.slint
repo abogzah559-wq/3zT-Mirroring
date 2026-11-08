@@ -44,8 +44,8 @@ export component AppWin inherits Window {
                     padding: 6px;
                     padding-left: 8px;
                     spacing: 6px;
-                    GlassButton { icon: "\u{E72B}"; tip: "Back"; enabled: root.phase == "streaming"; clicked => { root.action("back"); } }
-                    GlassButton { icon: "\u{E777}"; tip: "Restart the app"; enabled: root.phase == "streaming"; clicked => { root.action("restart-app"); } }
+                    GlassButton { icon: "\u{E72B}"; tip: @tr("Back"); enabled: root.phase == "streaming"; clicked => { root.action("back"); } }
+                    GlassButton { icon: "\u{E777}"; tip: @tr("Restart the app"); enabled: root.phase == "streaming"; clicked => { root.action("restart-app"); } }
                     Text {
                         horizontal-stretch: 1;
                         text: root.app-name;
@@ -74,8 +74,8 @@ export component AppWin inherits Window {
                     spacing: 12px;
                     Text {
                         text: root.phase == "error"
-                            ? (root.message != "" ? root.message : "The app could not be opened.")
-                            : "Opening " + root.app-name + "…";
+                            ? (root.message != "" ? root.message : @tr("The app could not be opened."))
+                            : @tr("Opening {}…", root.app-name);
                         font-size: 13px;
                         color: root.phase == "error" ? Theme.warn : Theme.text-2;
                         wrap: word-wrap;
@@ -83,7 +83,7 @@ export component AppWin inherits Window {
                     }
                     if root.phase == "error": HorizontalLayout {
                         alignment: center;
-                        GlassButton { primary: true; icon: "\u{E72C}"; label: "Try again"; clicked => { root.retry(); } }
+                        GlassButton { primary: true; icon: "\u{E72C}"; label: @tr("Try again"); clicked => { root.retry(); } }
                     }
                 }
             }

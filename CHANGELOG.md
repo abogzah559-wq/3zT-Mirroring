@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.0.1
+
+- Built-in HEVC decoder (FFmpeg, GPU-accelerated through D3D11 with a CPU
+  fallback): iPhone and iPad on iOS 27 show their picture on PCs without the
+  HEVC Video Extensions, and Android H.265 works there too. It also takes
+  over when Windows' own HEVC decoder opens but decodes nothing.
+- Arabic interface: Settings › Appearance › Language (System, English,
+  Arabic). System follows the Windows display language.
+- A stopped Apple Mobile Device Service is started for you after one Windows
+  prompt; the installer starts it right after installing it and asks for a
+  restart only when it could not.
+- Clear message when mouse and keyboard control needs a newer iOS (iOS 27 or
+  later) and when Windows can't see the iPhone/iPad at all.
+- The "Buy me a coffee" button is evenly padded.
+- Consistent mode names in error messages (Studio mode, Connection & driver).
+
 ## 2.0.0
 
 - New name and look: 3zT Mirroring, with a soft-black theme, macOS-style

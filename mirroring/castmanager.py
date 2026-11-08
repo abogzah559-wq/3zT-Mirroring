@@ -45,13 +45,13 @@ def _ios_too_old(version: str | None) -> bool:
 
 def _old_ios_message(version: str) -> str:
     return (f"Apple Driver mode needs iOS {capability.HYBRID_MIN_IOS} or later; this device runs iOS {version}. "
-            "Use Studio mode over the cable or Wi-Fi (AirPlay): Settings > Connection & Drivers.")
+            "Use Studio mode over the cable or Wi-Fi (AirPlay): Settings > Connection & driver.")
 
 
 def _no_native_video_message(version: str) -> str:
     return (f"iOS {version} doesn't send its screen to Apple Driver mode (that needs iOS {APPLE_MIN_IOS} or later). "
             "3zT Mirroring uses Hybrid Control on this device: the picture comes over AirPlay. "
-            "If it still fails, use Studio mode: Settings > Connection & Drivers.")
+            "If it still fails, use Studio mode: Settings > Connection & driver.")
 
 
 def _friendly_error(error: Exception) -> str:
@@ -74,13 +74,13 @@ def _friendly_error(error: Exception) -> str:
 # Why a listed device can't start in the chosen mode (castmanager._need).
 _NEED_MESSAGES = {
     "restore": "This device uses the Studio mode driver, so Apple mode can't see it. Press Restore Apple driver "
-               "in Settings > Connection & Drivers, or switch to Studio mode.",
+               "in Settings > Connection & driver, or switch to Studio mode.",
     "bind": "Studio mode needs its driver on this device. Press Install Studio mode driver in Settings > "
-            "Connection & Drivers, or switch to Apple Driver mode.",
+            "Connection & driver, or switch to Apple Driver mode.",
     "package": "Studio mode uses libusb-win32, which isn't on this PC. Install TikTok LIVE Studio's iOS driver "
                "or libusb-win32 once, or switch to Apple Driver mode.",
     "removefilter": "A libusb0 filter is stacked on Apple's driver. Press Remove libusb0 filter in Settings > "
-                    "Connection & Drivers first.",
+                    "Connection & driver first.",
     "mode": "Choose a connection mode first.",
 }
 
@@ -354,9 +354,9 @@ class CastManager:
             self._set_state("error", error=f"{name} isn't connected. {how}")
             return self.snapshot()
         if not found:
-            msg = ("Your iPhone/iPad is using another app's USB driver (TikTok LIVE Studio). Switch to USB Direct "
-                   "or repair the driver in Settings > Connection & Drivers." if self._presence.get("takenOver")
-                   else "Connect an iPhone or iPad with a USB cable.")
+            msg = ("Your iPhone/iPad is using another app's USB driver (TikTok LIVE Studio). Switch to Studio mode "
+                   "or repair the driver in Settings > Connection & driver." if self._presence.get("takenOver")
+                   else self._no_device_message(mode))
             self._set_state("error", error=msg)
             return self.snapshot()
         # The picked device, else one that can start now.
@@ -367,7 +367,7 @@ class CastManager:
             return self.snapshot()
         if target.get("need") == "wifi":
             self._set_state("error", error="The device isn't on Wi-Fi yet. Press Set up Wi-Fi in Settings with the "
-                            "cable connected, keep both on the same network, or switch to Wired.")
+                            "cable connected, keep both on the same network, or switch to Cable.")
             return self.snapshot()
         if not target.get("ready"):
             self._set_state("error", error="Unlock the device and tap Trust, then try again.")
@@ -423,18 +423,18 @@ class CastManager:
         self.refresh_drivers()
         lib = self._drivers.get("libusb0", {})
         if not lib.get("available"):
-            self._set_state("error", error="USB Direct needs the libusb0 driver, which isn't installed on this PC. "
-                                           "Open Settings > Connection & Drivers.")
+            self._set_state("error", error="Studio mode needs the libusb0 driver, which isn't installed on this PC. "
+                                           "Open Settings > Connection & driver.")
             return None
         entry = self._driver_entry(target["id"])
         if entry is None or not entry.get("usbDirectReady"):
             if entry is not None and entry.get("unsafeFilter"):
                 msg = ("A libusb0 filter is stacked on this device's Apple driver. That combination can crash "
-                       "Windows, so 3zT Mirroring won't use it. Open Settings > Connection & Drivers and press "
+                       "Windows, so 3zT Mirroring won't use it. Open Settings > Connection & driver and press "
                        "Remove libusb0 filter.")
             else:
-                msg = ("The USB Direct driver isn't installed for this device yet. Open Settings > Connection & "
-                       "Drivers and press Install USB Direct driver, then reconnect the cable.")
+                msg = ("The Studio mode driver isn't installed for this device yet. Open Settings > Connection & "
+                       "driver and press Install Studio mode driver, then reconnect the cable.")
             self._set_state("error", error=msg)
             return None
         from mirroring.usbdirect.hub import MediaHub
@@ -476,6 +476,25 @@ class CastManager:
                 self.hub.close()
             self.hub = None
             self._publish()
+
+    def _no_device_message(self, mode: str) -> str:
+        """Why no iPhone/iPad was found, with the fix. Apple Driver mode needs
+        Apple's service: when it is stopped, ask Windows (UAC) to start it."""
+        if mode == "apple":
+            from mirroring.drivers.status import apple_status
+
+            amds = apple_status()
+            if not amds.get("service"):
+                return ("Apple Mobile Device Support is not installed. Run the 3zT Mirroring Setup again, or "
+                        "install Apple Devices from the Microsoft Store.")
+            if not amds.get("running"):
+                if _start_apple_service():
+                    return ("The Apple Mobile Device Service was stopped. Approve the Windows prompt to start it, "
+                            "then press Start again.")
+                return ("The Apple Mobile Device Service is stopped. Start it in Services (services.msc) and set it "
+                        "to Automatic, or restart the PC.")
+        return ("Windows can't see the iPhone/iPad. Unlock it, plug the cable in again (a data cable, not a "
+                "charge-only one), and tap Allow / Trust on the device.")
 
     def _on_control(self, control: dict) -> None:
         """Hybrid reports what it actually opened (picture, control)."""
@@ -629,3 +648,27 @@ class CastManager:
             self.stop()
         self._publish()
         return self.snapshot()
+
+
+_AMDS_PROMPTED = -1e9
+
+
+def _start_apple_service() -> bool:
+    """Starts Apple Mobile Device Service (and sets it to Automatic) through a
+    UAC prompt. True when the prompt was shown."""
+    import ctypes
+    import time
+
+    global _AMDS_PROMPTED
+    if time.monotonic() - _AMDS_PROMPTED < 60:
+        return True  # one prompt a minute, however often Start is pressed
+    _AMDS_PROMPTED = time.monotonic()
+    script = ("Set-Service -Name 'Apple Mobile Device Service' -StartupType Automatic; "
+              "Start-Service -Name 'Apple Mobile Device Service'")
+    try:
+        r = ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", "powershell.exe",
+            f'-NoProfile -WindowStyle Hidden -Command "{script}"', None, 0)
+    except (AttributeError, OSError):
+        return False
+    return int(r) > 32

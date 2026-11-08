@@ -1,0 +1,1648 @@
+# Arabic interface text for 3zT Mirroring.
+# English is the source; an entry without a translation shows in English.
+msgid ""
+msgstr ""
+"Project-Id-Version: 3zT Mirroring\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Back"
+msgstr "رجوع"
+
+msgid "Restart the app"
+msgstr "إعادة تشغيل التطبيق"
+
+msgid "The app could not be opened."
+msgstr "تعذّر فتح التطبيق."
+
+msgid "Opening {}…"
+msgstr "جارٍ فتح {}…"
+
+msgid "Try again"
+msgstr "حاول مرة أخرى"
+
+msgid "Auto"
+msgstr "تلقائي"
+
+msgid "Minimise"
+msgstr "تصغير"
+
+msgid "Close"
+msgstr "إغلاق"
+
+msgid "Restore"
+msgstr "استعادة"
+
+msgid "Maximise"
+msgstr "تكبير"
+
+msgid "Buy me a coffee"
+msgstr "اشترِ لي قهوة"
+
+msgid "Updating {}%"
+msgstr "جارٍ التحديث {}%"
+
+msgid "Updating…"
+msgstr "جارٍ التحديث…"
+
+msgid "Update to v{}"
+msgstr "تحديث إلى v{}"
+
+msgid "Mirroring"
+msgstr "يعرض الآن"
+
+msgid "Waiting for the device"
+msgstr "بانتظار الجهاز"
+
+msgid "Connecting…"
+msgstr "جارٍ الاتصال…"
+
+msgid "Action needed"
+msgstr "يلزم إجراء"
+
+msgid "Ready"
+msgstr "جاهز"
+
+msgid "No device"
+msgstr "لا يوجد جهاز"
+
+msgid "Restart"
+msgstr "إعادة تشغيل"
+
+msgid "Restart the connection"
+msgstr "إعادة تشغيل الاتصال"
+
+msgid "Start"
+msgstr "ابدأ"
+
+msgid "Start mirroring"
+msgstr "ابدأ العرض"
+
+msgid "Stop"
+msgstr "إيقاف"
+
+msgid "Stop mirroring"
+msgstr "إيقاف العرض"
+
+msgid "Sound off — click to turn on"
+msgstr "الصوت مغلق — اضغط للتشغيل"
+
+msgid "Sound on PC — click to mute"
+msgstr "الصوت على الكمبيوتر — اضغط للكتم"
+
+msgid "Rotate view"
+msgstr "تدوير العرض"
+
+msgid "AUTO"
+msgstr "تلقائي"
+
+msgid "EDGE"
+msgstr "ملء"
+
+msgid "FILL"
+msgstr "تمديد"
+
+msgid "View mode: Auto-Fit / Edge-to-Edge / Stretch"
+msgstr "وضع العرض: ملاءمة تلقائية / ملء الحواف / تمديد"
+
+msgid "Exit full screen"
+msgstr "الخروج من ملء الشاشة"
+
+msgid "Full screen"
+msgstr "ملء الشاشة"
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Swipe from the right edge (forward)"
+msgstr "سحب من الحافة اليمنى (للأمام)"
+
+msgid "Swipe left"
+msgstr "سحب لليسار"
+
+msgid "Back (right click works too)"
+msgstr "رجوع (الزر الأيمن يعمل أيضاً)"
+
+msgid "Home screen"
+msgstr "الشاشة الرئيسية"
+
+msgid "Home"
+msgstr "الرئيسية"
+
+msgid "Recent apps"
+msgstr "التطبيقات الأخيرة"
+
+msgid "Recent"
+msgstr "الأخيرة"
+
+msgid "Swipe from the left edge (back, also Alt+←)"
+msgstr "سحب من الحافة اليسرى (رجوع، أو Alt+←)"
+
+msgid "Swipe right"
+msgstr "سحب لليمين"
+
+msgid "Control Center"
+msgstr "مركز التحكم"
+
+msgid "Control"
+msgstr "التحكم"
+
+msgid "Phone apps (open on the phone or in a new window)"
+msgstr "تطبيقات الجوال (تُفتح على الجوال أو في نافذة جديدة)"
+
+msgid "Apps"
+msgstr "التطبيقات"
+
+msgid "Quick Settings"
+msgstr "الإعدادات السريعة"
+
+msgid "Quick"
+msgstr "سريعة"
+
+msgid "Notifications"
+msgstr "الإشعارات"
+
+msgid "Alerts"
+msgstr "الإشعارات"
+
+msgid "Phone volume down"
+msgstr "خفض صوت الجوال"
+
+msgid "Phone volume up"
+msgstr "رفع صوت الجوال"
+
+msgid "Power button (lock / wake the screen)"
+msgstr "زر التشغيل (قفل / إيقاظ الشاشة)"
+
+msgid "Lock screen"
+msgstr "قفل الشاشة"
+
+msgid "Lock"
+msgstr "قفل"
+
+msgid "Needs Trust"
+msgstr "يحتاج «الوثوق»"
+
+msgid "Wi-Fi not set up"
+msgstr "Wi-Fi غير مُعدّ"
+
+msgid "Choose a mode"
+msgstr "اختر وضعاً"
+
+msgid "Needs a driver"
+msgstr "يحتاج تعريفاً"
+
+msgid "Restore the Apple driver"
+msgstr "استعادة تعريف Apple"
+
+msgid "Install the Studio mode driver"
+msgstr "تثبيت تعريف وضع الاستوديو"
+
+msgid "libusb-win32 is not installed"
+msgstr "libusb-win32 غير مثبّت"
+
+msgid "Remove the libusb0 filter first"
+msgstr "أزل مرشّح libusb0 أولاً"
+
+msgid "Choose a connection mode"
+msgstr "اختر وضع الاتصال"
+
+msgid "Wi-Fi is not set up yet"
+msgstr "لم يُعدّ Wi-Fi بعد"
+
+msgid "Unlock it and tap Trust"
+msgstr "افتح قفله واضغط «الوثوق»"
+
+msgid "This device uses the Studio mode driver, so Apple mode cannot see it. Restore the Apple driver, or switch to Studio mode."
+msgstr "هذا الجهاز يستخدم تعريف وضع الاستوديو، لذلك لا يراه وضع Apple. استعد تعريف Apple أو انتقل إلى وضع الاستوديو."
+
+msgid "Studio mode uses the libusb0 driver on the device. Install it, or switch to Apple Driver mode."
+msgstr "وضع الاستوديو يستخدم تعريف libusb0 على الجهاز. ثبّته أو انتقل إلى وضع تعريف Apple."
+
+msgid "Install the iOS driver of TikTok LIVE Studio or libusb-win32 once, then press Check drivers. Or use Apple Driver mode."
+msgstr "ثبّت تعريف iOS الخاص بـ TikTok LIVE Studio أو libusb-win32 مرة واحدة، ثم اضغط «فحص التعريفات». أو استخدم وضع تعريف Apple."
+
+msgid "A libusb0 filter is stacked on the Apple driver. It can crash Windows."
+msgstr "يوجد مرشّح libusb0 فوق تعريف Apple، وقد يسبب تعطّل Windows."
+
+msgid "Pick Apple Driver or Studio mode to continue."
+msgstr "اختر تعريف Apple أو وضع الاستوديو للمتابعة."
+
+msgid "Plug in the cable once, then press Set up Wi-Fi in Settings. Or choose Cable."
+msgstr "وصّل الكيبل مرة واحدة، ثم اضغط «إعداد Wi-Fi» في الإعدادات. أو اختر الكيبل."
+
+msgid "Unlock the device, tap Trust if it asks, then try again."
+msgstr "افتح قفل الجهاز، واضغط «الوثوق» إن طُلب، ثم حاول مرة أخرى."
+
+msgid "Detect device"
+msgstr "اكتشاف الجهاز"
+
+msgid "Found on USB through the libusb0 driver"
+msgstr "تم العثور عليه عبر USB بتعريف libusb0"
+
+msgid "Open the device"
+msgstr "فتح الجهاز"
+
+msgid "Switching it to its screen-capture mode"
+msgstr "تحويله إلى وضع التقاط الشاشة"
+
+msgid "Check trust"
+msgstr "التحقق من الوثوق"
+
+msgid "Keep it unlocked while 3zT Mirroring proves this PC is trusted"
+msgstr "أبقِه مفتوح القفل بينما يتحقق 3zT Mirroring من أن هذا الكمبيوتر موثوق"
+
+msgid "Start stream"
+msgstr "بدء البث"
+
+msgid "Receiving the screen over Studio mode"
+msgstr "استقبال الشاشة عبر وضع الاستوديو"
+
+msgid "Device connected"
+msgstr "الجهاز متصل"
+
+msgid "Your iPhone/iPad chose 3zT Mirroring in Screen Mirroring"
+msgstr "اختار جهاز iPhone/iPad ‏3zT Mirroring في «انعكاس الشاشة»"
+
+msgid "Secure connection"
+msgstr "اتصال آمن"
+
+msgid "AirPlay pairing and FairPlay key exchange"
+msgstr "إقران AirPlay وتبادل مفاتيح FairPlay"
+
+msgid "Receive video"
+msgstr "استقبال الفيديو"
+
+msgid "Decrypting the AirPlay stream"
+msgstr "فك تشفير بث AirPlay"
+
+msgid "Receiving the screen over Wi-Fi"
+msgstr "استقبال الشاشة عبر Wi-Fi"
+
+msgid "Found through Apple Mobile Device Service"
+msgstr "تم العثور عليه عبر خدمة Apple Mobile Device"
+
+msgid "Opening an encrypted Wi-Fi tunnel to the device"
+msgstr "فتح نفق Wi-Fi مشفّر إلى الجهاز"
+
+msgid "Opening an encrypted USB tunnel to the device"
+msgstr "فتح نفق USB مشفّر إلى الجهاز"
+
+msgid "Prepare the device"
+msgstr "تجهيز الجهاز"
+
+msgid "Keep it unlocked. The first time, a small developer image is installed."
+msgstr "أبقِه مفتوح القفل. في المرة الأولى تُثبّت صورة مطوّر صغيرة."
+
+msgid "Receiving the screen in HEVC"
+msgstr "استقبال الشاشة بصيغة HEVC"
+
+msgid "Ready · Wi-Fi"
+msgstr "جاهز · Wi-Fi"
+
+msgid "Waiting for the iPhone / iPad"
+msgstr "بانتظار iPhone / iPad"
+
+msgid "Plug in an iPhone or iPad"
+msgstr "وصّل iPhone أو iPad"
+
+msgid "{} ready"
+msgstr "{} جاهز"
+
+msgid "On the iPhone/iPad: open Control Center → Screen Mirroring → pick 3zT Mirroring. The PC and the device must be on the same network."
+msgstr "على iPhone/iPad: افتح مركز التحكم ← انعكاس الشاشة ← اختر 3zT Mirroring. يجب أن يكون الكمبيوتر والجهاز على الشبكة نفسها."
+
+msgid "On the iPhone/iPad: Control Center → Screen Mirroring → 3zT Mirroring."
+msgstr "على iPhone/iPad: مركز التحكم ← انعكاس الشاشة ← 3zT Mirroring."
+
+msgid "Wi-Fi: the PC and the device on the same network. The first time, press Set up Wi-Fi in Settings with the cable in."
+msgstr "Wi-Fi: الكمبيوتر والجهاز على الشبكة نفسها. في المرة الأولى اضغط «إعداد Wi-Fi» في الإعدادات والكيبل موصول."
+
+msgid "Use a USB cable, unlock it and tap Trust."
+msgstr "استخدم كيبل USB، وافتح القفل واضغط «الوثوق»."
+
+msgid "Unlock it, then press Start mirroring."
+msgstr "افتح القفل، ثم اضغط «ابدأ العرض»."
+
+msgid "Studio mode"
+msgstr "وضع الاستوديو"
+
+msgid "Apple Driver"
+msgstr "تعريف Apple"
+
+msgid "Change"
+msgstr "تغيير"
+
+msgid "Choose Apple Driver or Studio mode"
+msgstr "اختر تعريف Apple أو وضع الاستوديو"
+
+msgid "Cable (USB)"
+msgstr "كيبل (USB)"
+
+msgid "Stop waiting"
+msgstr "إيقاف الانتظار"
+
+msgid "Restore Apple driver"
+msgstr "استعادة تعريف Apple"
+
+msgid "Install driver"
+msgstr "تثبيت التعريف"
+
+msgid "Remove filter"
+msgstr "إزالة المرشّح"
+
+msgid "Choose mode"
+msgstr "اختر الوضع"
+
+msgid "Open settings"
+msgstr "فتح الإعدادات"
+
+msgid "Couldn't connect"
+msgstr "تعذّر الاتصال"
+
+msgid "Connected"
+msgstr "متصل"
+
+msgid "Connecting to {}"
+msgstr "جارٍ الاتصال بـ {}"
+
+msgid "Connecting"
+msgstr "جارٍ الاتصال"
+
+msgid "How should 3zT Mirroring connect?"
+msgstr "كيف يتصل 3zT Mirroring؟"
+
+msgid "Nothing connects and no driver changes until you continue."
+msgstr "لن يتصل شيء ولن يتغير أي تعريف حتى تتابع."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Standard · full control"
+msgstr "قياسي · تحكم كامل"
+
+msgid "Recommended"
+msgstr "موصى به"
+
+msgid "Uses Apple's own driver. Most compatible, stable and easy."
+msgstr "يستخدم تعريف Apple نفسه. الأكثر توافقاً وثباتاً وسهولة."
+
+msgid "Up to 60 fps, HEVC (device-limited bitrate, about 4–6 Mbps)"
+msgstr "حتى 60 إطاراً/ث، HEVC (معدل بت يحدده الجهاز، نحو 4–6 Mbps)"
+
+msgid "Mouse touch, keyboard, gestures and buttons"
+msgstr "لمس بالماوس، لوحة مفاتيح، إيماءات وأزرار"
+
+msgid "Apple's own driver, nothing to install"
+msgstr "تعريف Apple نفسه، لا شيء للتثبيت"
+
+msgid "Cable or Wi-Fi (after a one-time setup with the cable)"
+msgstr "كيبل أو Wi-Fi (بعد إعداد لمرة واحدة بالكيبل)"
+
+msgid "iOS 17–26: Hybrid Control (experimental)"
+msgstr "iOS 17–26: تحكم هجين (تجريبي)"
+
+msgid "iOS 16 or older: use Studio mode"
+msgstr "iOS 16 أو أقدم: استخدم وضع الاستوديو"
+
+msgid "For live streaming"
+msgstr "للبث المباشر"
+
+msgid "Best quality for streaming: high bitrate (measured 12–30 Mbps), up to 60 fps, very low latency. Needs the libusb0 driver."
+msgstr "أفضل جودة للبث: معدل بت عالٍ (مقاس 12–30 Mbps)، حتى 60 إطاراً/ث، وتأخير منخفض جداً. يحتاج تعريف libusb0."
+
+msgid "Up to 60 fps, full native resolution over the cable, high-bitrate H.264"
+msgstr "حتى 60 إطاراً/ث، الدقة الأصلية كاملة عبر الكيبل، H.264 بمعدل بت عالٍ"
+
+msgid "Cable (USB) or Wi-Fi (AirPlay, no driver)"
+msgstr "كيبل (USB) أو Wi-Fi (‏AirPlay، بلا تعريف)"
+
+msgid "Picture and sound only: no touch, keyboard or gestures"
+msgstr "صورة وصوت فقط: بلا لمس أو لوحة مفاتيح أو إيماءات"
+
+msgid "Apple apps can't see the device until you switch back"
+msgstr "تطبيقات Apple لا ترى الجهاز حتى تعود"
+
+msgid "Connection"
+msgstr "الاتصال"
+
+msgid "Cable"
+msgstr "كيبل"
+
+msgid "Remember my choice"
+msgstr "تذكّر اختياري"
+
+msgid "You can change it any time in Settings › Connection & driver. Changing it may need an app restart and reconnecting the cable."
+msgstr "يمكنك تغييره في أي وقت من الإعدادات › الاتصال والتعريف. قد يحتاج التغيير إلى إعادة تشغيل التطبيق وإعادة توصيل الكيبل."
+
+msgid "Change device type"
+msgstr "تغيير نوع الجهاز"
+
+msgid "Continue"
+msgstr "متابعة"
+
+msgid "Detected"
+msgstr "تم اكتشافه"
+
+msgid "{} detected"
+msgstr "تم اكتشاف {}"
+
+msgid "Mirror and control compatible Apple devices using USB or Wi-Fi."
+msgstr "اعرض أجهزة Apple المتوافقة وتحكم بها عبر USB أو Wi-Fi."
+
+msgid "Android Smartphone / Tablet"
+msgstr "جوال / تابلت Android"
+
+msgid "High-performance Android mirroring and control over USB or Wi-Fi."
+msgstr "عرض وتحكم عالي الأداء لأجهزة Android عبر USB أو Wi-Fi."
+
+msgid "Apple Driver or Studio mode"
+msgstr "تعريف Apple أو وضع الاستوديو"
+
+msgid "Cable or Wi-Fi"
+msgstr "كيبل أو Wi-Fi"
+
+msgid "Through ADB and scrcpy, no app on the phone"
+msgstr "عبر ADB وscrcpy، بلا تطبيق على الجوال"
+
+msgid "Cable or Wi-Fi, any Android brand"
+msgstr "كيبل أو Wi-Fi، أي نوع Android"
+
+msgid "Welcome to 3zT Mirroring"
+msgstr "مرحباً بك في 3zT Mirroring"
+
+msgid "Which device would you like to connect?"
+msgstr "أي جهاز تريد توصيله؟"
+
+msgid "iPhone / iPad"
+msgstr "iPhone / iPad"
+
+msgid "Apple and Android devices are both connected. Choose the one to mirror."
+msgstr "جهاز Apple وجهاز Android متصلان معاً. اختر الذي تريد عرضه."
+
+msgid "Remember device type"
+msgstr "تذكّر نوع الجهاز"
+
+msgid "You can change it any time in Settings › Device type or with the Back button."
+msgstr "يمكنك تغييره في أي وقت من الإعدادات › نوع الجهاز أو بزر الرجوع."
+
+msgid "Android video"
+msgstr "فيديو Android"
+
+msgid "A profile fills in resolution, FPS, bitrate and codec; change one value and the profile becomes Custom. Each phone keeps its own settings (the same over USB and Wi-Fi). Encoders are read from the phone on the first mirroring; if the chosen encoder fails, 3zT Mirroring tries another hardware encoder, then H.264, at most 4 times, and keeps your choice."
+msgstr "الملف الشخصي يضبط الدقة ومعدل الإطارات ومعدل البت والترميز؛ غيّر أي قيمة ويصبح «مخصص». لكل جوال إعداداته (نفسها عبر USB وWi-Fi). تُقرأ المرمّزات من الجوال في أول عرض؛ إذا فشل المرمّز المختار يجرب 3zT Mirroring مرمّزاً عتادياً آخر ثم H.264، أربع مرات كحد أقصى، ويحتفظ باختيارك."
+
+msgid "Profile"
+msgstr "الملف"
+
+msgid "Low Latency"
+msgstr "تأخير منخفض"
+
+msgid "Balanced"
+msgstr "متوازن"
+
+msgid "High Quality"
+msgstr "جودة عالية"
+
+msgid "Streaming"
+msgstr "بث"
+
+msgid "Custom"
+msgstr "مخصص"
+
+msgid "Resolution"
+msgstr "الدقة"
+
+msgid "Longest side."
+msgstr "الضلع الأطول."
+
+msgid "Native"
+msgstr "الأصلية"
+
+msgid "FPS"
+msgstr "الإطارات/ث"
+
+msgid "A cap; the phone never goes above its refresh rate."
+msgstr "حد أعلى؛ لا يتجاوز الجوال معدل تحديث شاشته."
+
+msgid "Bitrate"
+msgstr "معدل البت"
+
+msgid "Codec"
+msgstr "الترميز"
+
+msgid "H.265 needs HEVC Video Extensions on Windows."
+msgstr "H.265 يحتاج امتداد HEVC Video Extensions في Windows."
+
+msgid "This phone has no H.265 encoder."
+msgstr "هذا الجوال لا يملك مرمّز H.265."
+
+msgid "Auto = H.264, the lowest latency."
+msgstr "تلقائي = H.264، أقل تأخير."
+
+msgid "Encoder"
+msgstr "المرمّز"
+
+msgid "Detected on the first mirroring."
+msgstr "يُكتشف في أول عرض."
+
+msgid "In use"
+msgstr "المستخدم الآن"
+
+msgid "Switch to Wi-Fi: once connected, you can unplug the cable"
+msgstr "التحويل إلى Wi-Fi: بعد الاتصال يمكنك فصل الكيبل"
+
+msgid "Start mirroring this device"
+msgstr "ابدأ عرض هذا الجهاز"
+
+msgid "Start over the USB cable (most stable, lowest delay)"
+msgstr "ابدأ عبر كيبل USB (الأكثر ثباتاً وأقل تأخير)"
+
+msgid "Start over Wi-Fi (you can unplug the cable)"
+msgstr "ابدأ عبر Wi-Fi (يمكنك فصل الكيبل)"
+
+msgid "Connecting… the phone starts the scrcpy server."
+msgstr "جارٍ الاتصال… الجوال يشغّل خادم scrcpy."
+
+msgid "Working…"
+msgstr "جارٍ العمل…"
+
+msgid "Connect over Wi-Fi"
+msgstr "الاتصال عبر Wi-Fi"
+
+msgid "Scan a QR code, a pairing code or an IP:port address"
+msgstr "امسح رمز QR، أو رمز إقران، أو عنوان IP:port"
+
+msgid "Already on the cable? Press the Wi-Fi button next to the phone's name, done. Without a cable (Android 11+):"
+msgstr "موصول بالكيبل؟ اضغط زر Wi-Fi بجانب اسم الجوال وانتهى. بدون كيبل (Android 11+):"
+
+msgid "Option 1 · Scan a QR code (easiest)"
+msgstr "الخيار 1 · امسح رمز QR (الأسهل)"
+
+msgid "The phone and the PC are on the same Wi-Fi."
+msgstr "الجوال والكمبيوتر على شبكة Wi-Fi نفسها."
+
+msgid "On the phone: Settings › Developer options › Wireless debugging › turn it on."
+msgstr "على الجوال: الإعدادات › خيارات المطور › تصحيح الأخطاء اللاسلكي › فعّله."
+
+msgid "Press the button below, then on the phone tap \"Pair device with QR code\" and scan."
+msgstr "اضغط الزر أدناه، ثم على الجوال اضغط «إقران الجهاز باستخدام رمز QR» وامسح."
+
+msgid "Show QR code"
+msgstr "عرض رمز QR"
+
+msgid "Show a QR code to scan on the phone"
+msgstr "عرض رمز QR لمسحه بالجوال"
+
+msgid "On the phone: Wireless debugging › \"Pair device with QR code\", then scan this code."
+msgstr "على الجوال: تصحيح الأخطاء اللاسلكي › «إقران الجهاز باستخدام رمز QR»، ثم امسح هذا الرمز."
+
+msgid "Option 2 · Pairing code or IP address"
+msgstr "الخيار 2 · رمز إقران أو عنوان IP"
+
+msgid "Hide"
+msgstr "إخفاء"
+
+msgid "Show"
+msgstr "إظهار"
+
+msgid "In Wireless debugging, tap \"Pair device with pairing code\"."
+msgstr "في تصحيح الأخطاء اللاسلكي اضغط «إقران الجهاز باستخدام رمز الإقران»."
+
+msgid "Enter the IP:port and the 6-digit code shown in that window, press Pair."
+msgstr "أدخل IP:port والرمز المكوّن من 6 أرقام الظاهرين في تلك النافذة، ثم اضغط «إقران»."
+
+msgid "Enter the IP:port from the main Wireless debugging screen (a different port), press Connect. Paired before? Go straight to step 3."
+msgstr "أدخل IP:port من شاشة تصحيح الأخطاء اللاسلكي الرئيسية (منفذ مختلف)، ثم اضغط «اتصال». أقرنته من قبل؟ انتقل مباشرة إلى الخطوة 3."
+
+msgid "IP:port, e.g. 192.168.1.20:37099"
+msgstr "IP:port، مثل 192.168.1.20:37099"
+
+msgid "6-digit code"
+msgstr "رمز من 6 أرقام"
+
+msgid "Pair"
+msgstr "إقران"
+
+msgid "Step 2: pair once with the code from the phone"
+msgstr "الخطوة 2: أقرن مرة واحدة بالرمز من الجوال"
+
+msgid "Connect"
+msgstr "اتصال"
+
+msgid "Step 3: connect to this address (adb connect)"
+msgstr "الخطوة 3: الاتصال بهذا العنوان (adb connect)"
+
+msgid "Turn on USB debugging"
+msgstr "فعّل تصحيح أخطاء USB"
+
+msgid "Settings › About phone › tap Build number 7×, then Developer options › USB debugging."
+msgstr "الإعدادات › حول الهاتف › اضغط «رقم الإصدار» 7 مرات، ثم خيارات المطور › تصحيح أخطاء USB."
+
+msgid "Plug in the USB cable"
+msgstr "وصّل كيبل USB"
+
+msgid "Use a data cable, not a charge-only cable."
+msgstr "استخدم كيبل بيانات، وليس كيبل شحن فقط."
+
+msgid "Allow it on the phone"
+msgstr "اسمح به على الجوال"
+
+msgid "Tap Allow on the Allow USB debugging prompt."
+msgstr "اضغط «سماح» في نافذة السماح بتصحيح أخطاء USB."
+
+msgid "Beta: picture, sound (Android 11+) and control from the PC. No driver is installed or changed."
+msgstr "تجريبي: صورة وصوت (Android 11+) وتحكم من الكمبيوتر. لا يُثبّت أو يُغيّر أي تعريف."
+
+msgid "Settings & controls"
+msgstr "الإعدادات وأدوات التحكم"
+
+msgid "Appearance"
+msgstr "المظهر"
+
+msgid "Liquid Glass shows the real desktop behind the window. Thickness 0% = fully clear with no blur, higher = more frosted (Windows' own blur). Turn it off for a solid window with no extra GPU work."
+msgstr "الزجاج السائل يُظهر سطح المكتب خلف النافذة. السماكة 0% = شفاف تماماً بلا ضبابية، والأعلى = ضبابية أكثر (ضبابية Windows نفسها). أوقفه لنافذة مصمتة بلا حمل إضافي على كرت الشاشة."
+
+msgid "Light"
+msgstr "فاتح"
+
+msgid "Dark"
+msgstr "داكن"
+
+msgid "System"
+msgstr "النظام"
+
+msgid "Language"
+msgstr "اللغة"
+
+msgid "Liquid Glass"
+msgstr "الزجاج السائل"
+
+msgid "Glass thickness"
+msgstr "سماكة الزجاج"
+
+msgid " · clear"
+msgstr " · شفاف"
+
+msgid "Animated background"
+msgstr "خلفية متحركة"
+
+msgid "Display & aspect"
+msgstr "العرض والأبعاد"
+
+msgid "Auto-Fit shows the whole device screen. Edge-to-Edge fills the area and crops the sides. The window follows the device's size and orientation (portrait / landscape)."
+msgstr "الملاءمة التلقائية تُظهر شاشة الجهاز كاملة. ملء الحواف يملأ المساحة ويقص الأطراف. النافذة تتبع حجم الجهاز واتجاهه (عمودي / أفقي)."
+
+msgid "Auto-Fit"
+msgstr "ملاءمة تلقائية"
+
+msgid "Edge-to-Edge"
+msgstr "ملء الحواف"
+
+msgid "Stretch"
+msgstr "تمديد"
+
+msgid "Window follows the screen"
+msgstr "النافذة تتبع الشاشة"
+
+msgid "Portrait / landscape automatically"
+msgstr "عمودي / أفقي تلقائياً"
+
+msgid "Rotation"
+msgstr "التدوير"
+
+msgid "Record / stream in OBS"
+msgstr "التسجيل / البث في OBS"
+
+msgid "Game Capture takes the picture straight from the GPU: sharp, no window frame, and it keeps working when 3zT Mirroring is behind other windows. Window Capture also works, but it picks up the window frame too."
+msgstr "Game Capture يأخذ الصورة مباشرة من كرت الشاشة: حادة، بلا إطار نافذة، وتستمر حتى لو كان 3zT Mirroring خلف نوافذ أخرى. Window Capture يعمل أيضاً لكنه يلتقط إطار النافذة."
+
+msgid "In OBS, add a Game Capture source → Mode: capture specific window → pick [3zTMirroring.exe]: 3zT Mirroring. Then select it and press Ctrl+F (Fit to screen): portrait / landscape stays centred automatically."
+msgstr "في OBS أضف مصدر Game Capture ← الوضع: التقاط نافذة محددة ← اختر [3zTMirroring.exe]: 3zT Mirroring. ثم حدده واضغط Ctrl+F (ملاءمة الشاشة): يبقى العمودي / الأفقي في المنتصف تلقائياً."
+
+msgid "Device audio → PC"
+msgstr "صوت الجهاز ← الكمبيوتر"
+
+msgid "Sound plays through WASAPI on this PC. Lip sync holds the picture a little so it matches the sound. Low buffer is tighter, high rides out hiccups."
+msgstr "يُشغّل الصوت عبر WASAPI على هذا الكمبيوتر. مزامنة الشفاه تؤخر الصورة قليلاً لتطابق الصوت. التخزين المؤقت المنخفض أدق، والعالي يتحمل التقطعات."
+
+msgid "On this PC"
+msgstr "على هذا الكمبيوتر"
+
+msgid "Device only"
+msgstr "الجهاز فقط"
+
+msgid "PC volume"
+msgstr "صوت الكمبيوتر"
+
+msgid "Lip sync"
+msgstr "مزامنة الشفاه"
+
+msgid "Low"
+msgstr "منخفض"
+
+msgid "Normal"
+msgstr "عادي"
+
+msgid "High"
+msgstr "عالٍ"
+
+msgid "Click = tap, drag = swipe, scroll = scroll on the phone. Right click = Back, middle click = Home. Click the picture first so the PC keyboard types on the phone."
+msgstr "النقر = لمس، السحب = سحب، العجلة = تمرير على الجوال. الزر الأيمن = رجوع، الزر الأوسط = الرئيسية. انقر على الصورة أولاً لتكتب لوحة مفاتيح الكمبيوتر على الجوال."
+
+msgid "Click and drag = touch. Mouse Back button = swipe back. The PC keyboard works as a hardware keyboard in Apple Driver mode; click the picture first."
+msgstr "النقر والسحب = لمس. زر الرجوع في الماوس = سحب للرجوع. لوحة مفاتيح الكمبيوتر تعمل كلوحة مفاتيح خارجية في وضع تعريف Apple؛ انقر على الصورة أولاً."
+
+msgid "Touch with the mouse"
+msgstr "اللمس بالماوس"
+
+msgid "PC keyboard to the device"
+msgstr "لوحة مفاتيح الكمبيوتر للجهاز"
+
+msgid "Gestures (scroll, mouse Back button)"
+msgstr "الإيماءات (التمرير، زر الرجوع في الماوس)"
+
+msgid "Keyboard shortcuts"
+msgstr "اختصارات لوحة المفاتيح"
+
+msgid "While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring."
+msgstr "أثناء الكتابة على الجهاز تذهب المفاتيح المفردة (Space وM) إلى الجهاز؛ واختصارات Alt وCtrl تبقى لـ 3zT Mirroring."
+
+msgid "Sound on the PC on / off"
+msgstr "تشغيل / إيقاف الصوت على الكمبيوتر"
+
+msgid "Show / hide the controls around the picture"
+msgstr "إظهار / إخفاء أدوات التحكم حول الصورة"
+
+msgid "Full screen / leave"
+msgstr "ملء الشاشة / خروج"
+
+msgid "Open / close Settings"
+msgstr "فتح / إغلاق الإعدادات"
+
+msgid "Rotate the view (Auto, 90°, 180°, 270°, 0°)"
+msgstr "تدوير العرض (تلقائي، 90°، 180°، 270°، 0°)"
+
+msgid "Copy the text on the device screen to the PC (OCR)"
+msgstr "نسخ النص من شاشة الجهاز إلى الكمبيوتر (OCR)"
+
+msgid "Clear the copied-text history"
+msgstr "مسح سجل النص المنسوخ"
+
+msgid "Lock the device"
+msgstr "قفل الجهاز"
+
+msgid "Paste the PC clipboard on the phone"
+msgstr "لصق حافظة الكمبيوتر في الجوال"
+
+msgid "Copy, cut, select all, undo on the phone"
+msgstr "نسخ، قص، تحديد الكل، تراجع على الجوال"
+
+msgid "Notification Center (open / close)"
+msgstr "مركز الإشعارات (فتح / إغلاق)"
+
+msgid "Control Center (open / close)"
+msgstr "مركز التحكم (فتح / إغلاق)"
+
+msgid "Recent Apps"
+msgstr "التطبيقات الأخيرة"
+
+msgid "Phone volume up / down"
+msgstr "رفع / خفض صوت الجوال"
+
+msgid "Wake & unlock (saved passcode)"
+msgstr "إيقاظ وفتح القفل (رمز الدخول المحفوظ)"
+
+msgid "Stealth dim: device screen to 0% / restore"
+msgstr "تعتيم خفي: شاشة الجهاز إلى 0% / استعادة"
+
+msgid "Type the PC clipboard text on the device"
+msgstr "كتابة نص حافظة الكمبيوتر على الجهاز"
+
+msgid "Show / hide the on-screen keyboard"
+msgstr "إظهار / إخفاء لوحة المفاتيح على الشاشة"
+
+msgid "Copy, cut, paste, select all, undo in iOS"
+msgstr "نسخ، قص، لصق، تحديد الكل، تراجع في iOS"
+
+msgid "Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"
+msgstr "تبديل لوحة مفاتيح الجهاز بين الإنجليزية والعربية (العربية تحتاج تخطيط «العربية – PC» للوحة المفاتيح الخارجية على الجهاز)"
+
+msgid "Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode."
+msgstr "وضع الاستوديو صورة وصوت فقط: التحكم بالجهاز واختصاراته في وضع تعريف Apple."
+
+msgid "Apple device shortcuts work in Apple Driver mode while mirroring."
+msgstr "اختصارات أجهزة Apple تعمل في وضع تعريف Apple أثناء العرض."
+
+msgid "Device type"
+msgstr "نوع الجهاز"
+
+msgid "Choose iPhone / iPad or Android. A running session is stopped safely first. Apple and Android settings are kept separately."
+msgstr "اختر iPhone / iPad أو Android. تُوقف الجلسة الجارية بأمان أولاً. إعدادات Apple وAndroid محفوظة كلٌّ على حدة."
+
+msgid "Auto unlock"
+msgstr "فتح القفل تلقائياً"
+
+msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
+msgstr "في وضع تعريف Apple فقط (ليس وضع الاستوديو). يوقظ 3zT Mirroring جهاز iPhone/iPad ويسحب للأعلى ويكتب رمز الدخول أو كلمة السر. يُحفظ مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."
+
+msgid "A passcode is saved on this PC."
+msgstr "يوجد رمز دخول محفوظ على هذا الكمبيوتر."
+
+msgid "No passcode saved yet."
+msgstr "لا يوجد رمز دخول محفوظ بعد."
+
+msgid "Device passcode or password"
+msgstr "رمز دخول الجهاز أو كلمة السر"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Remove"
+msgstr "إزالة"
+
+msgid "Unlock when mirroring starts"
+msgstr "فتح القفل عند بدء العرض"
+
+msgid "Also Alt+U at any time"
+msgstr "وأيضاً Alt+U في أي وقت"
+
+msgid "Connection & driver"
+msgstr "الاتصال والتعريف"
+
+msgid "Apple Driver uses Apple's own driver. Studio mode uses libusb0 for high bitrate. Driver changes always ask for confirmation and administrator approval."
+msgstr "تعريف Apple يستخدم تعريف Apple نفسه. وضع الاستوديو يستخدم libusb0 لمعدل بت عالٍ. أي تغيير للتعريف يطلب دائماً التأكيد وموافقة المسؤول."
+
+msgid "Wi-Fi: pick 3zT Mirroring in Screen Mirroring on the device."
+msgstr "Wi-Fi: اختر 3zT Mirroring في «انعكاس الشاشة» على الجهاز."
+
+msgid "Cable: through the libusb0 driver, high bitrate."
+msgstr "الكيبل: عبر تعريف libusb0، معدل بت عالٍ."
+
+msgid "Wi-Fi: press Set up Wi-Fi once with the cable in. A plugged-in device still works over the cable."
+msgstr "Wi-Fi: اضغط «إعداد Wi-Fi» مرة واحدة والكيبل موصول. الجهاز الموصول يبقى يعمل عبر الكيبل."
+
+msgid "Cable: through Apple's driver."
+msgstr "الكيبل: عبر تعريف Apple."
+
+msgid "Change mode"
+msgstr "تغيير الوضع"
+
+msgid "Check drivers"
+msgstr "فحص التعريفات"
+
+msgid "Set up Wi-Fi"
+msgstr "إعداد Wi-Fi"
+
+msgid "Remove libusb0 filter"
+msgstr "إزالة مرشّح libusb0"
+
+msgid "Install Studio mode driver"
+msgstr "تثبيت تعريف وضع الاستوديو"
+
+msgid "Updates"
+msgstr "التحديثات"
+
+msgid "3zT Mirroring downloads only after you press Update, straight from the official GitHub release. It checks the file's SHA-256 and the release signature before running it. Your settings stay."
+msgstr "لا يُنزّل 3zT Mirroring إلا بعد ضغطك «تحديث»، مباشرة من إصدار GitHub الرسمي. يتحقق من SHA-256 للملف ومن توقيع الإصدار قبل تشغيله. إعداداتك تبقى."
+
+msgid "Check at start"
+msgstr "التحقق عند التشغيل"
+
+msgid "Install v{}"
+msgstr "تثبيت v{}"
+
+msgid "Check for updates"
+msgstr "التحقق من التحديثات"
+
+msgid "Release notes"
+msgstr "ملاحظات الإصدار"
+
+msgid "Advanced"
+msgstr "متقدم"
+
+msgid "Start with Windows"
+msgstr "التشغيل مع Windows"
+
+msgid "Close to the tray"
+msgstr "الإغلاق إلى شريط المهام"
+
+msgid "Always on top"
+msgstr "دائماً في المقدمة"
+
+msgid "Stats in the header"
+msgstr "الإحصائيات في الشريط العلوي"
+
+msgid "Stats (measured)"
+msgstr "الإحصائيات (مقاسة)"
+
+msgid "All numbers are measured: decoded fps, presented fps, skipped frames (replaced by a newer frame before display), last frame decode time."
+msgstr "كل الأرقام مقاسة: الإطارات المفكوكة/ث، المعروضة/ث، الإطارات المتخطاة (استُبدلت بإطار أحدث قبل العرض)، ووقت فك آخر إطار."
+
+msgid "Edge crop (fine)"
+msgstr "قص الحواف (دقيق)"
+
+msgid "Trim black bars or borders off the picture, in device pixels. Touches still land in the right place."
+msgstr "قص الأشرطة السوداء أو الحواف من الصورة بوحدات بكسل الجهاز. اللمس يبقى في مكانه الصحيح."
+
+msgid "Reset (0 px)"
+msgstr "إعادة ضبط (0 px)"
+
+msgid "About & credits"
+msgstr "حول البرنامج والشكر"
+
+msgid "Open log folder"
+msgstr "فتح مجلد السجلات"
+
+msgid "3zT Mirroring logs for bug reports (%LOCALAPPDATA%\\3zT Mirroring\\logs)"
+msgstr "سجلات 3zT Mirroring لبلاغات الأخطاء (%LOCALAPPDATA%\\3zT Mirroring\\logs)"
+
+msgid "© 2026 3zT · based on ZenLink © 2026 Zenvy Zenshiro · GPL-3.0-or-later · no warranty."
+msgstr "© 2026 3zT · مبني على ZenLink © 2026 Zenvy Zenshiro · GPL-3.0-or-later · بلا ضمان."
+
+msgid "Android is a trademark of Google LLC. iPhone, iPad and AirPlay are trademarks of Apple Inc. 3zT Mirroring is not affiliated with Google or Apple."
+msgstr "Android علامة تجارية لشركة Google LLC. وiPhone وiPad وAirPlay علامات تجارية لشركة Apple Inc. ‏3zT Mirroring غير تابع لـ Google أو Apple."
+
+msgid "On the phone"
+msgstr "على الجوال"
+
+msgid "New window"
+msgstr "نافذة جديدة"
+
+msgid "Search apps…"
+msgstr "ابحث في التطبيقات…"
+
+msgid "Drop to send to the device"
+msgstr "أفلت الملف لإرساله إلى الجهاز"
+
+msgid "Sending files needs Apple Driver mode"
+msgstr "إرسال الملفات يحتاج وضع تعريف Apple"
+
+msgid "No Android phone is being mirrored"
+msgstr "لا يوجد جوال Android قيد العرض"
+
+msgid "Then pick the app on the iPhone/iPad (e.g. VLC, Documents). The file also shows in Files › On My iPhone."
+msgstr "ثم اختر التطبيق على iPhone/iPad (مثل VLC أو Documents). يظهر الملف أيضاً في الملفات › على الـ iPhone."
+
+msgid "Studio mode replaces Apple's USB driver, so it cannot send files. Switch to Apple Driver in Settings."
+msgstr "وضع الاستوديو يستبدل تعريف USB الخاص بـ Apple، لذلك لا يستطيع إرسال الملفات. انتقل إلى تعريف Apple في الإعدادات."
+
+msgid "An .apk file is installed. Other files go to the phone's Download folder."
+msgstr "ملف ‎.apk يُثبّت. والملفات الأخرى تذهب إلى مجلد التنزيلات في الجوال."
+
+msgid "Start mirroring an Android phone, then drop files here."
+msgstr "ابدأ عرض جوال Android، ثم أفلت الملفات هنا."
+
+msgid "Passcode saved (encrypted on this PC)"
+msgstr "تم حفظ رمز الدخول (مشفّراً على هذا الكمبيوتر)"
+
+msgid "Passcode removed"
+msgstr "تمت إزالة رمز الدخول"
+
+msgid "Couldn't save the passcode: the 3zT Mirroring service is not running"
+msgstr "تعذّر حفظ رمز الدخول: خدمة 3zT Mirroring لا تعمل"
+
+msgid "ready"
+msgstr "جاهز"
+
+msgid "unlock + Trust"
+msgstr "افتح القفل + «الوثوق»"
+
+msgid "choose a mode"
+msgstr "اختر وضعاً"
+
+msgid "Studio mode driver"
+msgstr "تعريف وضع الاستوديو"
+
+msgid "needs a driver"
+msgstr "يحتاج تعريفاً"
+
+msgid "not seen on Wi-Fi"
+msgstr "غير ظاهر على Wi-Fi"
+
+msgid "not connected"
+msgstr "غير متصل"
+
+msgid "Saved · {}"
+msgstr "محفوظ · {}"
+
+msgid "{} · saved · {}"
+msgstr "{} · محفوظ · {}"
+
+msgid "Apple Driver (Standard)"
+msgstr "تعريف Apple (قياسي)"
+
+msgid "Not chosen yet"
+msgstr "لم يُختر بعد"
+
+msgid "{} after an app restart"
+msgstr "{} بعد إعادة تشغيل التطبيق"
+
+msgid "running"
+msgstr "تعمل"
+
+msgid "not running"
+msgstr "لا تعمل"
+
+msgid "Native audio"
+msgstr "الصوت الأصلي"
+
+msgid "available"
+msgstr "متاح"
+
+msgid "not available"
+msgstr "غير متاح"
+
+msgid "The Media Feature Pack is missing"
+msgstr "حزمة Media Feature Pack غير موجودة"
+
+msgid "This Windows (an N or KN edition) has no Windows video components, so 3zT Mirroring cannot show the picture. Add the free \"Media Feature Pack\" from Microsoft: Settings › Apps › Optional features › View features › Media Feature Pack. Then restart the PC."
+msgstr "نسخة Windows هذه (إصدار N أو KN) لا تحتوي مكونات الفيديو، لذلك لا يستطيع 3zT Mirroring عرض الصورة. أضف «Media Feature Pack» المجانية من Microsoft: الإعدادات › التطبيقات › الميزات الاختيارية › عرض الميزات › Media Feature Pack. ثم أعد تشغيل الكمبيوتر."
+
+msgid "Open Optional features"
+msgstr "فتح الميزات الاختيارية"
+
+msgid "Later"
+msgstr "لاحقاً"
+
+msgid "Stop casting before changing drivers."
+msgstr "أوقف العرض قبل تغيير التعريفات."
+
+msgid "Connect the device first."
+msgstr "وصّل الجهاز أولاً."
+
+msgid "Restore the Apple driver?"
+msgstr "استعادة تعريف Apple؟"
+
+msgid "Apple Driver mode can see the device again. Studio mode stops until its driver is installed again. A backup is saved first. Windows will ask for administrator permission. Unplug and reconnect the cable afterwards."
+msgstr "سيرى وضع تعريف Apple الجهاز مجدداً. ويتوقف وضع الاستوديو حتى يُثبّت تعريفه مرة أخرى. تُحفظ نسخة احتياطية أولاً. سيطلب Windows صلاحية المسؤول. افصل الكيبل وأعد توصيله بعدها."
+
+msgid "Install the Studio mode driver?"
+msgstr "تثبيت تعريف وضع الاستوديو؟"
+
+msgid "Like TikTok LIVE Studio, 3zT Mirroring installs the libusb-win32 driver for this device. While it is installed, Apple mode and Apple apps can't see the device; press Restore Apple driver to switch back. If there is no driver package for this model yet, 3zT Mirroring builds one and signs it with a new certificate named \"3zT Mirroring Studio mode\", added to Windows' trusted certificates (its private key is deleted). A backup is saved first, and Apple's driver comes back automatically if the device doesn't start. Windows will ask for administrator permission. Unplug and reconnect the cable afterwards."
+msgstr "مثل TikTok LIVE Studio، يثبّت 3zT Mirroring تعريف libusb-win32 لهذا الجهاز. أثناء تثبيته لا يرى وضع Apple ولا تطبيقات Apple الجهاز؛ اضغط «استعادة تعريف Apple» للعودة. إن لم توجد حزمة تعريف لهذا الطراز بعد، يبنيها 3zT Mirroring ويوقّعها بشهادة جديدة باسم «3zT Mirroring Studio mode» تُضاف إلى الشهادات الموثوقة في Windows (ويُحذف مفتاحها الخاص). تُحفظ نسخة احتياطية أولاً، ويعود تعريف Apple تلقائياً إن لم يعمل الجهاز. سيطلب Windows صلاحية المسؤول. افصل الكيبل وأعد توصيله بعدها."
+
+msgid "Remove the libusb0 filter?"
+msgstr "إزالة مرشّح libusb0؟"
+
+msgid "It is stacked on Apple's driver, which can crash Windows. Apple's driver stays. A backup is saved first. Windows will ask for administrator permission."
+msgstr "هو موضوع فوق تعريف Apple، وقد يسبب تعطّل Windows. يبقى تعريف Apple. تُحفظ نسخة احتياطية أولاً. سيطلب Windows صلاحية المسؤول."
+
+msgid "Changing the device's driver…"
+msgstr "جارٍ تغيير تعريف الجهاز…"
+
+msgid "Approve the Windows permission prompt. A PowerShell window shows each step; keep the cable plugged in until it finishes."
+msgstr "وافق على نافذة صلاحيات Windows. نافذة PowerShell تعرض كل خطوة؛ أبقِ الكيبل موصولاً حتى تنتهي."
+
+msgid "Driver changed"
+msgstr "تم تغيير التعريف"
+
+msgid "The 3zT Mirroring service needs a restart to use {} mode. Unplug the cable and plug it in again."
+msgstr "خدمة 3zT Mirroring تحتاج إعادة تشغيل لاستخدام وضع {}. افصل الكيبل ثم وصّله مجدداً."
+
+msgid "Restart now"
+msgstr "إعادة التشغيل الآن"
+
+msgid "The backend did not answer."
+msgstr "الخدمة لم تستجب."
+
+msgid "The previous state was restored."
+msgstr "تمت استعادة الحالة السابقة."
+
+msgid "Driver not changed"
+msgstr "لم يتغير التعريف"
+
+msgid "ADB was not found. Install the Android SDK Platform-Tools (official, from Google) or set ANDROID_HOME, then open this screen again."
+msgstr "لم يُعثر على ADB. ثبّت Android SDK Platform-Tools (الرسمية من Google) أو اضبط ANDROID_HOME، ثم افتح هذه الشاشة مجدداً."
+
+msgid "Starting ADB…"
+msgstr "جارٍ تشغيل ADB…"
+
+msgid "ADB did not start. Close other apps that use ADB, then try again."
+msgstr "لم يعمل ADB. أغلق التطبيقات الأخرى التي تستخدم ADB، ثم حاول مرة أخرى."
+
+msgid "ADB port 5037 is used by another program. 3zT Mirroring does not change it."
+msgstr "منفذ ADB رقم 5037 يستخدمه برنامج آخر. ‏3zT Mirroring لا يغيّره."
+
+msgid "Windows sees a phone on USB, but ADB does not yet. Turn on USB debugging (steps below), then unplug and plug the cable in again."
+msgstr "يرى Windows جوالاً على USB، لكن ADB لا يراه بعد. فعّل تصحيح أخطاء USB (الخطوات أدناه)، ثم افصل الكيبل ووصّله مجدداً."
+
+msgid "No Android device yet. Follow the steps below."
+msgstr "لا يوجد جهاز Android بعد. اتبع الخطوات أدناه."
+
+msgid "{} device(s) seen through ADB."
+msgstr "{} جهاز ظاهر عبر ADB."
+
+msgid "Another app's ADB server (version {}) is running; 3zT Mirroring does not stop it."
+msgstr "خادم ADB لتطبيق آخر (الإصدار {}) يعمل؛ ‏3zT Mirroring لا يوقفه."
+
+msgid "Emulator"
+msgstr "محاكي"
+
+msgid "Tap Allow on the phone"
+msgstr "اضغط «سماح» على الجوال"
+
+msgid "Offline, reconnect the cable"
+msgstr "غير متصل، أعد توصيل الكيبل"
+
+msgid "No USB permission or driver"
+msgstr "لا توجد صلاحية USB أو تعريف"
+
+msgid "Recovery or bootloader mode"
+msgstr "وضع الاسترداد أو الإقلاع"
+
+msgid "Android too old (API {}, needs 21+)"
+msgstr "إصدار Android قديم (API {}، يلزم 21+)"
+
+msgid "Reading device info…"
+msgstr "جارٍ قراءة معلومات الجهاز…"
+
+msgid ", no PC decoder"
+msgstr "، بلا فك ترميز على الكمبيوتر"
+
+msgid "Start mirroring first."
+msgstr "ابدأ العرض أولاً."
+
+msgid "No picture to read yet."
+msgstr "لا توجد صورة لقراءتها بعد."
+
+msgid "Reading the text on the screen…"
+msgstr "جارٍ قراءة النص على الشاشة…"
+
+msgid "Text recognition failed (Windows OCR)."
+msgstr "فشل التعرّف على النص (Windows OCR)."
+
+msgid "No text found on the screen."
+msgstr "لم يُعثر على نص في الشاشة."
+
+msgid "Text read, but Windows didn't allow copying it to the clipboard."
+msgstr "قُرئ النص، لكن Windows لم يسمح بنسخه إلى الحافظة."
+
+msgid "Nothing new on this screen; the copied text is unchanged."
+msgstr "لا جديد في هذه الشاشة؛ النص المنسوخ لم يتغير."
+
+msgid "Copied to the PC: {} new line(s) ({} in total). Alt+R starts over."
+msgstr "نُسخ إلى الكمبيوتر: {} سطر جديد (المجموع {}). Alt+R يبدأ من جديد."
+
+msgid "system"
+msgstr "نظام"
+
+msgid "The phone listed no apps."
+msgstr "الجوال لم يعرض أي تطبيقات."
+
+msgid "No app matches."
+msgstr "لا يوجد تطبيق مطابق."
+
+msgid "{} of {} apps. Type to search."
+msgstr "{} من {} تطبيق. اكتب للبحث."
+
+msgid "Start mirroring an Android phone first."
+msgstr "ابدأ عرض جوال Android أولاً."
+
+msgid "Apps on {}"
+msgstr "التطبيقات على {}"
+
+msgid "Reading the phone's apps…"
+msgstr "جارٍ قراءة تطبيقات الجوال…"
+
+msgid "Could not read the apps: {}"
+msgstr "تعذّرت قراءة التطبيقات: {}"
+
+msgid "Phone control is not ready."
+msgstr "التحكم بالجوال غير جاهز."
+
+msgid "The app window did not open: {}"
+msgstr "لم تُفتح نافذة التطبيق: {}"
+
+msgid "Invalid address. Example: 192.168.1.20:37099"
+msgstr "عنوان غير صحيح. مثال: 192.168.1.20:37099"
+
+msgid "Enter the pairing address (IP:port) shown on the phone."
+msgstr "أدخل عنوان الإقران (IP:port) الظاهر على الجوال."
+
+msgid "The pairing code has 6 digits."
+msgstr "رمز الإقران مكوّن من 6 أرقام."
+
+msgid "Waiting for the phone to scan…"
+msgstr "بانتظار مسح الجوال للرمز…"
+
+msgid "Test recording"
+msgstr "تسجيل تجريبي"
+
+msgid "No Android device is ready yet."
+msgstr "لا يوجد جهاز Android جاهز بعد."
+
+msgid "The scrcpy server file is missing ({}). Reinstall 3zT Mirroring."
+msgstr "ملف خادم scrcpy مفقود ({}). أعد تثبيت 3zT Mirroring."
+
+msgid "Mirroring failed: {}. Reconnect the cable or tap Allow on the phone, then Start again."
+msgstr "فشل العرض: {}. أعد توصيل الكيبل أو اضغط «سماح» على الجوال، ثم ابدأ مجدداً."
+
+msgid "Retrying… ({})"
+msgstr "جارٍ إعادة المحاولة… ({})"
+
+msgid "This shortcut needs Apple Driver mode while mirroring."
+msgstr "هذا الاختصار يحتاج وضع تعريف Apple أثناء العرض."
+
+msgid "Sound on the PC: off (Alt+M)"
+msgstr "الصوت على الكمبيوتر: مغلق (Alt+M)"
+
+msgid "Sound on the PC: on (Alt+M)"
+msgstr "الصوت على الكمبيوتر: يعمل (Alt+M)"
+
+msgid "Rotation: {}"
+msgstr "التدوير: {}"
+
+msgid "Copy history cleared. The next Alt+C starts fresh."
+msgstr "تم مسح سجل النسخ. ضغطة Alt+C التالية تبدأ من جديد."
+
+msgid "Typing {} characters on the device."
+msgstr "جارٍ كتابة {} حرف على الجهاز."
+
+msgid "The PC clipboard has no text."
+msgstr "حافظة الكمبيوتر لا تحتوي نصاً."
+
+msgid "The chosen encoder failed; now using {}. Your choice is kept."
+msgstr "فشل المرمّز المختار؛ يُستخدم الآن {}. اختيارك محفوظ."
+
+msgid "Open 3zT Mirroring"
+msgstr "فتح 3zT Mirroring"
+
+msgid "Quit"
+msgstr "خروج"
+
+msgid "Checking for updates…"
+msgstr "جارٍ التحقق من التحديثات…"
+
+msgid "3zT Mirroring is up to date."
+msgstr "‏3zT Mirroring محدّث."
+
+msgid "Other edition: v{}. Installs as a separate app; settings do not move over."
+msgstr "إصدار آخر: v{}. يُثبّت كتطبيق منفصل؛ الإعدادات لا تنتقل."
+
+msgid "New version available: v{}"
+msgstr "يتوفر إصدار جديد: v{}"
+
+msgid "3zT Mirroring v{} is available: press Update in the header."
+msgstr "‏3zT Mirroring v{} متوفر: اضغط «تحديث» في الشريط العلوي."
+
+msgid "Could not check: {}"
+msgstr "تعذّر التحقق: {}"
+
+msgid "Downloading {}…"
+msgstr "جارٍ تنزيل {}…"
+
+msgid "The other edition's installer is open."
+msgstr "مثبّت الإصدار الآخر مفتوح."
+
+msgid "Update failed: {}"
+msgstr "فشل التحديث: {}"
+
+msgid "Starting 3zT Mirroring…"
+msgstr "جارٍ تشغيل 3zT Mirroring…"
+
+msgid "{} is not connected. Plug in the cable (or join the same Wi-Fi), unlock it, then press Start."
+msgstr "{} غير متصل. وصّل الكيبل (أو اتصل بشبكة Wi-Fi نفسها)، وافتح القفل، ثم اضغط «ابدأ»."
+
+msgid "Restarting the 3zT Mirroring service…"
+msgstr "جارٍ إعادة تشغيل خدمة 3zT Mirroring…"
+
+msgid "Restarting the connection…"
+msgstr "جارٍ إعادة تشغيل الاتصال…"
+
+msgid "Applying the Android settings…"
+msgstr "جارٍ تطبيق إعدادات Android…"
+
+msgid "The mode was not saved, try again."
+msgstr "لم يُحفظ الوضع، حاول مرة أخرى."
+
+msgid "Switching to Wi-Fi…"
+msgstr "جارٍ التحويل إلى Wi-Fi…"
+
+msgid "Switching to the cable…"
+msgstr "جارٍ التحويل إلى الكيبل…"
+
+msgid "The connection could not be changed, try again."
+msgstr "تعذّر تغيير الاتصال، حاول مرة أخرى."
+
+msgid "Setting up Wi-Fi…"
+msgstr "جارٍ إعداد Wi-Fi…"
+
+msgid "Checking drivers…"
+msgstr "جارٍ فحص التعريفات…"
+
+msgid "Wi-Fi is ready. You can unplug the cable."
+msgstr "Wi-Fi جاهز. يمكنك فصل الكيبل."
+
+msgid "Wi-Fi could not be set up."
+msgstr "تعذّر إعداد Wi-Fi."
+
+msgid "Drivers checked."
+msgstr "تم فحص التعريفات."
+
+msgid "Unlocking the device…"
+msgstr "جارٍ فتح قفل الجهاز…"
+
+msgid "No picture from the iPhone/iPad yet. Unlock the device and press Restart. If it stays empty, send the logs (Settings › About › Open log folder)."
+msgstr "لا توجد صورة من iPhone/iPad بعد. افتح قفل الجهاز واضغط «إعادة تشغيل». إن بقيت فارغة أرسل السجلات (الإعدادات › حول البرنامج › فتح مجلد السجلات)."
+
+msgid "sound"
+msgstr "الصوت"
+
+msgid "Start mirroring an Android phone first, then drop the file here."
+msgstr "ابدأ عرض جوال Android أولاً، ثم أفلت الملف هنا."
+
+msgid "Folders cannot be sent yet: drop the files."
+msgstr "لا يمكن إرسال المجلدات بعد: أفلت الملفات نفسها."
+
+msgid "Send {} file(s) to an app on the iPhone/iPad"
+msgstr "إرسال {} ملف إلى تطبيق على iPhone/iPad"
+
+msgid "Could not read the iPhone/iPad apps. Check that the device is connected in Apple Driver mode and trusted."
+msgstr "تعذّرت قراءة تطبيقات iPhone/iPad. تأكد أن الجهاز متصل في وضع تعريف Apple وموثوق."
+
+msgid "Sending files to an iPhone/iPad needs Apple Driver mode (Studio mode cannot)."
+msgstr "إرسال الملفات إلى iPhone/iPad يحتاج وضع تعريف Apple (وضع الاستوديو لا يستطيع)."
+
+msgid "Reading the iPhone/iPad apps…"
+msgstr "جارٍ قراءة تطبيقات iPhone/iPad…"
+
+msgid "No app accepts files (File Sharing). Install e.g. VLC or Documents from the App Store."
+msgstr "لا يوجد تطبيق يقبل الملفات (مشاركة الملفات). ثبّت مثلاً VLC أو Documents من App Store."
+
+msgid "Pick an app: the files go to its folder and show in Files › On My iPhone."
+msgstr "اختر تطبيقاً: تذهب الملفات إلى مجلده وتظهر في الملفات › على الـ iPhone."
+
+msgid "AAC decode failed ({})"
+msgstr "فشل فك ترميز AAC ({})"
+
+msgid "AAC decoder did not open (bad codec config)"
+msgstr "لم يعمل فاك ترميز AAC (إعدادات ترميز غير صالحة)"
+
+msgid "FairPlay handshake not finished"
+msgstr "لم تكتمل مصافحة FairPlay"
+
+msgid "On your iPhone/iPad open Control Center, tap Screen Mirroring and choose “{}”. Both must be on the same Wi-Fi network."
+msgstr "على iPhone/iPad افتح مركز التحكم، واضغط «انعكاس الشاشة» واختر “{}”. يجب أن يكونا على شبكة Wi-Fi نفسها."
+
+msgid "Starting the AirPlay receiver"
+msgstr "جارٍ تشغيل مستقبل AirPlay"
+
+msgid "Touch control couldn't start ({})."
+msgstr "تعذّر بدء التحكم باللمس ({})."
+
+msgid "This device doesn't offer touch control over the Apple driver (missing: {}). Turn on Developer Mode (Settings > Privacy & Security), restart the device and try again. The picture keeps working over AirPlay."
+msgstr "هذا الجهاز لا يوفر التحكم باللمس عبر تعريف Apple (الناقص: {}). فعّل وضع المطور (الإعدادات > الخصوصية والأمن)، وأعد تشغيل الجهاز وحاول مجدداً. الصورة تبقى تعمل عبر AirPlay."
+
+msgid "Starting the AirPlay receiver and the touch link"
+msgstr "جارٍ تشغيل مستقبل AirPlay ورابط اللمس"
+
+msgid "Mouse and keyboard control needs iOS 27 or later on this device. Update it in Settings > General > Software Update."
+msgstr "التحكم بالماوس ولوحة المفاتيح يحتاج iOS 27 أو أحدث على هذا الجهاز. حدّثه من الإعدادات > عام > تحديث البرامج."
+
+msgid "Touch control needs Developer Mode (Settings > Privacy & Security), then a restart."
+msgstr "التحكم باللمس يحتاج وضع المطور (الإعدادات > الخصوصية والأمن)، ثم إعادة التشغيل."
+
+msgid "Unlock the device and tap Trust, then press Start again for touch control."
+msgstr "افتح قفل الجهاز واضغط «الوثوق»، ثم اضغط «ابدأ» مجدداً للتحكم باللمس."
+
+msgid "Touch control needs the device on the cable (or Wi-Fi set up in Apple Driver mode)."
+msgstr "التحكم باللمس يحتاج الجهاز على الكيبل (أو Wi-Fi مُعدّاً في وضع تعريف Apple)."
+
+msgid "Opening touch control over the Apple driver…"
+msgstr "جارٍ فتح التحكم باللمس عبر تعريف Apple…"
+
+msgid "Touch, keyboard and buttons go over the Apple driver. Experimental: not yet confirmed on every iOS version."
+msgstr "اللمس ولوحة المفاتيح والأزرار تمر عبر تعريف Apple. تجريبي: لم يُؤكَّد بعد على كل إصدارات iOS."
+
+msgid "The device's media service didn't answer. Restart the device and try again."
+msgstr "خدمة الوسائط في الجهاز لم تستجب. أعد تشغيل الجهاز وحاول مجدداً."
+
+msgid "Touch control isn't ready yet."
+msgstr "التحكم باللمس غير جاهز بعد."
+
+msgid "Opening a secure Wi-Fi tunnel to the device"
+msgstr "جارٍ فتح نفق Wi-Fi آمن إلى الجهاز"
+
+msgid "Opening a secure USB tunnel to the device"
+msgstr "جارٍ فتح نفق USB آمن إلى الجهاز"
+
+msgid "Preparing the device (first time downloads a small image)"
+msgstr "جارٍ تجهيز الجهاز (أول مرة تُنزّل صورة صغيرة)"
+
+msgid "The device offers no screen service. Turn on Developer Mode (Settings > Privacy & Security), restart the device and try again."
+msgstr "الجهاز لا يوفر خدمة الشاشة. فعّل وضع المطور (الإعدادات > الخصوصية والأمن)، وأعد تشغيل الجهاز وحاول مجدداً."
+
+msgid "That iPhone is no longer connected."
+msgstr "جهاز iPhone هذا لم يعد متصلاً."
+
+msgid "The phone refused the connection. Unlock it and keep it on the cable."
+msgstr "رفض الجهاز الاتصال. افتح قفله وأبقِه على الكيبل."
+
+msgid "The requested phone service is not available."
+msgstr "خدمة الجهاز المطلوبة غير متاحة."
+
+msgid "The phone did not accept the connection."
+msgstr "الجهاز لم يقبل الاتصال."
+
+msgid "Apple Mobile Device Service is not running. Install Apple Devices from the Microsoft Store, then reconnect the iPhone."
+msgstr "خدمة Apple Mobile Device لا تعمل. ثبّت Apple Devices من Microsoft Store، ثم أعد توصيل الـ iPhone."
+
+msgid "The device wasn't found on Wi-Fi. Keep it unlocked and on the same network as this PC."
+msgstr "لم يُعثر على الجهاز على Wi-Fi. أبقِه مفتوح القفل وعلى شبكة هذا الكمبيوتر نفسها."
+
+msgid "Wi-Fi isn't set up for this device yet. Connect the cable, unlock the device, press \"Set up Wi-Fi\" in Settings once, then unplug."
+msgstr "لم يُعدّ Wi-Fi لهذا الجهاز بعد. وصّل الكيبل، وافتح قفل الجهاز، واضغط «إعداد Wi-Fi» في الإعدادات مرة واحدة، ثم افصل الكيبل."
+
+msgid "Apple Driver mode needs iOS {} or later; this device runs iOS {}. Use Studio mode over the cable or Wi-Fi (AirPlay): Settings > Connection & driver."
+msgstr "وضع تعريف Apple يحتاج iOS {} أو أحدث؛ وهذا الجهاز يعمل بـ iOS {}. استخدم وضع الاستوديو عبر الكيبل أو Wi-Fi (‏AirPlay): الإعدادات > الاتصال والتعريف."
+
+msgid "Wi-Fi setup failed: {}"
+msgstr "فشل إعداد Wi-Fi: {}"
+
+msgid "This device uses the Studio mode driver, so Apple mode can't see it. Press Restore Apple driver in Settings > Connection & driver, or switch to Studio mode."
+msgstr "هذا الجهاز يستخدم تعريف وضع الاستوديو، لذلك لا يراه وضع Apple. اضغط «استعادة تعريف Apple» في الإعدادات > الاتصال والتعريف، أو انتقل إلى وضع الاستوديو."
+
+msgid "Studio mode needs its driver on this device. Press Install Studio mode driver in Settings > Connection & driver, or switch to Apple Driver mode."
+msgstr "وضع الاستوديو يحتاج تعريفه على هذا الجهاز. اضغط «تثبيت تعريف وضع الاستوديو» في الإعدادات > الاتصال والتعريف، أو انتقل إلى وضع تعريف Apple."
+
+msgid "Studio mode uses libusb-win32, which isn't on this PC. Install TikTok LIVE Studio's iOS driver or libusb-win32 once, or switch to Apple Driver mode."
+msgstr "وضع الاستوديو يستخدم libusb-win32 وهو غير موجود على هذا الكمبيوتر. ثبّت تعريف iOS الخاص بـ TikTok LIVE Studio أو libusb-win32 مرة واحدة، أو انتقل إلى وضع تعريف Apple."
+
+msgid "A libusb0 filter is stacked on Apple's driver. Press Remove libusb0 filter in Settings > Connection & driver first."
+msgstr "يوجد مرشّح libusb0 فوق تعريف Apple. اضغط «إزالة مرشّح libusb0» في الإعدادات > الاتصال والتعريف أولاً."
+
+msgid "Choose a connection mode first."
+msgstr "اختر وضع الاتصال أولاً."
+
+msgid "Unlock the device and tap Trust, then try again."
+msgstr "افتح قفل الجهاز واضغط «الوثوق»، ثم حاول مرة أخرى."
+
+msgid "The device was disconnected. Plug it back in and try again."
+msgstr "انفصل الجهاز. وصّله مجدداً وحاول مرة أخرى."
+
+msgid "Another app is using the device's screen (Xcode, QuickTime, TikTok LIVE Studio). Close it and try again."
+msgstr "تطبيق آخر يستخدم شاشة الجهاز (Xcode أو QuickTime أو TikTok LIVE Studio). أغلقه وحاول مرة أخرى."
+
+msgid "Windows can't see the iPhone/iPad. Unlock it, plug the cable in again (a data cable, not a charge-only one), and tap Allow / Trust on the device."
+msgstr "لا يرى Windows جهاز iPhone/iPad. افتح قفله، وأعد توصيل الكيبل (كيبل بيانات وليس للشحن فقط)، واضغط «سماح» / «الوثوق» على الجهاز."
+
+msgid "That device"
+msgstr "هذا الجهاز"
+
+msgid "Keep it unlocked and on the same Wi-Fi as this PC, or plug in the cable."
+msgstr "أبقِه مفتوح القفل وعلى Wi-Fi هذا الكمبيوتر نفسها، أو وصّل الكيبل."
+
+msgid "Plug it in with the cable, unlock it and tap Trust."
+msgstr "وصّله بالكيبل، وافتح قفله واضغط «الوثوق»."
+
+msgid "Your iPhone/iPad is using another app's USB driver (TikTok LIVE Studio). Switch to Studio mode or repair the driver in Settings > Connection & driver."
+msgstr "جهاز iPhone/iPad يستخدم تعريف USB لتطبيق آخر (TikTok LIVE Studio). انتقل إلى وضع الاستوديو أو أصلح التعريف في الإعدادات > الاتصال والتعريف."
+
+msgid "A libusb0 filter is stacked on this device's Apple driver. That combination can crash Windows, so 3zT Mirroring won't use it. Open Settings > Connection & driver and press Remove libusb0 filter."
+msgstr "يوجد مرشّح libusb0 فوق تعريف Apple لهذا الجهاز. هذا المزيج قد يسبب تعطّل Windows، لذلك لن يستخدمه 3zT Mirroring. افتح الإعدادات > الاتصال والتعريف واضغط «إزالة مرشّح libusb0»."
+
+msgid "The Studio mode driver isn't installed for this device yet. Open Settings > Connection & driver and press Install Studio mode driver, then reconnect the cable."
+msgstr "تعريف وضع الاستوديو غير مثبّت لهذا الجهاز بعد. افتح الإعدادات > الاتصال والتعريف واضغط «تثبيت تعريف وضع الاستوديو»، ثم أعد توصيل الكيبل."
+
+msgid "Casting stopped"
+msgstr "توقف العرض"
+
+msgid "Apple Mobile Device Support is not installed. Run the 3zT Mirroring Setup again, or install Apple Devices from the Microsoft Store."
+msgstr "Apple Mobile Device Support غير مثبّت. شغّل إعداد 3zT Mirroring مرة أخرى، أو ثبّت Apple Devices من Microsoft Store."
+
+msgid "The Apple Mobile Device Service is stopped. Start it in Services (services.msc) and set it to Automatic, or restart the PC."
+msgstr "خدمة Apple Mobile Device متوقفة. شغّلها من الخدمات (services.msc) واضبطها على «تلقائي»، أو أعد تشغيل الكمبيوتر."
+
+msgid "Wi-Fi needs Apple Driver mode."
+msgstr "Wi-Fi يحتاج وضع تعريف Apple."
+
+msgid "Stop casting first."
+msgstr "أوقف العرض أولاً."
+
+msgid "Connect the device with the cable, unlock it and tap Trust first."
+msgstr "وصّل الجهاز بالكيبل، وافتح قفله واضغط «الوثوق» أولاً."
+
+msgid "AirPlay (Wi-Fi) + touch over the Apple driver"
+msgstr "AirPlay (‏Wi-Fi) + لمس عبر تعريف Apple"
+
+msgid "The device isn't on Wi-Fi yet. Press Set up Wi-Fi in Settings with the cable connected, keep both on the same network, or switch to Cable."
+msgstr "الجهاز ليس على Wi-Fi بعد. اضغط «إعداد Wi-Fi» في الإعدادات والكيبل موصول، وأبقِ الاثنين على الشبكة نفسها، أو انتقل إلى الكيبل."
+
+msgid "Studio mode needs the libusb0 driver, which isn't installed on this PC. Open Settings > Connection & driver."
+msgstr "وضع الاستوديو يحتاج تعريف libusb0 وهو غير مثبّت على هذا الكمبيوتر. افتح الإعدادات > الاتصال والتعريف."
+
+msgid "The Apple Mobile Device Service was stopped. Approve the Windows prompt to start it, then press Start again."
+msgstr "كانت خدمة Apple Mobile Device متوقفة. وافق على نافذة Windows لتشغيلها، ثم اضغط «ابدأ» مجدداً."
+
+msgid "Wi-Fi is already set up."
+msgstr "Wi-Fi مُعدّ مسبقاً."
+
+msgid "Opening the device through libusb0"
+msgstr "جارٍ فتح الجهاز عبر libusb0"
+
+msgid "The driver tool did not report a result (exit {}). Nothing is known to have changed."
+msgstr "أداة التعريف لم تُرجع نتيجة (رمز الخروج {}). لا يُعرف أن شيئاً تغيّر."
+
+msgid "That device is not connected anymore. Plug it in and try again."
+msgstr "هذا الجهاز لم يعد متصلاً. وصّله وحاول مرة أخرى."
+
+msgid "Administrator permission was not given. Nothing was changed."
+msgstr "لم تُمنح صلاحية المسؤول. لم يتغير شيء."
+
+msgid "Problem (code {})"
+msgstr "مشكلة (الرمز {})"
+
+msgid "The device didn't take the shortcut ({})."
+msgstr "الجهاز لم يستجب للاختصار ({})."
+
+msgid "Text recognition failed: {}"
+msgstr "فشل التعرّف على النص: {}"
+
+msgid "Screen stream is not running ({})."
+msgstr "بث الشاشة لا يعمل ({})."
+
+msgid "Touch, keyboard and buttons are not available in Studio mode."
+msgstr "اللمس ولوحة المفاتيح والأزرار غير متاحة في وضع الاستوديو."
+
+msgid "The change was not confirmed."
+msgstr "لم يُؤكَّد التغيير."
+
+msgid "Another driver change is running."
+msgstr "يوجد تغيير تعريف آخر قيد التنفيذ."
+
+msgid "Shortcuts need Apple Driver mode while casting."
+msgstr "الاختصارات تحتاج وضع تعريف Apple أثناء العرض."
+
+msgid "Needs Apple Driver mode and a connected device."
+msgstr "يحتاج وضع تعريف Apple وجهازاً متصلاً."
+
+msgid "Another file is being sent."
+msgstr "يُرسل ملف آخر حالياً."
+
+msgid "Not confirmed."
+msgstr "لم يُؤكَّد."
+
+msgid "Waiting for the first video frame."
+msgstr "بانتظار أول إطار فيديو."
+
+msgid "Trust check over USB failed ({}). Unplug the device and retry."
+msgstr "فشل التحقق من الوثوق عبر USB ({}). افصل الجهاز وحاول مجدداً."
+
+msgid "Windows refused to open the capture interface ({}). Unplug the device and retry."
+msgstr "رفض Windows فتح واجهة الالتقاط ({}). افصل الجهاز وحاول مجدداً."
+
+msgid "Windows refused to select the capture configuration ({}). Unplug the device, plug it in again and retry."
+msgstr "رفض Windows اختيار إعدادات الالتقاط ({}). افصل الجهاز ووصّله مجدداً ثم حاول."
+
+msgid "USB connection lost: {}"
+msgstr "انقطع اتصال USB: {}"
+
+msgid "Switching the device to screen capture"
+msgstr "جارٍ تحويل الجهاز إلى التقاط الشاشة"
+
+msgid "Checking that this PC is trusted"
+msgstr "جارٍ التحقق من أن هذا الكمبيوتر موثوق"
+
+msgid "Unlock the device and keep it unlocked"
+msgstr "افتح قفل الجهاز وأبقِه مفتوحاً"
+
+msgid "The device is not connected."
+msgstr "الجهاز غير متصل."
+
+msgid "Studio mode needs the libusb0 driver installed as the device's driver (no filters). Open Settings > Connection & driver."
+msgstr "وضع الاستوديو يحتاج تعريف libusb0 مثبّتاً كتعريف للجهاز (بلا مرشّحات). افتح الإعدادات > الاتصال والتعريف."
+
+msgid "The device did not offer its screen-capture configuration. Unlock it and try again. If it keeps failing, restart the iPhone/iPad."
+msgstr "الجهاز لم يعرض إعدادات التقاط الشاشة. افتح قفله وحاول مجدداً. إن استمر الفشل أعد تشغيل iPhone/iPad."
+
+msgid "The device disappeared. Plug it in again and retry."
+msgstr "اختفى الجهاز. وصّله مجدداً وحاول."
+
+msgid "The device did not come back in screen-capture mode. Restart the iPhone/iPad (turn it off and on), plug it in again, unlock it and retry."
+msgstr "لم يعد الجهاز في وضع التقاط الشاشة. أعد تشغيل iPhone/iPad (أطفئه وشغّله)، ووصّله مجدداً، وافتح قفله وحاول."
+
+msgid "The device did not leave screen-capture mode. Unplug it, plug it in again and retry."
+msgstr "لم يخرج الجهاز من وضع التقاط الشاشة. افصله ووصّله مجدداً وحاول."
+
+msgid "Device answered, setting up the stream"
+msgstr "استجاب الجهاز، جارٍ تجهيز البث"
+
+msgid "This PC isn't trusted by the device yet. Use Apple mode once (or iTunes / Apple Devices), tap Trust on the device, then switch back to Studio mode."
+msgstr "الجهاز لا يثق بهذا الكمبيوتر بعد. استخدم وضع Apple مرة واحدة (أو iTunes / Apple Devices)، واضغط «الوثوق» على الجهاز، ثم عد إلى وضع الاستوديو."
+
+msgid "Unlock the device and try again."
+msgstr "افتح قفل الجهاز وحاول مرة أخرى."
+
+msgid "The device doesn't trust this PC anymore. Use Apple mode once and tap Trust, then try again."
+msgstr "الجهاز لم يعد يثق بهذا الكمبيوتر. استخدم وضع Apple مرة واحدة واضغط «الوثوق»، ثم حاول مرة أخرى."
+
+msgid "The device opened screen capture but sent nothing. Restart the iPhone/iPad (turn it off and on), unlock it, keep it on the home screen, then press Start casting again."
+msgstr "فتح الجهاز التقاط الشاشة لكنه لم يرسل شيئاً. أعد تشغيل iPhone/iPad (أطفئه وشغّله)، وافتح قفله، وأبقِه على الشاشة الرئيسية، ثم اضغط «ابدأ» مجدداً."
+
+msgid "Android: the scrcpy server (Genymobile & Romain Vimont, Apache-2.0) and Google's official adb (Android platform-tools, unmodified; NOTICE.txt in third_party). Apple: pymobiledevice3 (GPL-3.0), pane-iphone-mirror-windows (GPL-3.0), quicktime_video_hack (MIT), libusb-win32, UxPlay/playfair (GPL-3.0). AAC sound and the built-in HEVC decoder: FFmpeg (LGPL). Details: README and THIRD_PARTY_NOTICES.md."
+msgstr "Android: خادم scrcpy ‏(Genymobile وRomain Vimont، Apache-2.0) وadb الرسمي من Google ‏(Android platform-tools دون تعديل؛ NOTICE.txt في third_party). Apple: ‏pymobiledevice3 ‏(GPL-3.0)، pane-iphone-mirror-windows ‏(GPL-3.0)، quicktime_video_hack ‏(MIT)، libusb-win32، UxPlay/playfair ‏(GPL-3.0). صوت AAC وفاك ترميز HEVC المدمج: FFmpeg ‏(LGPL). التفاصيل: README وTHIRD_PARTY_NOTICES.md."

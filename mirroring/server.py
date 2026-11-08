@@ -7,7 +7,7 @@
   USB Direct mode served from the session's MediaHub: /cast/codec,
                   /cast/stream.bin, /cast/audio.bin (same framing). Input
                   isn't available on that path.
-/api/connection and /api/drivers drive the Connection & Drivers settings.
+/api/connection and /api/drivers drive the Connection & driver settings.
 """
 
 from __future__ import annotations
@@ -333,7 +333,7 @@ def build_app(manager: CastManager) -> web.Application:
             # Hybrid: the picture is AirPlay (hub), input goes to the CoreDevice
             # HID server on the same loopback port Apple mode uses.
             return await cast_proxy(request)
-        return web.json_response({"error": "Touch, keyboard and buttons are not available in USB Direct mode."}, status=409)
+        return web.json_response({"error": "Touch, keyboard and buttons are not available in Studio mode."}, status=409)
 
     async def cast_proxy(request: web.Request) -> web.StreamResponse:
         url = f"{UPSTREAM}/{request.match_info['tail']}"

@@ -1,7 +1,7 @@
 """Consented driver switches between Apple mode and USB Direct.
 
 The app process itself never writes driver state. A change runs only when
-the user pressed a button in Settings > Connection & Drivers and confirmed
+the user pressed a button in Settings > Connection & driver and confirmed
 it; then `tools/usb_filter.ps1` runs elevated through UAC (Windows asks the
 user), backs up the device's driver state, applies the change, verifies the
 device restarted, and rolls back on failure.

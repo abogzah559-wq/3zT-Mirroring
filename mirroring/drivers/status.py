@@ -167,7 +167,7 @@ def libusb0_status() -> dict:
     status["bundled"] = all(os.path.exists(os.path.join(BUNDLED, f))
                             for f in (r"amd64\libusb0.sys", r"amd64\libusb0.dll", r"x86\libusb0_x86.dll"))
     status["installed"] = status["service"] and status["sys"] and status["dll"]
-    # Installing the USB Direct driver works from either source.
+    # Installing the Studio mode driver works from either source.
     status["available"] = status["installed"] or status["bundled"]
     status["zadig"] = True  # the official download page is always offered
     return status

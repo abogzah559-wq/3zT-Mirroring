@@ -461,6 +461,10 @@ fn session(
     let mut got_key = false;
     let mut pending: VecDeque<(i64, Instant)> = VecDeque::new();
     let mut upload = None;
+    // Windows' HEVC decoder can open and still refuse every frame (some
+    // drivers, 10-bit streams): then switch to the built-in decoder.
+    let decoded_at_start = stats.decoded.load(Relaxed);
+    let mut failures = 0u32;
     while !stop.load(Relaxed) {
         let Some(rec) = stream.next_record() else {
             return Ok(());
@@ -513,6 +517,21 @@ fn session(
                 if let Err(e) = mft.input(&au, ts, &mut sink) {
                     log::warn!("decode: {e}");
                     stats.errors.fetch_add(1, Relaxed);
+                    failures += 1;
+                    if failures >= 6
+                        && matches!(info.codec, Codec::Hevc)
+                        && stats.decoded.load(Relaxed) == decoded_at_start
+                        && ffdec::available()
+                    {
+                        log::info!(
+                            "decoder: Media Foundation HEVC decoded nothing, using videodec"
+                        );
+                        drop(mft);
+                        if info.keyframes_on_request {
+                            source.request_keyframe();
+                        }
+                        return session_ff(gpu, ring, stats, stop, source, info, stream);
+                    }
                     mft.flush();
                     got_key = false;
                     if info.keyframes_on_request {

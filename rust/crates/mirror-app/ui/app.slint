@@ -15,7 +15,7 @@ export { Theme, UiTest }
 export global AndroidEnc {
     // Encoder choices for the selected codec: "" = Auto, then MediaCodec names.
     in property <[string]> options: [""];
-    in property <[string]> labels: ["Auto"];
+    in property <[string]> labels: [@tr("Auto")];
     // Codecs both ends support (empty = not detected yet).
     in property <[string]> codecs;
     // e.g. "H.264: 2 (1 hw) · H.265: 1 (1 hw)".
@@ -56,6 +56,7 @@ export struct Prefs {
     android-encoder: string,  // "" = automatic, else a MediaCodec name from the phone's list
     update-check: bool,       // look for a new version at start
     update-channel: string,   // "" = this build's own | stable | beta
+    language: string,         // "" = as Windows | en | ar
 }
 
 // Window controls in the macOS style: close, minimise, zoom. The symbols
@@ -93,8 +94,8 @@ component TrafficLights inherits HorizontalLayout {
             changed has-hover => {
                 root.hot = self.has-hover;
                 if self.has-hover {
-                    Tip.text = b.id == "min" ? "Minimise" : b.id == "close" ? "Close"
-                        : root.maximized ? "Restore" : "Maximise";
+                    Tip.text = b.id == "min" ? @tr("Minimise") : b.id == "close" ? @tr("Close")
+                        : root.maximized ? @tr("Restore") : @tr("Maximise");
                     Tip.x = self.absolute-position.x + self.width / 2;
                     Tip.top = self.absolute-position.y;
                     Tip.bottom = self.absolute-position.y + self.height;
@@ -107,11 +108,13 @@ component TrafficLights inherits HorizontalLayout {
     }
 }
 
-// "Buy me a coffee": a small pill next to the window controls.
+// "Buy me a coffee": a small pill next to the window controls. The width
+// comes from the content; the cup's drawing sits left of its 24-unit box
+// (the handle is on the right), so the paddings even out what the eye sees.
 component CoffeeButton inherits Rectangle {
     callback clicked();
     in property <bool> compact;
-    width: row.preferred-width + 18px;
+    width: row.preferred-width;
     height: 26px;
     border-radius: 13px;
     background: ta.pressed ? Theme.fill-hover : ta.has-hover ? Theme.fill : Theme.raise;
@@ -119,22 +122,25 @@ component CoffeeButton inherits Rectangle {
     border-color: Theme.line;
     animate background { duration: 120ms; }
     row := HorizontalLayout {
-        x: 9px;
+        padding-left: root.compact ? 6px : 10px;
+        padding-right: root.compact ? 5px : 12px;
         spacing: 6px;
         alignment: center;
-        Path {
-            width: 15px;
-            height: 15px;
-            y: (parent.height - self.height) / 2;
-            viewbox-width: 24;
-            viewbox-height: 24;
-            stroke: Theme.text;
-            stroke-width: 1.6px;
-            fill: transparent;
-            commands: "M4 9 L16 9 L16 14 A5 5 0 0 1 11 19 L9 19 A5 5 0 0 1 4 14 Z M16 10.5 L17.5 10.5 A2.5 2.5 0 0 1 17.5 15.5 L16 15.5 M8 3.5 C7.2 4.5 8.8 5.5 8 6.5 M12 3.5 C11.2 4.5 12.8 5.5 12 6.5";
+        VerticalLayout {
+            alignment: center;
+            Path {
+                width: 15px;
+                height: 15px;
+                viewbox-width: 24;
+                viewbox-height: 24;
+                stroke: Theme.text;
+                stroke-width: 1.6px;
+                fill: transparent;
+                commands: "M4 9 L16 9 L16 14 A5 5 0 0 1 11 19 L9 19 A5 5 0 0 1 4 14 Z M16 10.5 L17.5 10.5 A2.5 2.5 0 0 1 17.5 15.5 L16 15.5 M8 3.5 C7.2 4.5 8.8 5.5 8 6.5 M12 3.5 C11.2 4.5 12.8 5.5 12 6.5";
+            }
         }
         if !root.compact: Text {
-            text: "Buy me a coffee";
+            text: @tr("Buy me a coffee");
             font-size: 11.5px;
             font-weight: 600;
             color: Theme.text;
@@ -146,7 +152,7 @@ component CoffeeButton inherits Rectangle {
         clicked => { Tip.shown = false; root.clicked(); }
         changed has-hover => {
             if self.has-hover && root.compact {
-                Tip.text = "Buy me a coffee";
+                Tip.text = @tr("Buy me a coffee");
                 Tip.x = self.absolute-position.x + self.width / 2;
                 Tip.top = self.absolute-position.y;
                 Tip.bottom = self.absolute-position.y + self.height;
@@ -178,7 +184,7 @@ component UpdatePill inherits Rectangle {
         animate width { duration: 120ms; }
     }
     t := Text {
-        text: busy ? (progress >= 0 ? "Updating " + round(progress * 100) + "%" : "Updating…") : "Update to v" + root.version;
+        text: busy ? (progress >= 0 ? @tr("Updating {}%", round(progress * 100)) : @tr("Updating…")) : @tr("Update to v{}", root.version);
         font-size: 11px;
         font-weight: 700;
         color: Theme.btn-text;
@@ -299,7 +305,7 @@ component TopBar inherits Rectangle {
             border-width: 1px;
             border-color: Theme.line;
             pillT := Text {
-                text: live ? "Mirroring" : listening ? "Waiting for the device" : busy ? "Connecting…" : blocked ? "Action needed" : "Ready";
+                text: live ? @tr("Mirroring") : listening ? @tr("Waiting for the device") : busy ? @tr("Connecting…") : blocked ? @tr("Action needed") : @tr("Ready");
                 font-size: 11px;
                 font-weight: 600;
                 color: live ? Theme.accent : Theme.text-2;
@@ -313,7 +319,7 @@ component TopBar inherits Rectangle {
             horizontal-stretch: 1;
             min-width: 0px;
             if !compact: Text {
-                text: device == "" ? "No device" : device + (link == "" ? "" : "  ·  " + link);
+                text: device == "" ? @tr("No device") : device + (link == "" ? "" : "  ·  " + link);
                 font-size: 11.5px;
                 color: Theme.text-2;
                 overflow: elide;
@@ -323,29 +329,29 @@ component TopBar inherits Rectangle {
         GlassButton {
             y: (parent.height - self.height) / 2;
             icon: "\u{E72C}";
-            label: compact ? "" : "Restart";
-            tip: "Restart the connection";
+            label: compact ? "" : @tr("Restart");
+            tip: @tr("Restart the connection");
             clicked => { root.restart(); }
         }
         if !live && !busy: GlassButton {
             y: (parent.height - self.height) / 2;
             primary: true;
             icon: "\u{E768}";
-            label: compact ? "" : "Start";
-            tip: "Start mirroring";
+            label: compact ? "" : @tr("Start");
+            tip: @tr("Start mirroring");
             clicked => { root.start(); }
         }
         if live || busy: GlassButton {
             y: (parent.height - self.height) / 2;
             icon: "\u{E71A}";
-            label: compact ? "" : "Stop";
-            tip: "Stop mirroring";
+            label: compact ? "" : @tr("Stop");
+            tip: @tr("Stop mirroring");
             clicked => { root.stop(); }
         }
         GlassButton {
             y: (parent.height - self.height) / 2;
             icon: muted ? "\u{E74F}" : "\u{E767}";
-            tip: muted ? "Sound off — click to turn on" : "Sound on PC — click to mute";
+            tip: muted ? @tr("Sound off — click to turn on") : @tr("Sound on PC — click to mute");
             active: !muted;
             clicked => { root.mute(); }
         }
@@ -353,12 +359,12 @@ component TopBar inherits Rectangle {
             y: (parent.height - self.height) / 2;
             icon: "\u{E7AD}";
             clicked => { root.rotate(); }
-            tip: "Rotate view";
+            tip: @tr("Rotate view");
         }
         if !compact: GlassButton {
             y: (parent.height - self.height) / 2;
-            label: fit == "contain" ? "AUTO" : fit == "cover" ? "EDGE" : "FILL";
-            tip: "View mode: Auto-Fit / Edge-to-Edge / Stretch";
+            label: fit == "contain" ? @tr("AUTO") : fit == "cover" ? @tr("EDGE") : @tr("FILL");
+            tip: @tr("View mode: Auto-Fit / Edge-to-Edge / Stretch");
             active: true;
             clicked => { root.fit-next(); }
         }
@@ -366,14 +372,14 @@ component TopBar inherits Rectangle {
             y: (parent.height - self.height) / 2;
             icon: root.fullscreen ? "\u{E73F}" : "\u{E740}";
             active: root.fullscreen;
-            tip: root.fullscreen ? "Exit full screen" : "Full screen";
+            tip: root.fullscreen ? @tr("Exit full screen") : @tr("Full screen");
             clicked => { root.window-action("fullscreen"); }
         }
         GlassButton {
             y: (parent.height - self.height) / 2;
             icon: "\u{E713}";
             active: settings-open;
-            tip: "Settings";
+            tip: @tr("Settings");
             clicked => { root.settings(); }
         }
     }
@@ -403,19 +409,19 @@ component BottomBar inherits Rectangle {
                 padding-right: 9px;
                 spacing: 6px;
                 alignment: center;
-                if !root.android: Chip { icon: "\u{E76B}"; tip: "Swipe from the right edge (forward)"; label: compact ? "" : "Swipe left"; clicked => { root.action("swipe-left"); } }
-                if root.android: Chip { icon: "\u{E72B}"; tip: "Back (right click works too)"; label: compact ? "" : "Back"; clicked => { root.action("back"); } }
-                Chip { icon: "\u{E80F}"; tip: "Home screen"; label: compact ? "" : "Home"; clicked => { root.action("home"); } }
-                Chip { icon: "\u{E8A9}"; tip: "Recent apps"; label: compact ? "" : "Recent"; clicked => { root.action("switcher"); } }
-                if !root.android: Chip { icon: "\u{E76C}"; tip: "Swipe from the left edge (back, also Alt+←)"; label: compact ? "" : "Swipe right"; clicked => { root.action("swipe-right"); } }
+                if !root.android: Chip { icon: "\u{E76B}"; tip: @tr("Swipe from the right edge (forward)"); label: compact ? "" : @tr("Swipe left"); clicked => { root.action("swipe-left"); } }
+                if root.android: Chip { icon: "\u{E72B}"; tip: @tr("Back (right click works too)"); label: compact ? "" : @tr("Back"); clicked => { root.action("back"); } }
+                Chip { icon: "\u{E80F}"; tip: @tr("Home screen"); label: compact ? "" : @tr("Home"); clicked => { root.action("home"); } }
+                Chip { icon: "\u{E8A9}"; tip: @tr("Recent apps"); label: compact ? "" : @tr("Recent"); clicked => { root.action("switcher"); } }
+                if !root.android: Chip { icon: "\u{E76C}"; tip: @tr("Swipe from the left edge (back, also Alt+←)"); label: compact ? "" : @tr("Swipe right"); clicked => { root.action("swipe-right"); } }
                 Rectangle { width: 1px; background: Theme.dark ? #ffffff1f : #0000001a; }
-                if !root.android: Chip { icon: "\u{E9E9}"; tip: "Control Center"; label: compact ? "" : "Control"; clicked => { root.action("control-center"); } }
-                if root.android: Chip { icon: "\u{E71D}"; tip: "Phone apps (open on the phone or in a new window)"; label: compact ? "" : "Apps"; clicked => { root.action("apps"); } }
-                if root.android: Chip { icon: "\u{E9E9}"; tip: "Quick Settings"; label: compact ? "" : "Quick"; clicked => { root.action("quick-settings"); } }
-                Chip { icon: "\u{EA8F}"; tip: "Notifications"; label: compact ? "" : "Alerts"; clicked => { root.action("notifications"); } }
-                if root.android: Chip { icon: "\u{E993}"; tip: "Phone volume down"; label: ""; clicked => { root.action("vol-down"); } }
-                if root.android: Chip { icon: "\u{E995}"; tip: "Phone volume up"; label: ""; clicked => { root.action("vol-up"); } }
-                Chip { icon: "\u{E72E}"; tip: root.android ? "Power button (lock / wake the screen)" : "Lock screen"; label: compact ? "" : "Lock"; clicked => { root.action("lock"); } }
+                if !root.android: Chip { icon: "\u{E9E9}"; tip: @tr("Control Center"); label: compact ? "" : @tr("Control"); clicked => { root.action("control-center"); } }
+                if root.android: Chip { icon: "\u{E71D}"; tip: @tr("Phone apps (open on the phone or in a new window)"); label: compact ? "" : @tr("Apps"); clicked => { root.action("apps"); } }
+                if root.android: Chip { icon: "\u{E9E9}"; tip: @tr("Quick Settings"); label: compact ? "" : @tr("Quick"); clicked => { root.action("quick-settings"); } }
+                Chip { icon: "\u{EA8F}"; tip: @tr("Notifications"); label: compact ? "" : @tr("Alerts"); clicked => { root.action("notifications"); } }
+                if root.android: Chip { icon: "\u{E993}"; tip: @tr("Phone volume down"); label: ""; clicked => { root.action("vol-down"); } }
+                if root.android: Chip { icon: "\u{E995}"; tip: @tr("Phone volume up"); label: ""; clicked => { root.action("vol-up"); } }
+                Chip { icon: "\u{E72E}"; tip: root.android ? @tr("Power button (lock / wake the screen)") : @tr("Lock screen"); label: compact ? "" : @tr("Lock"); clicked => { root.action("lock"); } }
             }
         }
     }
@@ -513,39 +519,39 @@ component Placeholder inherits Rectangle {
     property <bool> card: flow-step >= 0;
     property <bool> air: link == "wireless";
     property <color> tone: device == "" ? Theme.text-3 : need != "" ? Theme.warn : Theme.ok;
-    property <string> need-label: need == "trust" ? "Needs Trust"
-        : need == "wifi" ? "Wi-Fi not set up"
-        : need == "mode" ? "Choose a mode"
-        : "Needs a driver";
-    property <string> need-title: need == "restore" ? "Restore the Apple driver"
-        : need == "bind" ? "Install the Studio mode driver"
-        : need == "package" ? "libusb-win32 is not installed"
-        : need == "removefilter" ? "Remove the libusb0 filter first"
-        : need == "mode" ? "Choose a connection mode"
-        : need == "wifi" ? "Wi-Fi is not set up yet"
-        : "Unlock it and tap Trust";
-    property <string> need-hint: need == "restore" ? "This device uses the Studio mode driver, so Apple mode cannot see it. Restore the Apple driver, or switch to Studio mode."
-        : need == "bind" ? "Studio mode uses the libusb0 driver on the device. Install it, or switch to Apple Driver mode."
-        : need == "package" ? "Install the iOS driver of TikTok LIVE Studio or libusb-win32 once, then press Check drivers. Or use Apple Driver mode."
-        : need == "removefilter" ? "A libusb0 filter is stacked on the Apple driver. It can crash Windows."
-        : need == "mode" ? "Pick Apple Driver or Studio mode to continue."
-        : need == "wifi" ? "Plug in the cable once, then press Set up Wi-Fi in Settings. Or choose Cable."
-        : "Unlock the device, tap Trust if it asks, then try again.";
+    property <string> need-label: need == "trust" ? @tr("Needs Trust")
+        : need == "wifi" ? @tr("Wi-Fi not set up")
+        : need == "mode" ? @tr("Choose a mode")
+        : @tr("Needs a driver");
+    property <string> need-title: need == "restore" ? @tr("Restore the Apple driver")
+        : need == "bind" ? @tr("Install the Studio mode driver")
+        : need == "package" ? @tr("libusb-win32 is not installed")
+        : need == "removefilter" ? @tr("Remove the libusb0 filter first")
+        : need == "mode" ? @tr("Choose a connection mode")
+        : need == "wifi" ? @tr("Wi-Fi is not set up yet")
+        : @tr("Unlock it and tap Trust");
+    property <string> need-hint: need == "restore" ? @tr("This device uses the Studio mode driver, so Apple mode cannot see it. Restore the Apple driver, or switch to Studio mode.")
+        : need == "bind" ? @tr("Studio mode uses the libusb0 driver on the device. Install it, or switch to Apple Driver mode.")
+        : need == "package" ? @tr("Install the iOS driver of TikTok LIVE Studio or libusb-win32 once, then press Check drivers. Or use Apple Driver mode.")
+        : need == "removefilter" ? @tr("A libusb0 filter is stacked on the Apple driver. It can crash Windows.")
+        : need == "mode" ? @tr("Pick Apple Driver or Studio mode to continue.")
+        : need == "wifi" ? @tr("Plug in the cable once, then press Set up Wi-Fi in Settings. Or choose Cable.")
+        : @tr("Unlock the device, tap Trust if it asks, then try again.");
     property <[[string]]> texts: flow-kind == "usbdirect" ? [
-            ["Detect device", "Found on USB through the libusb0 driver"],
-            ["Open the device", "Switching it to its screen-capture mode"],
-            ["Check trust", "Keep it unlocked while 3zT Mirroring proves this PC is trusted"],
-            ["Start stream", "Receiving the screen over Studio mode"]]
+            [@tr("Detect device"), @tr("Found on USB through the libusb0 driver")],
+            [@tr("Open the device"), @tr("Switching it to its screen-capture mode")],
+            [@tr("Check trust"), @tr("Keep it unlocked while 3zT Mirroring proves this PC is trusted")],
+            [@tr("Start stream"), @tr("Receiving the screen over Studio mode")]]
         : flow-kind == "airplay" ? [
-            ["Device connected", "Your iPhone/iPad chose 3zT Mirroring in Screen Mirroring"],
-            ["Secure connection", "AirPlay pairing and FairPlay key exchange"],
-            ["Receive video", "Decrypting the AirPlay stream"],
-            ["Start stream", "Receiving the screen over Wi-Fi"]]
+            [@tr("Device connected"), @tr("Your iPhone/iPad chose 3zT Mirroring in Screen Mirroring")],
+            [@tr("Secure connection"), @tr("AirPlay pairing and FairPlay key exchange")],
+            [@tr("Receive video"), @tr("Decrypting the AirPlay stream")],
+            [@tr("Start stream"), @tr("Receiving the screen over Wi-Fi")]]
         : [
-            ["Detect device", "Found through Apple Mobile Device Service"],
-            ["Secure connection", wifi ? "Opening an encrypted Wi-Fi tunnel to the device" : "Opening an encrypted USB tunnel to the device"],
-            ["Prepare the device", "Keep it unlocked. The first time, a small developer image is installed."],
-            ["Start stream", "Receiving the screen in HEVC"]];
+            [@tr("Detect device"), @tr("Found through Apple Mobile Device Service")],
+            [@tr("Secure connection"), wifi ? @tr("Opening an encrypted Wi-Fi tunnel to the device") : @tr("Opening an encrypted USB tunnel to the device")],
+            [@tr("Prepare the device"), @tr("Keep it unlocked. The first time, a small developer image is installed.")],
+            [@tr("Start stream"), @tr("Receiving the screen in HEVC")]];
     property <float> pct: max(0, min(flow-step, 4)) / 4;
     animate pct { duration: 420ms; easing: ease-out; }
     function st(i: int) -> string {
@@ -602,13 +608,13 @@ component Placeholder inherits Rectangle {
                     }
                     Text { text: device; font-size: 12px; font-weight: 600; color: Theme.text; vertical-alignment: center; }
                     Text { text: "·"; color: Theme.text-3; vertical-alignment: center; }
-                    Text { text: need != "" ? root.need-label : wifi ? "Ready · Wi-Fi" : "Ready"; font-size: 12px; font-weight: 600; color: root.tone; vertical-alignment: center; }
+                    Text { text: need != "" ? root.need-label : wifi ? @tr("Ready · Wi-Fi") : @tr("Ready"); font-size: 12px; font-weight: 600; color: root.tone; vertical-alignment: center; }
                 }
             }
         }
         Text {
-            text: listening ? "Waiting for the iPhone / iPad"
-                : device == "" ? "Plug in an iPhone or iPad" : need != "" ? root.need-title : (device + " ready");
+            text: listening ? @tr("Waiting for the iPhone / iPad")
+                : device == "" ? @tr("Plug in an iPhone or iPad") : need != "" ? root.need-title : @tr("{} ready", device);
             font-size: 20px;
             font-weight: 700;
             color: Theme.text;
@@ -616,12 +622,12 @@ component Placeholder inherits Rectangle {
         }
         Text {
             text: message != "" ? message
-                : listening ? "On the iPhone/iPad: open Control Center → Screen Mirroring → pick 3zT Mirroring. The PC and the device must be on the same network."
+                : listening ? @tr("On the iPhone/iPad: open Control Center → Screen Mirroring → pick 3zT Mirroring. The PC and the device must be on the same network.")
                 : device != "" && need != "" ? root.need-hint
-                : device == "" && air && mode == "usbdirect" ? "On the iPhone/iPad: Control Center → Screen Mirroring → 3zT Mirroring."
-                : device == "" && air ? "Wi-Fi: the PC and the device on the same network. The first time, press Set up Wi-Fi in Settings with the cable in."
-                : device == "" ? "Use a USB cable, unlock it and tap Trust."
-                : "Unlock it, then press Start mirroring.";
+                : device == "" && air && mode == "usbdirect" ? @tr("On the iPhone/iPad: Control Center → Screen Mirroring → 3zT Mirroring.")
+                : device == "" && air ? @tr("Wi-Fi: the PC and the device on the same network. The first time, press Set up Wi-Fi in Settings with the cable in.")
+                : device == "" ? @tr("Use a USB cable, unlock it and tap Trust.")
+                : @tr("Unlock it, then press Start mirroring.");
             font-size: 12.5px;
             color: message != "" ? #ff8a80 : Theme.text-2;
             horizontal-alignment: center;
@@ -693,38 +699,38 @@ component Placeholder inherits Rectangle {
             padding-top: 4px;
             GlassButton {
                 icon: "\u{E8AB}";
-                label: (mode == "usbdirect" ? "Studio mode" : "Apple Driver") + " · " + "Change";
-                tip: "Choose Apple Driver or Studio mode";
+                label: (mode == "usbdirect" ? @tr("Studio mode") : @tr("Apple Driver")) + " · " + @tr("Change");
+                tip: @tr("Choose Apple Driver or Studio mode");
                 clicked => { root.change-mode(); }
             }
             Seg {
                 width: 190px;
                 height: 32px;
                 options: ["wired", "wireless"];
-                labels: ["Cable (USB)", "Wi-Fi"];
+                labels: [@tr("Cable (USB)"), "Wi-Fi"];
                 value: root.link;
                 changed(v) => { root.set-link(v); }
             }
         }
         if listening: HorizontalLayout {
             alignment: center;
-            GlassButton { icon: "\u{E71A}"; label: "Stop waiting"; clicked => { root.stop(); } }
+            GlassButton { icon: "\u{E71A}"; label: @tr("Stop waiting"); clicked => { root.stop(); } }
         }
         if device == "" && !listening: HorizontalLayout {
             alignment: center;
-            GlassButton { primary: true; icon: "\u{E768}"; label: "Start"; clicked => { root.start(); } }
+            GlassButton { primary: true; icon: "\u{E768}"; label: @tr("Start"); clicked => { root.start(); } }
         }
         if device != "" && !listening: HorizontalLayout {
             alignment: center;
-            if need == "" || need == "trust": GlassButton { primary: true; icon: "\u{E768}"; label: need == "" ? "Start mirroring" : "Try again"; clicked => { root.start(); } }
+            if need == "" || need == "trust": GlassButton { primary: true; icon: "\u{E768}"; label: need == "" ? @tr("Start mirroring") : @tr("Try again"); clicked => { root.start(); } }
             if need != "" && need != "trust": GlassButton {
                 primary: true;
                 icon: "\u{E90F}";
-                label: need == "restore" ? "Restore Apple driver"
-                    : need == "bind" ? "Install driver"
-                    : need == "removefilter" ? "Remove filter"
-                    : need == "mode" ? "Choose mode"
-                    : "Open settings";
+                label: need == "restore" ? @tr("Restore Apple driver")
+                    : need == "bind" ? @tr("Install driver")
+                    : need == "removefilter" ? @tr("Remove filter")
+                    : need == "mode" ? @tr("Choose mode")
+                    : @tr("Open settings");
                 clicked => { root.fix(); }
             }
         }
@@ -747,10 +753,10 @@ component Placeholder inherits Rectangle {
             spacing: 6px;
             HorizontalLayout {
                 Text {
-                    text: flow-failed ? "Couldn't connect"
-                        : flow-step >= 4 ? "Connected"
-                        : device != "" ? ("Connecting to " + device)
-                        : "Connecting";
+                    text: flow-failed ? @tr("Couldn't connect")
+                        : flow-step >= 4 ? @tr("Connected")
+                        : device != "" ? @tr("Connecting to {}", device)
+                        : @tr("Connecting");
                     font-size: 17px;
                     font-weight: 700;
                     color: Theme.text;
@@ -784,8 +790,8 @@ component Placeholder inherits Rectangle {
                 HorizontalLayout {
                     alignment: end;
                     spacing: 8px;
-                    GlassButton { label: "Close"; clicked => { root.dismiss(); } }
-                    GlassButton { primary: true; icon: "\u{E72C}"; label: "Try again"; clicked => { root.start(); } }
+                    GlassButton { label: @tr("Close"); clicked => { root.dismiss(); } }
+                    GlassButton { primary: true; icon: "\u{E72C}"; label: @tr("Try again"); clicked => { root.start(); } }
                 }
             }
         }
@@ -954,25 +960,25 @@ component ModeChooser inherits Rectangle {
                     VerticalLayout {
                         alignment: center;
                         horizontal-stretch: 1;
-                        Text { text: "How should 3zT Mirroring connect?"; font-size: 16px; font-weight: 800; color: Theme.text; wrap: word-wrap; }
-                        Text { text: "Nothing connects and no driver changes until you continue."; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
+                        Text { text: @tr("How should 3zT Mirroring connect?"); font-size: 16px; font-weight: 800; color: Theme.text; wrap: word-wrap; }
+                        Text { text: @tr("Nothing connects and no driver changes until you continue."); font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
                     }
-                    if root.cancelable: VerticalLayout { alignment: start; GlassButton { icon: "\u{E711}"; tip: "Cancel"; clicked => { root.cancel(); } } }
+                    if root.cancelable: VerticalLayout { alignment: start; GlassButton { icon: "\u{E711}"; tip: @tr("Cancel"); clicked => { root.cancel(); } } }
                 }
                 ModeCard {
                     icon: "\u{E83D}";
                     tint: #22c55e;
-                    title: "Apple Driver";
-                    tag: "Standard · full control";
-                    badge: "Recommended";
-                    desc: "Uses Apple's own driver. Most compatible, stable and easy.";
+                    title: @tr("Apple Driver");
+                    tag: @tr("Standard · full control");
+                    badge: @tr("Recommended");
+                    desc: @tr("Uses Apple's own driver. Most compatible, stable and easy.");
                     points: [
-                        { ok: true, text: "Up to 60 fps, HEVC (device-limited bitrate, about 4–6 Mbps)" },
-                        { ok: true, text: "Mouse touch, keyboard, gestures and buttons" },
-                        { ok: true, text: "Apple's own driver, nothing to install" },
-                        { ok: true, text: "Cable or Wi-Fi (after a one-time setup with the cable)" },
-                        { ok: true, text: "iOS 17–26: Hybrid Control (experimental)" },
-                        { ok: false, text: "iOS 16 or older: use Studio mode" },
+                        { ok: true, text: @tr("Up to 60 fps, HEVC (device-limited bitrate, about 4–6 Mbps)") },
+                        { ok: true, text: @tr("Mouse touch, keyboard, gestures and buttons") },
+                        { ok: true, text: @tr("Apple's own driver, nothing to install") },
+                        { ok: true, text: @tr("Cable or Wi-Fi (after a one-time setup with the cable)") },
+                        { ok: true, text: @tr("iOS 17–26: Hybrid Control (experimental)") },
+                        { ok: false, text: @tr("iOS 16 or older: use Studio mode") },
                     ];
                     selected: root.pick == "apple";
                     pick => { root.pick = "apple"; }
@@ -980,50 +986,50 @@ component ModeChooser inherits Rectangle {
                 ModeCard {
                     icon: "\u{E945}";
                     tint: #8e8e93;
-                    title: "Studio mode";
-                    tag: "For live streaming";
-                    desc: "Best quality for streaming: high bitrate (measured 12–30 Mbps), up to 60 fps, very low latency. Needs the libusb0 driver.";
+                    title: @tr("Studio mode");
+                    tag: @tr("For live streaming");
+                    desc: @tr("Best quality for streaming: high bitrate (measured 12–30 Mbps), up to 60 fps, very low latency. Needs the libusb0 driver.");
                     points: [
-                        { ok: true, text: "Up to 60 fps, full native resolution over the cable, high-bitrate H.264" },
-                        { ok: true, text: "Cable (USB) or Wi-Fi (AirPlay, no driver)" },
-                        { ok: false, text: "Picture and sound only: no touch, keyboard or gestures" },
-                        { ok: false, text: "Apple apps can't see the device until you switch back" },
+                        { ok: true, text: @tr("Up to 60 fps, full native resolution over the cable, high-bitrate H.264") },
+                        { ok: true, text: @tr("Cable (USB) or Wi-Fi (AirPlay, no driver)") },
+                        { ok: false, text: @tr("Picture and sound only: no touch, keyboard or gestures") },
+                        { ok: false, text: @tr("Apple apps can't see the device until you switch back") },
                     ];
                     selected: root.pick == "usbdirect";
                     pick => { root.pick = "usbdirect"; }
                 }
                 HorizontalLayout {
                     spacing: 10px;
-                    Text { text: "Connection"; font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
+                    Text { text: @tr("Connection"); font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
                     Seg {
                         width: 240px;
                         options: ["wired", "wireless"];
-                        labels: ["Cable", "Wi-Fi"];
+                        labels: [@tr("Cable"), "Wi-Fi"];
                         value: root.link-pick;
                         changed(v) => { root.link-pick = v; }
                     }
                 }
                 HorizontalLayout {
                     spacing: 10px;
-                    Text { text: "Remember my choice"; font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
+                    Text { text: @tr("Remember my choice"); font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
                     Toggle { checked: root.keep; toggled(v) => { root.keep = v; } }
                 }
                 Text {
-                    text: "You can change it any time in Settings › Connection & driver. Changing it may need an app restart and reconnecting the cable.";
+                    text: @tr("You can change it any time in Settings › Connection & driver. Changing it may need an app restart and reconnecting the cable.");
                     font-size: 11px;
                     color: Theme.text-3;
                     wrap: word-wrap;
                 }
                 HorizontalLayout {
                     spacing: 8px;
-                    GlassButton { icon: "\u{E72B}"; label: "Back"; tip: "Change device type"; clicked => { root.back(); } }
+                    GlassButton { icon: "\u{E72B}"; label: @tr("Back"); tip: @tr("Change device type"); clicked => { root.back(); } }
                     Rectangle { horizontal-stretch: 1; }
-                    if root.cancelable: GlassButton { label: "Cancel"; clicked => { root.cancel(); } }
+                    if root.cancelable: GlassButton { label: @tr("Cancel"); clicked => { root.cancel(); } }
                     GlassButton {
                         primary: true;
                         enabled: root.pick != "";
                         icon: "\u{E72A}";
-                        label: "Continue";
+                        label: @tr("Continue");
                         clicked => { root.choose(root.pick, root.link-pick, root.keep); }
                     }
                 }
@@ -1140,18 +1146,18 @@ component PlatformSelector inherits Rectangle {
     callback choose(string, bool);
     property <string> pick: picked;
     property <bool> keep: remember;
-    property <string> apple-badge: root.apple-detected ? "Detected" : "";
-    property <string> android-badge: root.android-count > 0 ? (root.android-count + " detected") : "";
-    property <string> apple-desc: "Mirror and control compatible Apple devices using USB or Wi-Fi.";
-    property <string> android-title: "Android Smartphone / Tablet";
-    property <string> android-desc: "High-performance Android mirroring and control over USB or Wi-Fi.";
+    property <string> apple-badge: root.apple-detected ? @tr("Detected") : "";
+    property <string> android-badge: root.android-count > 0 ? @tr("{} detected", root.android-count) : "";
+    property <string> apple-desc: @tr("Mirror and control compatible Apple devices using USB or Wi-Fi.");
+    property <string> android-title: @tr("Android Smartphone / Tablet");
+    property <string> android-desc: @tr("High-performance Android mirroring and control over USB or Wi-Fi.");
     property <[string]> apple-points: [
-        "Apple Driver or Studio mode",
-        "Cable or Wi-Fi",
+        @tr("Apple Driver or Studio mode"),
+        @tr("Cable or Wi-Fi"),
     ];
     property <[string]> android-points: [
-        "Through ADB and scrcpy, no app on the phone",
-        "Cable or Wi-Fi, any Android brand",
+        @tr("Through ADB and scrcpy, no app on the phone"),
+        @tr("Cable or Wi-Fi, any Android brand"),
     ];
     property <float> t: 0;
     init => { self.t = 1; }
@@ -1183,10 +1189,10 @@ component PlatformSelector inherits Rectangle {
                         HorizontalLayout {
                             alignment: start;
                             spacing: 6px;
-                            Text { text: "Welcome to 3zT Mirroring"; font-size: 12px; font-weight: 600; color: Theme.accent; vertical-alignment: center; }
+                            Text { text: @tr("Welcome to 3zT Mirroring"); font-size: 12px; font-weight: 600; color: Theme.accent; vertical-alignment: center; }
                             Text { text: "v" + AppInfo.version; font-size: 9.5px; font-weight: 700; letter-spacing: 1px; color: Theme.text-2; vertical-alignment: center; }
                         }
-                        Text { text: "Which device would you like to connect?"; font-size: 18px; font-weight: 800; color: Theme.text; wrap: word-wrap; }
+                        Text { text: @tr("Which device would you like to connect?"); font-size: 18px; font-weight: 800; color: Theme.text; wrap: word-wrap; }
                     }
                 }
                 if sheet.wide: HorizontalLayout {
@@ -1195,7 +1201,7 @@ component PlatformSelector inherits Rectangle {
                         horizontal-stretch: 1;
                         icon: "\u{E8EA}";
                         tint: #5ac8fa;
-                        title: "iPhone / iPad";
+                        title: @tr("iPhone / iPad");
                         desc: root.apple-desc;
                         points: root.apple-points;
                         badge: root.apple-badge;
@@ -1221,7 +1227,7 @@ component PlatformSelector inherits Rectangle {
                     PlatformCard {
                         icon: "\u{E8EA}";
                         tint: #5ac8fa;
-                        title: "iPhone / iPad";
+                        title: @tr("iPhone / iPad");
                         desc: root.apple-desc;
                         points: root.apple-points;
                         badge: root.apple-badge;
@@ -1242,18 +1248,18 @@ component PlatformSelector inherits Rectangle {
                     }
                 }
                 if root.apple-detected && root.android-count > 0: Text {
-                    text: "Apple and Android devices are both connected. Choose the one to mirror.";
+                    text: @tr("Apple and Android devices are both connected. Choose the one to mirror.");
                     font-size: 11.5px;
                     color: Theme.warn;
                     wrap: word-wrap;
                 }
                 HorizontalLayout {
                     spacing: 10px;
-                    Text { text: "Remember device type"; font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
+                    Text { text: @tr("Remember device type"); font-size: 12px; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
                     Toggle { checked: root.keep; toggled(v) => { root.keep = v; } }
                 }
                 Text {
-                    text: "You can change it any time in Settings › Device type or with the Back button.";
+                    text: @tr("You can change it any time in Settings › Device type or with the Back button.");
                     font-size: 11px;
                     color: Theme.text-3;
                     wrap: word-wrap;
@@ -1264,7 +1270,7 @@ component PlatformSelector inherits Rectangle {
                         primary: true;
                         enabled: root.pick != "";
                         icon: "\u{E72A}";
-                        label: "Continue";
+                        label: @tr("Continue");
                         clicked => { root.choose(root.pick, root.keep); }
                     }
                 }
@@ -1364,36 +1370,36 @@ component AndroidVideoCard inherits Card {
     // Windows can decode H.265 (HEVC Video Extensions or a GPU driver decoder).
     in property <bool> hevc-ok;
     callback changed(Prefs);
-    title: "Android video";
+    title: @tr("Android video");
     icon: "\u{E714}";
     tint-a: #3ddc84;
     tint-b: #1f9d55;
-    info: "A profile fills in resolution, FPS, bitrate and codec; change one value and the profile becomes Custom. Each phone keeps its own settings (the same over USB and Wi-Fi). Encoders are read from the phone on the first mirroring; if the chosen encoder fails, 3zT Mirroring tries another hardware encoder, then H.264, at most 4 times, and keeps your choice.";
-    Row { label: "Profile"; }
+    info: @tr("A profile fills in resolution, FPS, bitrate and codec; change one value and the profile becomes Custom. Each phone keeps its own settings (the same over USB and Wi-Fi). Encoders are read from the phone on the first mirroring; if the chosen encoder fails, 3zT Mirroring tries another hardware encoder, then H.264, at most 4 times, and keeps your choice.");
+    Row { label: @tr("Profile"); }
     Seg {
         options: ["low-latency", "balanced", "high-quality", "streaming", "custom"];
-        labels: ["Low Latency", "Balanced", "High Quality", "Streaming", "Custom"];
+        labels: [@tr("Low Latency"), @tr("Balanced"), @tr("High Quality"), @tr("Streaming"), @tr("Custom")];
         value: prefs.android-profile;
         changed(v) => { root.prefs.android-profile = v; root.changed(root.prefs); }
     }
-    Row { label: "Resolution"; hint: "Longest side."; }
+    Row { label: @tr("Resolution"); hint: @tr("Longest side."); }
     Seg {
         options: ["1280", "1920", "2560", "0"];
-        labels: ["720p", "1080p", "1440p", "Native"];
+        labels: ["720p", "1080p", "1440p", @tr("Native")];
         value: prefs.android-max-size;
         changed(v) => { root.prefs.android-max-size = v; root.changed(root.prefs); }
     }
-    Row { label: "FPS"; hint: "A cap; the phone never goes above its refresh rate."; }
+    Row { label: @tr("FPS"); hint: @tr("A cap; the phone never goes above its refresh rate."); }
     Seg {
         options: ["30", "60", "90", "120", "144"];
         labels: ["30", "60", "90", "120", "144"];
         value: prefs.android-fps;
         changed(v) => { root.prefs.android-fps = v; root.changed(root.prefs); }
     }
-    Row { label: "Bitrate"; }
+    Row { label: @tr("Bitrate"); }
     Seg {
         options: ["4", "8", "16", "24", "40"];
-        labels: ["4", "8", "16", "24", "40 Mbps"];
+        labels: ["4", "8", "16", "24", @tr("40 Mbps")];
         value: prefs.android-bitrate;
         changed(v) => { root.prefs.android-bitrate = v; root.changed(root.prefs); }
     }
@@ -1401,20 +1407,20 @@ component AndroidVideoCard inherits Card {
     // that, what Windows can decode.
     property <bool> h265-ok: AndroidEnc.codecs.length > 0 ? (AndroidEnc.codecs.length > 1 && AndroidEnc.codecs[1] == "h265") : root.hevc-ok;
     Row {
-        label: "Codec";
-        hint: !root.hevc-ok ? "H.265 needs HEVC Video Extensions on Windows."
-            : AndroidEnc.codecs.length == 1 ? "This phone has no H.265 encoder."
-            : "Auto = H.264, the lowest latency.";
+        label: @tr("Codec");
+        hint: !root.hevc-ok ? @tr("H.265 needs HEVC Video Extensions on Windows.")
+            : AndroidEnc.codecs.length == 1 ? @tr("This phone has no H.265 encoder.")
+            : @tr("Auto = H.264, the lowest latency.");
     }
     Seg {
         options: root.h265-ok ? ["auto", "h264", "h265"] : ["auto", "h264"];
-        labels: root.h265-ok ? ["Auto", "H.264", "H.265 (HEVC)"] : ["Auto", "H.264"];
+        labels: root.h265-ok ? [@tr("Auto"), "H.264", @tr("H.265 (HEVC)")] : [@tr("Auto"), "H.264"];
         value: prefs.android-codec;
         changed(v) => { root.prefs.android-codec = v; root.changed(root.prefs); }
     }
     Row {
-        label: "Encoder";
-        hint: AndroidEnc.detected != "" ? AndroidEnc.detected : "Detected on the first mirroring.";
+        label: @tr("Encoder");
+        hint: AndroidEnc.detected != "" ? AndroidEnc.detected : @tr("Detected on the first mirroring.");
     }
     if AndroidEnc.options.length > 1: Seg {
         options: AndroidEnc.options;
@@ -1423,7 +1429,7 @@ component AndroidVideoCard inherits Card {
         changed(v) => { root.prefs.android-encoder = v; root.changed(root.prefs); }
     }
     if AndroidEnc.using != "": Row {
-        label: "In use";
+        label: @tr("In use");
         hint: AndroidEnc.using;
     }
 }
@@ -1477,7 +1483,7 @@ component AndroidHome inherits Rectangle {
                     VerticalLayout {
                         alignment: center;
                         horizontal-stretch: 1;
-                        Text { text: "Android Smartphone / Tablet"; font-size: 15px; font-weight: 800; color: Theme.text; }
+                        Text { text: @tr("Android Smartphone / Tablet"); font-size: 15px; font-weight: 800; color: Theme.text; }
                         Text { text: root.status; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
                     }
                 }
@@ -1499,7 +1505,7 @@ component AndroidHome inherits Rectangle {
                             icon: "\u{E701}";
                             label: "Wi-Fi";
                             enabled: !root.wifi-busy;
-                            tip: "Switch to Wi-Fi: once connected, you can unplug the cable";
+                            tip: @tr("Switch to Wi-Fi: once connected, you can unplug the cable");
                             clicked => { root.wifi-device(i); }
                         }
                     }
@@ -1508,8 +1514,8 @@ component AndroidHome inherits Rectangle {
                         GlassButton {
                             primary: true;
                             icon: "\u{E768}";
-                            label: "Start";
-                            tip: "Start mirroring this device";
+                            label: @tr("Start");
+                            tip: @tr("Start mirroring this device");
                             clicked => { root.start-device(i); }
                         }
                     }
@@ -1521,20 +1527,20 @@ component AndroidHome inherits Rectangle {
                             primary: true;
                             icon: "\u{E768}";
                             label: "USB";
-                            tip: "Start over the USB cable (most stable, lowest delay)";
+                            tip: @tr("Start over the USB cable (most stable, lowest delay)");
                             clicked => { root.start-device-via(i, "usb"); }
                         }
                         GlassButton {
                             primary: true;
                             icon: "\u{E701}";
                             label: "Wi-Fi";
-                            tip: "Start over Wi-Fi (you can unplug the cable)";
+                            tip: @tr("Start over Wi-Fi (you can unplug the cable)");
                             clicked => { root.start-device-via(i, "wifi"); }
                         }
                     }
                 }
                 if root.phase == "connecting": Text {
-                    text: "Connecting… the phone starts the scrcpy server.";
+                    text: @tr("Connecting… the phone starts the scrcpy server.");
                     font-size: 11.5px;
                     color: Theme.accent;
                     wrap: word-wrap;
@@ -1551,7 +1557,7 @@ component AndroidHome inherits Rectangle {
                     spacing: 6px;
                     BusyBar { }
                     Text {
-                        text: root.wifi-status != "" ? root.wifi-status : "Working…";
+                        text: root.wifi-status != "" ? root.wifi-status : @tr("Working…");
                         font-size: 11.5px;
                         color: Theme.accent;
                         wrap: word-wrap;
@@ -1561,9 +1567,9 @@ component AndroidHome inherits Rectangle {
                     spacing: 8px;
                     GlassButton {
                         icon: "\u{E701}";
-                        label: "Connect over Wi-Fi";
+                        label: @tr("Connect over Wi-Fi");
                         active: root.wifi-open;
-                        tip: "Scan a QR code, a pairing code or an IP:port address";
+                        tip: @tr("Scan a QR code, a pairing code or an IP:port address");
                         clicked => { root.wifi-open = !root.wifi-open; }
                     }
                     Rectangle { horizontal-stretch: 1; }
@@ -1572,25 +1578,25 @@ component AndroidHome inherits Rectangle {
                     VerticalLayout {
                         spacing: 10px;
                         Text {
-                            text: "Already on the cable? Press the Wi-Fi button next to the phone's name, done. Without a cable (Android 11+):";
+                            text: @tr("Already on the cable? Press the Wi-Fi button next to the phone's name, done. Without a cable (Android 11+):");
                             font-size: 11.5px;
                             color: Theme.text-2;
                             wrap: word-wrap;
                         }
                         if !root.qr-on: VerticalLayout {
                             spacing: 6px;
-                            Text { text: "Option 1 · Scan a QR code (easiest)"; font-size: 12.5px; font-weight: 650; color: Theme.text; }
-                            StepRow { text: "1.  " + "The phone and the PC are on the same Wi-Fi."; }
-                            StepRow { text: "2.  " + "On the phone: Settings › Developer options › Wireless debugging › turn it on."; }
-                            StepRow { text: "3.  " + "Press the button below, then on the phone tap \"Pair device with QR code\" and scan."; }
+                            Text { text: @tr("Option 1 · Scan a QR code (easiest)"); font-size: 12.5px; font-weight: 650; color: Theme.text; }
+                            StepRow { text: "1.  " + @tr("The phone and the PC are on the same Wi-Fi."); }
+                            StepRow { text: "2.  " + @tr("On the phone: Settings › Developer options › Wireless debugging › turn it on."); }
+                            StepRow { text: "3.  " + @tr("Press the button below, then on the phone tap \"Pair device with QR code\" and scan."); }
                             HorizontalLayout {
                                 alignment: start;
                                 GlassButton {
                                     primary: true;
                                     icon: "\u{ED14}";
-                                    label: "Show QR code";
+                                    label: @tr("Show QR code");
                                     enabled: !root.wifi-busy;
-                                    tip: "Show a QR code to scan on the phone";
+                                    tip: @tr("Show a QR code to scan on the phone");
                                     clicked => { root.wifi-qr(); }
                                 }
                             }
@@ -1614,7 +1620,7 @@ component AndroidHome inherits Rectangle {
                                 }
                             }
                             Text {
-                                text: "On the phone: Wireless debugging › \"Pair device with QR code\", then scan this code.";
+                                text: @tr("On the phone: Wireless debugging › \"Pair device with QR code\", then scan this code.");
                                 font-size: 11.5px;
                                 color: Theme.text-2;
                                 wrap: word-wrap;
@@ -1632,7 +1638,7 @@ component AndroidHome inherits Rectangle {
                                 alignment: center;
                                 GlassButton {
                                     icon: "\u{E711}";
-                                    label: "Cancel";
+                                    label: @tr("Cancel");
                                     clicked => { root.wifi-qr-cancel(); }
                                 }
                             }
@@ -1640,27 +1646,27 @@ component AndroidHome inherits Rectangle {
                         Rectangle { height: 1px; background: Theme.line; }
                         HorizontalLayout {
                             spacing: 8px;
-                            Text { text: "Option 2 · Pairing code or IP address"; font-size: 12.5px; font-weight: 650; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
+                            Text { text: @tr("Option 2 · Pairing code or IP address"); font-size: 12.5px; font-weight: 650; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; }
                             GlassButton {
-                                label: root.code-open ? "Hide" : "Show";
+                                label: root.code-open ? @tr("Hide") : @tr("Show");
                                 clicked => { root.code-open = !root.code-open; }
                             }
                         }
                         if root.code-open: VerticalLayout {
                             spacing: 6px;
-                            StepRow { text: "1.  " + "In Wireless debugging, tap \"Pair device with pairing code\"."; }
-                            StepRow { text: "2.  " + "Enter the IP:port and the 6-digit code shown in that window, press Pair."; }
-                            StepRow { text: "3.  " + "Enter the IP:port from the main Wireless debugging screen (a different port), press Connect. Paired before? Go straight to step 3."; }
+                            StepRow { text: "1.  " + @tr("In Wireless debugging, tap \"Pair device with pairing code\"."); }
+                            StepRow { text: "2.  " + @tr("Enter the IP:port and the 6-digit code shown in that window, press Pair."); }
+                            StepRow { text: "3.  " + @tr("Enter the IP:port from the main Wireless debugging screen (a different port), press Connect. Paired before? Go straight to step 3."); }
                             HorizontalLayout {
                                 spacing: 8px;
                                 addr := Field {
-                                    placeholder: "IP:port, e.g. 192.168.1.20:37099";
+                                    placeholder: @tr("IP:port, e.g. 192.168.1.20:37099");
                                     accepted => { if !root.wifi-busy { root.wifi-connect(self.text); } }
                                 }
                                 code := Field {
                                     horizontal-stretch: 0;
                                     width: 96px;
-                                    placeholder: "6-digit code";
+                                    placeholder: @tr("6-digit code");
                                     input-type: InputType.number;
                                     accepted => { if !root.wifi-busy { root.wifi-pair(addr.text, self.text); } }
                                 }
@@ -1670,17 +1676,17 @@ component AndroidHome inherits Rectangle {
                                 alignment: end;
                                 GlassButton {
                                     icon: "\u{E8D7}";
-                                    label: "Pair";
+                                    label: @tr("Pair");
                                     enabled: !root.wifi-busy && code.text != "";
-                                    tip: "Step 2: pair once with the code from the phone";
+                                    tip: @tr("Step 2: pair once with the code from the phone");
                                     clicked => { root.wifi-pair(addr.text, code.text); }
                                 }
                                 GlassButton {
                                     primary: true;
                                     icon: "\u{E71B}";
-                                    label: "Connect";
+                                    label: @tr("Connect");
                                     enabled: !root.wifi-busy && addr.text != "";
-                                    tip: "Step 3: connect to this address (adb connect)";
+                                    tip: @tr("Step 3: connect to this address (adb connect)");
                                     clicked => { root.wifi-connect(addr.text); }
                                 }
                             }
@@ -1693,30 +1699,30 @@ component AndroidHome inherits Rectangle {
                     changed(p) => { root.prefs-changed(p); }
                 }
                 FlowStep {
-                    title: "Turn on USB debugging";
-                    sub: "Settings › About phone › tap Build number 7×, then Developer options › USB debugging.";
+                    title: @tr("Turn on USB debugging");
+                    sub: @tr("Settings › About phone › tap Build number 7×, then Developer options › USB debugging.");
                     state: "todo";
                 }
                 FlowStep {
-                    title: "Plug in the USB cable";
-                    sub: "Use a data cable, not a charge-only cable.";
+                    title: @tr("Plug in the USB cable");
+                    sub: @tr("Use a data cable, not a charge-only cable.");
                     state: "todo";
                 }
                 FlowStep {
-                    title: "Allow it on the phone";
-                    sub: "Tap Allow on the Allow USB debugging prompt.";
+                    title: @tr("Allow it on the phone");
+                    sub: @tr("Tap Allow on the Allow USB debugging prompt.");
                     state: "todo";
                     last: true;
                 }
                 Text {
-                    text: "Beta: picture, sound (Android 11+) and control from the PC. No driver is installed or changed.";
+                    text: @tr("Beta: picture, sound (Android 11+) and control from the PC. No driver is installed or changed.");
                     font-size: 11px;
                     color: Theme.text-3;
                     wrap: word-wrap;
                 }
                 HorizontalLayout {
                     alignment: start;
-                    GlassButton { icon: "\u{E72B}"; label: "Change device type"; clicked => { root.back(); } }
+                    GlassButton { icon: "\u{E72B}"; label: @tr("Change device type"); clicked => { root.back(); } }
                 }
             }
         }
@@ -1791,7 +1797,7 @@ component SettingsPanel inherits Glass {
                 alignment: center;
                 horizontal-stretch: 1;
                 Text { text: "3zT Mirroring"; font-size: 15px; font-weight: 800; color: Theme.text; }
-                Text { text: "Settings & controls"; font-size: 11px; color: Theme.accent; font-weight: 600; }
+                Text { text: @tr("Settings & controls"); font-size: 11px; color: Theme.accent; font-weight: 600; }
             }
             GlassButton { icon: "\u{E711}"; clicked => { root.close(); } }
         }
@@ -1803,24 +1809,34 @@ component SettingsPanel inherits Glass {
                 spacing: 10px;
 
                 Card {
-                    title: "Appearance";
+                    title: @tr("Appearance");
                     icon: "\u{E790}";
                     tint-a: #a1a1aa;
                     tint-b: #52525b;
-                    info: "Liquid Glass shows the real desktop behind the window. Thickness 0% = fully clear with no blur, higher = more frosted (Windows' own blur). Turn it off for a solid window with no extra GPU work.";
+                    info: @tr("Liquid Glass shows the real desktop behind the window. Thickness 0% = fully clear with no blur, higher = more frosted (Windows' own blur). Turn it off for a solid window with no extra GPU work.");
                     Seg {
                         options: ["light", "dark", "system"];
-                        labels: ["Light", "Dark", "System"];
+                        labels: [@tr("Light"), @tr("Dark"), @tr("System")];
                         value: prefs.theme;
                         changed(v) => { root.prefs.theme = v; root.changed(root.prefs); }
                     }
                     Row {
-                        label: "Liquid Glass";
+                        label: @tr("Language");
+                        Seg {
+                            width: 230px;
+                            options: ["", "en", "ar"];
+                            labels: [@tr("System"), "English", "العربية"];
+                            value: prefs.language;
+                            changed(v) => { root.prefs.language = v; root.changed(root.prefs); }
+                        }
+                    }
+                    Row {
+                        label: @tr("Liquid Glass");
                         Toggle { checked: prefs.glass-on; toggled(v) => { root.prefs.glass-on = v; root.changed(root.prefs); } }
                     }
                     if prefs.glass-on: Row {
-                        label: "Glass thickness";
-                        Text { text: round(prefs.glass) + "%" + (prefs.glass < 1 ? " · clear" : ""); font-size: 12px; color: Theme.text-2; vertical-alignment: center; }
+                        label: @tr("Glass thickness");
+                        Text { text: round(prefs.glass) + "%" + (prefs.glass < 1 ? @tr(" · clear") : ""); font-size: 12px; color: Theme.text-2; vertical-alignment: center; }
                     }
                     if prefs.glass-on: GlassSlider {
                         step: 5;
@@ -1828,32 +1844,32 @@ component SettingsPanel inherits Glass {
                         changed(v) => { root.prefs.glass = v; root.changed(root.prefs); }
                     }
                     Row {
-                        label: "Animated background";
+                        label: @tr("Animated background");
                         Toggle { checked: prefs.dots; toggled(v) => { root.prefs.dots = v; root.changed(root.prefs); } }
                     }
                 }
 
                 Card {
-                    title: "Display & aspect";
+                    title: @tr("Display & aspect");
                     icon: "\u{E7F4}";
                     tint-a: #a78bfa;
                     tint-b: #7c3aed;
-                    info: "Auto-Fit shows the whole device screen. Edge-to-Edge fills the area and crops the sides. The window follows the device's size and orientation (portrait / landscape).";
+                    info: @tr("Auto-Fit shows the whole device screen. Edge-to-Edge fills the area and crops the sides. The window follows the device's size and orientation (portrait / landscape).");
                     Seg {
                         options: ["contain", "cover", "fill"];
-                        labels: ["Auto-Fit", "Edge-to-Edge", "Stretch"];
+                        labels: [@tr("Auto-Fit"), @tr("Edge-to-Edge"), @tr("Stretch")];
                         value: prefs.fit;
                         changed(v) => { root.prefs.fit = v; root.changed(root.prefs); }
                     }
                     Row {
-                        label: "Window follows the screen";
-                        hint: "Portrait / landscape automatically";
+                        label: @tr("Window follows the screen");
+                        hint: @tr("Portrait / landscape automatically");
                         Toggle { checked: prefs.fit-window; toggled(v) => { root.prefs.fit-window = v; root.changed(root.prefs); } }
                     }
-                    Text { text: "Rotation"; font-size: 12.5px; color: Theme.text; }
+                    Text { text: @tr("Rotation"); font-size: 12.5px; color: Theme.text; }
                     Seg {
                         options: ["auto", "0", "90", "180", "270"];
-                        labels: ["Auto", "0°", "90°", "180°", "270°"];
+                        labels: [@tr("Auto"), "0°", "90°", "180°", "270°"];
                         value: prefs.rotation;
                         changed(v) => { root.prefs.rotation = v; root.changed(root.prefs); }
                     }
@@ -1861,13 +1877,13 @@ component SettingsPanel inherits Glass {
 
 
                 Card {
-                    title: "Record / stream in OBS";
+                    title: @tr("Record / stream in OBS");
                     icon: "\u{E714}";
                     tint-a: #f87171;
                     tint-b: #dc2626;
-                    info: "Game Capture takes the picture straight from the GPU: sharp, no window frame, and it keeps working when 3zT Mirroring is behind other windows. Window Capture also works, but it picks up the window frame too.";
+                    info: @tr("Game Capture takes the picture straight from the GPU: sharp, no window frame, and it keeps working when 3zT Mirroring is behind other windows. Window Capture also works, but it picks up the window frame too.");
                     Text {
-                        text: "In OBS, add a Game Capture source → Mode: capture specific window → pick [3zTMirroring.exe]: 3zT Mirroring. Then select it and press Ctrl+F (Fit to screen): portrait / landscape stays centred automatically.";
+                        text: @tr("In OBS, add a Game Capture source → Mode: capture specific window → pick [3zTMirroring.exe]: 3zT Mirroring. Then select it and press Ctrl+F (Fit to screen): portrait / landscape stays centred automatically.");
                         font-size: 11.5px;
                         color: Theme.text-2;
                         wrap: word-wrap;
@@ -1875,77 +1891,77 @@ component SettingsPanel inherits Glass {
                 }
 
                 Card {
-                    title: "Device audio → PC";
+                    title: @tr("Device audio → PC");
                     icon: "\u{E767}";
                     tint-a: #fb923c;
                     tint-b: #ea580c;
-                    info: "Sound plays through WASAPI on this PC. Lip sync holds the picture a little so it matches the sound. Low buffer is tighter, high rides out hiccups.";
+                    info: @tr("Sound plays through WASAPI on this PC. Lip sync holds the picture a little so it matches the sound. Low buffer is tighter, high rides out hiccups.");
                     Seg {
                         options: ["pc", "device"];
-                        labels: ["On this PC", "Device only"];
+                        labels: [@tr("On this PC"), @tr("Device only")];
                         value: prefs.audio-out;
                         changed(v) => { root.prefs.audio-out = v; root.changed(root.prefs); }
                     }
                     Row {
-                        label: "PC volume";
+                        label: @tr("PC volume");
                         Text { text: round(prefs.volume) + "%"; font-size: 12px; color: Theme.text-2; vertical-alignment: center; }
                     }
                     GlassSlider { value: prefs.volume; changed(v) => { root.prefs.volume = v; root.changed(root.prefs); } }
                     Row {
-                        label: "Lip sync";
+                        label: @tr("Lip sync");
                         Toggle { checked: prefs.lip-sync; toggled(v) => { root.prefs.lip-sync = v; root.changed(root.prefs); } }
                     }
                     Seg {
                         options: ["low", "normal", "high"];
-                        labels: ["Low", "Normal", "High"];
+                        labels: [@tr("Low"), @tr("Normal"), @tr("High")];
                         value: prefs.audio-buffer;
                         changed(v) => { root.prefs.audio-buffer = v; root.changed(root.prefs); }
                     }
                 }
 
                 if !root.studio: Card {
-                    title: "Control";
+                    title: @tr("Control");
                     icon: "\u{E765}";
                     tint-a: #38bdf8;
                     tint-b: #0284c7;
                     info: root.screen == "android"
-                        ? "Click = tap, drag = swipe, scroll = scroll on the phone. Right click = Back, middle click = Home. Click the picture first so the PC keyboard types on the phone."
-                        : "Click and drag = touch. Mouse Back button = swipe back. The PC keyboard works as a hardware keyboard in Apple Driver mode; click the picture first.";
-                    Row { label: "Touch with the mouse"; Toggle { checked: prefs.touch; toggled(v) => { root.prefs.touch = v; root.changed(root.prefs); } } }
-                    Row { label: "PC keyboard to the device"; Toggle { checked: prefs.keyboard; toggled(v) => { root.prefs.keyboard = v; root.changed(root.prefs); } } }
-                    if root.screen != "android": Row { label: "Gestures (scroll, mouse Back button)"; Toggle { checked: prefs.gestures; toggled(v) => { root.prefs.gestures = v; root.changed(root.prefs); } } }
+                        ? @tr("Click = tap, drag = swipe, scroll = scroll on the phone. Right click = Back, middle click = Home. Click the picture first so the PC keyboard types on the phone.")
+                        : @tr("Click and drag = touch. Mouse Back button = swipe back. The PC keyboard works as a hardware keyboard in Apple Driver mode; click the picture first.");
+                    Row { label: @tr("Touch with the mouse"); Toggle { checked: prefs.touch; toggled(v) => { root.prefs.touch = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("PC keyboard to the device"); Toggle { checked: prefs.keyboard; toggled(v) => { root.prefs.keyboard = v; root.changed(root.prefs); } } }
+                    if root.screen != "android": Row { label: @tr("Gestures (scroll, mouse Back button)"); Toggle { checked: prefs.gestures; toggled(v) => { root.prefs.gestures = v; root.changed(root.prefs); } } }
                 }
 
                 Card {
-                    title: "Keyboard shortcuts";
+                    title: @tr("Keyboard shortcuts");
                     icon: "\u{E92E}";
                     tint-a: #a78bfa;
                     tint-b: #7c3aed;
-                    info: "While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.";
-                    KeyRow { keys: "Alt + M"; text: "Sound on the PC on / off"; }
-                    KeyRow { keys: "F2"; text: "Show / hide the controls around the picture"; }
-                    KeyRow { keys: "F11 · Esc"; text: "Full screen / leave"; }
-                    KeyRow { keys: "Ctrl + ,"; text: "Open / close Settings"; }
-                    KeyRow { keys: "Alt + H"; text: "Rotate the view (Auto, 90°, 180°, 270°, 0°)"; }
-                    if !root.studio: KeyRow { keys: "Alt + ←"; text: "Back"; }
-                    KeyRow { keys: "Alt + C"; text: "Copy the text on the device screen to the PC (OCR)"; }
-                    KeyRow { keys: "Alt + R"; text: "Clear the copied-text history"; }
-                    if !root.studio: KeyRow { keys: "Alt + L"; text: root.screen == "android" ? "Power button (lock / wake the screen)" : "Lock the device"; }
-                    if root.screen == "android": KeyRow { keys: "Ctrl + V"; text: "Paste the PC clipboard on the phone"; }
-                    if root.screen == "android": KeyRow { keys: "Ctrl + C / X / A / Z"; text: "Copy, cut, select all, undo on the phone"; }
-                    if !root.studio: KeyRow { keys: "Alt + N"; text: root.screen == "android" ? "Notifications" : "Notification Center (open / close)"; }
-                    if !root.studio: KeyRow { keys: "Alt + Q"; text: root.screen == "android" ? "Quick Settings" : "Control Center (open / close)"; }
-                    if root.screen == "android": KeyRow { keys: "Alt + S"; text: "Recent Apps"; }
-                    if root.screen == "android": KeyRow { keys: "Alt + ↑ / ↓"; text: "Phone volume up / down"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Alt + U"; text: "Wake & unlock (saved passcode)"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Alt + D"; text: "Stealth dim: device screen to 0% / restore"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Alt + V"; text: "Type the PC clipboard text on the device"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Ctrl + K"; text: "Show / hide the on-screen keyboard"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Ctrl + C / X / V / A / Z"; text: "Copy, cut, paste, select all, undo in iOS"; }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: "Alt + G"; text: "Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"; }
+                    info: @tr("While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.");
+                    KeyRow { keys: "Alt + M"; text: @tr("Sound on the PC on / off"); }
+                    KeyRow { keys: "F2"; text: @tr("Show / hide the controls around the picture"); }
+                    KeyRow { keys: "F11 · Esc"; text: @tr("Full screen / leave"); }
+                    KeyRow { keys: "Ctrl + ,"; text: @tr("Open / close Settings"); }
+                    KeyRow { keys: "Alt + H"; text: @tr("Rotate the view (Auto, 90°, 180°, 270°, 0°)"); }
+                    if !root.studio: KeyRow { keys: @tr("Alt + ←"); text: @tr("Back"); }
+                    KeyRow { keys: "Alt + C"; text: @tr("Copy the text on the device screen to the PC (OCR)"); }
+                    KeyRow { keys: "Alt + R"; text: @tr("Clear the copied-text history"); }
+                    if !root.studio: KeyRow { keys: @tr("Alt + L"); text: root.screen == "android" ? @tr("Power button (lock / wake the screen)") : @tr("Lock the device"); }
+                    if root.screen == "android": KeyRow { keys: @tr("Ctrl + V"); text: @tr("Paste the PC clipboard on the phone"); }
+                    if root.screen == "android": KeyRow { keys: @tr("Ctrl + C / X / A / Z"); text: @tr("Copy, cut, select all, undo on the phone"); }
+                    if !root.studio: KeyRow { keys: @tr("Alt + N"); text: root.screen == "android" ? @tr("Notifications") : @tr("Notification Center (open / close)"); }
+                    if !root.studio: KeyRow { keys: @tr("Alt + Q"); text: root.screen == "android" ? @tr("Quick Settings") : @tr("Control Center (open / close)"); }
+                    if root.screen == "android": KeyRow { keys: @tr("Alt + S"); text: @tr("Recent Apps"); }
+                    if root.screen == "android": KeyRow { keys: @tr("Alt + ↑ / ↓"); text: @tr("Phone volume up / down"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + U"); text: @tr("Wake & unlock (saved passcode)"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + D"); text: @tr("Stealth dim: device screen to 0% / restore"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + V"); text: @tr("Type the PC clipboard text on the device"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + K"); text: @tr("Show / hide the on-screen keyboard"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + C / X / V / A / Z"); text: @tr("Copy, cut, paste, select all, undo in iOS"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + G"); text: @tr("Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"); }
                     if root.screen != "android": Text {
-                        text: root.studio ? "Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode."
-                            : "Apple device shortcuts work in Apple Driver mode while mirroring.";
+                        text: root.studio ? @tr("Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode.")
+                            : @tr("Apple device shortcuts work in Apple Driver mode while mirroring.");
                         font-size: 11px;
                         color: Theme.text-3;
                         wrap: word-wrap;
@@ -1953,19 +1969,19 @@ component SettingsPanel inherits Glass {
                 }
 
                 Card {
-                    title: "Device type";
+                    title: @tr("Device type");
                     icon: "\u{E8EA}";
                     tint-a: #5ac8fa;
                     tint-b: #0a84ff;
-                    info: "Choose iPhone / iPad or Android. A running session is stopped safely first. Apple and Android settings are kept separately.";
-                    Text { text: root.screen == "android" ? "Android Smartphone / Tablet" : "iPhone / iPad"; font-size: 12.5px; font-weight: 600; color: Theme.text; }
+                    info: @tr("Choose iPhone / iPad or Android. A running session is stopped safely first. Apple and Android settings are kept separately.");
+                    Text { text: root.screen == "android" ? @tr("Android Smartphone / Tablet") : @tr("iPhone / iPad"); font-size: 12.5px; font-weight: 600; color: Theme.text; }
                     Row {
-                        label: "Remember device type";
+                        label: @tr("Remember device type");
                         Toggle { checked: prefs.remember-platform; toggled(v) => { root.prefs.remember-platform = v; root.changed(root.prefs); } }
                     }
                     HorizontalLayout {
                         alignment: start;
-                        GlassButton { icon: "\u{E72B}"; label: "Change device type"; clicked => { root.driver-action("platform"); } }
+                        GlassButton { icon: "\u{E72B}"; label: @tr("Change device type"); clicked => { root.driver-action("platform"); } }
                     }
                 }
 
@@ -1976,13 +1992,13 @@ component SettingsPanel inherits Glass {
                 }
 
                 if root.screen != "android" && !root.studio: Card {
-                    title: "Auto unlock";
+                    title: @tr("Auto unlock");
                     icon: "\u{E72E}";
                     tint-a: #a78bfa;
                     tint-b: #7c3aed;
-                    info: "Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.";
+                    info: @tr("Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.");
                     Text {
-                        text: root.passcode-set ? "A passcode is saved on this PC." : "No passcode saved yet.";
+                        text: root.passcode-set ? @tr("A passcode is saved on this PC.") : @tr("No passcode saved yet.");
                         font-size: 12.5px;
                         font-weight: 600;
                         color: root.passcode-set ? Theme.ok : Theme.text-2;
@@ -1990,76 +2006,76 @@ component SettingsPanel inherits Glass {
                     HorizontalLayout {
                         spacing: 8px;
                         pc := Field {
-                            placeholder: "Device passcode or password";
+                            placeholder: @tr("Device passcode or password");
                             input-type: InputType.password;
                             accepted => { root.save-passcode(self.text); self.text = ""; }
                         }
                         GlassButton {
                             primary: true;
-                            label: "Save";
+                            label: @tr("Save");
                             enabled: pc.text != "";
                             clicked => { root.save-passcode(pc.text); pc.text = ""; }
                         }
                         if root.passcode-set: GlassButton {
-                            label: "Remove";
+                            label: @tr("Remove");
                             clicked => { root.save-passcode(""); }
                         }
                     }
                     Row {
-                        label: "Unlock when mirroring starts";
-                        hint: "Also Alt+U at any time";
+                        label: @tr("Unlock when mirroring starts");
+                        hint: @tr("Also Alt+U at any time");
                         Toggle { checked: prefs.auto-unlock; toggled(v) => { root.prefs.auto-unlock = v; root.changed(root.prefs); } }
                     }
                 }
 
                 if root.screen != "android": Card {
-                    title: "Connection & driver";
+                    title: @tr("Connection & driver");
                     icon: "\u{E88E}";
                     tint-a: #34d399;
                     tint-b: #059669;
-                    info: "Apple Driver uses Apple's own driver. Studio mode uses libusb0 for high bitrate. Driver changes always ask for confirmation and administrator approval.";
+                    info: @tr("Apple Driver uses Apple's own driver. Studio mode uses libusb0 for high bitrate. Driver changes always ask for confirmation and administrator approval.");
                     Text { text: connection; font-size: 12.5px; font-weight: 600; color: Theme.text; wrap: word-wrap; }
                     Text { text: driver-text; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
                     Row {
-                        label: "Connection";
+                        label: @tr("Connection");
                         Seg {
                             width: 170px;
                             options: ["wired", "wireless"];
-                            labels: ["Cable (USB)", "Wi-Fi"];
+                            labels: [@tr("Cable (USB)"), "Wi-Fi"];
                             value: root.link;
                             changed(v) => { root.set-link(v); }
                         }
                     }
                     Text {
                         text: root.mode == "usbdirect"
-                            ? (root.link == "wireless" ? "Wi-Fi: pick 3zT Mirroring in Screen Mirroring on the device." : "Cable: through the libusb0 driver, high bitrate.")
-                            : (root.link == "wireless" ? "Wi-Fi: press Set up Wi-Fi once with the cable in. A plugged-in device still works over the cable." : "Cable: through Apple's driver.");
+                            ? (root.link == "wireless" ? @tr("Wi-Fi: pick 3zT Mirroring in Screen Mirroring on the device.") : @tr("Cable: through the libusb0 driver, high bitrate."))
+                            : (root.link == "wireless" ? @tr("Wi-Fi: press Set up Wi-Fi once with the cable in. A plugged-in device still works over the cable.") : @tr("Cable: through Apple's driver."));
                         font-size: 11px;
                         color: Theme.text-3;
                         wrap: word-wrap;
                     }
                     HorizontalLayout {
                         spacing: 6px;
-                        GlassButton { label: "Change mode"; tip: "Choose Apple Driver or Studio mode"; clicked => { root.driver-action("mode"); } }
-                        GlassButton { label: "Check drivers"; clicked => { root.driver-action("refresh"); } }
-                        if !root.studio: GlassButton { label: "Set up Wi-Fi"; clicked => { root.driver-action("wifi"); } }
+                        GlassButton { label: @tr("Change mode"); tip: @tr("Choose Apple Driver or Studio mode"); clicked => { root.driver-action("mode"); } }
+                        GlassButton { label: @tr("Check drivers"); clicked => { root.driver-action("refresh"); } }
+                        if !root.studio: GlassButton { label: @tr("Set up Wi-Fi"); clicked => { root.driver-action("wifi"); } }
                     }
                     if root.drv-filter || (root.drv-restore && !root.studio) || (root.drv-bind && root.studio): HorizontalLayout {
                         spacing: 6px;
-                        if root.drv-filter: GlassButton { primary: true; label: "Remove libusb0 filter"; clicked => { root.driver-action("removefilter"); } }
-                        if root.drv-restore && !root.studio: GlassButton { label: "Restore Apple driver"; clicked => { root.driver-action("restore"); } }
-                        if root.drv-bind && root.studio: GlassButton { label: "Install Studio mode driver"; clicked => { root.driver-action("bind"); } }
+                        if root.drv-filter: GlassButton { primary: true; label: @tr("Remove libusb0 filter"); clicked => { root.driver-action("removefilter"); } }
+                        if root.drv-restore && !root.studio: GlassButton { label: @tr("Restore Apple driver"); clicked => { root.driver-action("restore"); } }
+                        if root.drv-bind && root.studio: GlassButton { label: @tr("Install Studio mode driver"); clicked => { root.driver-action("bind"); } }
                     }
                 }
 
                 Card {
-                    title: "Updates";
+                    title: @tr("Updates");
                     icon: "\u{E895}";
                     tint-a: #34d399;
                     tint-b: #059669;
-                    info: "3zT Mirroring downloads only after you press Update, straight from the official GitHub release. It checks the file's SHA-256 and the release signature before running it. Your settings stay.";
+                    info: @tr("3zT Mirroring downloads only after you press Update, straight from the official GitHub release. It checks the file's SHA-256 and the release signature before running it. Your settings stay.");
                     Text { text: "3zT Mirroring v" + AppInfo.version; font-size: 12.5px; font-weight: 700; color: Theme.text; }
-                    Row { label: "Check at start"; Toggle { checked: prefs.update-check; toggled(v) => { root.prefs.update-check = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("Check at start"); Toggle { checked: prefs.update-check; toggled(v) => { root.prefs.update-check = v; root.changed(root.prefs); } } }
                     if root.upd-status != "": Text { text: root.upd-status; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
                     if root.upd-busy && root.upd-progress < 0: BusyBar { }
                     if root.upd-progress >= 0: Rectangle {
@@ -2080,41 +2096,41 @@ component SettingsPanel inherits Glass {
                     if root.upd-version != "": GlassButton {
                         primary: true;
                         enabled: !root.upd-busy;
-                        label: (root.upd-switch ? "Install v" : "Update to v") + root.upd-version;
+                        label: (root.upd-switch ? @tr("Install v{}", root.upd-version) : @tr("Update to v{}", root.upd-version));
                         clicked => { root.update-action("install"); }
                     }
                     HorizontalLayout {
                         spacing: 6px;
-                        GlassButton { enabled: !root.upd-busy; label: "Check for updates"; clicked => { root.update-action("check"); } }
-                        if root.upd-version != "": GlassButton { label: "Release notes"; clicked => { root.update-action("notes"); } }
+                        GlassButton { enabled: !root.upd-busy; label: @tr("Check for updates"); clicked => { root.update-action("check"); } }
+                        if root.upd-version != "": GlassButton { label: @tr("Release notes"); clicked => { root.update-action("notes"); } }
                     }
                 }
 
                 Card {
-                    title: "Advanced";
+                    title: @tr("Advanced");
                     icon: "\u{E713}";
                     tint-a: #a1a1aa;
                     tint-b: #52525b;
-                    Row { label: "Start with Windows"; Toggle { checked: prefs.start-with-windows; toggled(v) => { root.prefs.start-with-windows = v; root.changed(root.prefs); } } }
-                    Row { label: "Close to the tray"; Toggle { checked: prefs.close-to-tray; toggled(v) => { root.prefs.close-to-tray = v; root.changed(root.prefs); } } }
-                    Row { label: "Always on top"; Toggle { checked: prefs.on-top; toggled(v) => { root.prefs.on-top = v; root.changed(root.prefs); } } }
-                    Row { label: "Stats in the header"; Toggle { checked: prefs.stats; toggled(v) => { root.prefs.stats = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("Start with Windows"); Toggle { checked: prefs.start-with-windows; toggled(v) => { root.prefs.start-with-windows = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("Close to the tray"); Toggle { checked: prefs.close-to-tray; toggled(v) => { root.prefs.close-to-tray = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("Always on top"); Toggle { checked: prefs.on-top; toggled(v) => { root.prefs.on-top = v; root.changed(root.prefs); } } }
+                    Row { label: @tr("Stats in the header"); Toggle { checked: prefs.stats; toggled(v) => { root.prefs.stats = v; root.changed(root.prefs); } } }
                 }
 
                 Card {
-                    title: "Stats (measured)";
+                    title: @tr("Stats (measured)");
                     icon: "\u{E9D9}";
                     tint-a: #facc15;
                     tint-b: #ca8a04;
-                    info: "All numbers are measured: decoded fps, presented fps, skipped frames (replaced by a newer frame before display), last frame decode time.";
+                    info: @tr("All numbers are measured: decoded fps, presented fps, skipped frames (replaced by a newer frame before display), last frame decode time.");
                     Text { text: stats-full; font-size: 11.5px; color: Theme.text-2; font-family: "Cascadia Mono"; wrap: word-wrap; }
                 }
                 Card {
-                    title: "Edge crop (fine)";
+                    title: @tr("Edge crop (fine)");
                     icon: "\u{E7A8}";
                     tint-a: #94a3b8;
                     tint-b: #64748b;
-                    info: "Trim black bars or borders off the picture, in device pixels. Touches still land in the right place.";
+                    info: @tr("Trim black bars or borders off the picture, in device pixels. Touches still land in the right place.");
                     for side[i] in [
                         { key: "t", en: "Top" },
                         { key: "b", en: "Bottom" },
@@ -2143,7 +2159,7 @@ component SettingsPanel inherits Glass {
                     HorizontalLayout {
                         alignment: end;
                         GlassButton {
-                            label: "Reset (0 px)";
+                            label: @tr("Reset (0 px)");
                             clicked => {
                                 root.prefs.crop-t = 0; root.prefs.crop-b = 0; root.prefs.crop-l = 0; root.prefs.crop-r = 0;
                                 root.changed(root.prefs);
@@ -2152,7 +2168,7 @@ component SettingsPanel inherits Glass {
                     }
                 }
                 Card {
-                    title: "About & credits";
+                    title: @tr("About & credits");
                     icon: "\u{E946}";
                     tint-a: #ec4899;
                     tint-b: #a855f7;
@@ -2166,25 +2182,25 @@ component SettingsPanel inherits Glass {
                         alignment: start;
                         GlassButton {
                             icon: "\u{E8B7}";
-                            label: "Open log folder";
-                            tip: "3zT Mirroring logs for bug reports (%LOCALAPPDATA%\\3zT Mirroring\\logs)";
+                            label: @tr("Open log folder");
+                            tip: @tr("3zT Mirroring logs for bug reports (%LOCALAPPDATA%\\3zT Mirroring\\logs)");
                             clicked => { root.driver-action("logs"); }
                         }
                     }
                     Text {
-                        text: "© 2026 3zT · based on ZenLink © 2026 Zenvy Zenshiro · GPL-3.0-or-later · no warranty.";
+                        text: @tr("© 2026 3zT · based on ZenLink © 2026 Zenvy Zenshiro · GPL-3.0-or-later · no warranty.");
                         font-size: 11px;
                         color: Theme.text-2;
                         wrap: word-wrap;
                     }
                     Text {
-                        text: "Android: the scrcpy server (Genymobile & Romain Vimont, Apache-2.0) and Google's official adb (Android platform-tools, unmodified; NOTICE.txt in third_party). Apple: pymobiledevice3 (GPL-3.0), pane-iphone-mirror-windows (GPL-3.0), quicktime_video_hack (MIT), libusb-win32, UxPlay/playfair (GPL-3.0). AAC sound: FFmpeg (LGPL). Details: README and THIRD_PARTY_NOTICES.md.";
+                        text: @tr("Android: the scrcpy server (Genymobile & Romain Vimont, Apache-2.0) and Google's official adb (Android platform-tools, unmodified; NOTICE.txt in third_party). Apple: pymobiledevice3 (GPL-3.0), pane-iphone-mirror-windows (GPL-3.0), quicktime_video_hack (MIT), libusb-win32, UxPlay/playfair (GPL-3.0). AAC sound and the built-in HEVC decoder: FFmpeg (LGPL). Details: README and THIRD_PARTY_NOTICES.md.");
                         font-size: 11px;
                         color: Theme.text-2;
                         wrap: word-wrap;
                     }
                     Text {
-                        text: "Android is a trademark of Google LLC. iPhone, iPad and AirPlay are trademarks of Apple Inc. 3zT Mirroring is not affiliated with Google or Apple.";
+                        text: @tr("Android is a trademark of Google LLC. iPhone, iPad and AirPlay are trademarks of Apple Inc. 3zT Mirroring is not affiliated with Google or Apple.");
                         font-size: 10.5px;
                         color: Theme.text-3;
                         wrap: word-wrap;
@@ -2237,14 +2253,14 @@ component AppLauncher inherits Rectangle {
             if root.window-ok: Seg {
                 width: 210px;
                 options: ["phone", "window"];
-                labels: ["On the phone", "New window"];
+                labels: [@tr("On the phone"), @tr("New window")];
                 value: root.open-in;
                 changed(v) => { root.open-in = v; }
             }
-            GlassButton { icon: "\u{E711}"; tip: "Close"; clicked => { root.close(); } }
+            GlassButton { icon: "\u{E711}"; tip: @tr("Close"); clicked => { root.close(); } }
         }
         if !root.busy && root.searchable: Field {
-            placeholder: "Search apps…";
+            placeholder: @tr("Search apps…");
             edited(v) => { root.filter(v); }
         }
         if root.busy: BusyBar { }
@@ -2303,7 +2319,7 @@ export global AppInfo {
 }
 
 export component AppWindow inherits Window {
-    title: "3zT Mirroring";
+    title: @tr("3zT Mirroring");
     icon: @image-url("../../../../assets/logo-256.png");
     background: transparent;
     // Roomy start: taller, so the Android setup
@@ -2803,7 +2819,7 @@ export component AppWindow inherits Window {
                     horizontal-alignment: center;
                 }
                 Text {
-                    text: root.drop-ok ? "Drop to send to the device" : root.drop-apple ? "Sending files needs Apple Driver mode" : "No Android phone is being mirrored";
+                    text: root.drop-ok ? @tr("Drop to send to the device") : root.drop-apple ? @tr("Sending files needs Apple Driver mode") : @tr("No Android phone is being mirrored");
                     font-size: 16px;
                     font-weight: 700;
                     color: Theme.text;
@@ -2812,9 +2828,9 @@ export component AppWindow inherits Window {
                 }
                 Text {
                     text: root.drop-apple
-                        ? (root.drop-ok ? "Then pick the app on the iPhone/iPad (e.g. VLC, Documents). The file also shows in Files › On My iPhone."
-                                        : "Studio mode replaces Apple's USB driver, so it cannot send files. Switch to Apple Driver in Settings.")
-                        : root.drop-ok ? "An .apk file is installed. Other files go to the phone's Download folder." : "Start mirroring an Android phone, then drop files here.";
+                        ? (root.drop-ok ? @tr("Then pick the app on the iPhone/iPad (e.g. VLC, Documents). The file also shows in Files › On My iPhone.")
+                                        : @tr("Studio mode replaces Apple's USB driver, so it cannot send files. Switch to Apple Driver in Settings."))
+                        : root.drop-ok ? @tr("An .apk file is installed. Other files go to the phone's Download folder.") : @tr("Start mirroring an Android phone, then drop files here.");
                     font-size: 12px;
                     color: Theme.text-2;
                     horizontal-alignment: center;

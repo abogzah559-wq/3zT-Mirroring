@@ -1,10 +1,10 @@
 ; 3zT Mirroring installer (Inno Setup 6.6 or newer, for the dark wizard).
 ; Built by packaging\build.ps1.
 #ifndef AppVersion
-  #define AppVersion "2.0.0"
+  #define AppVersion "2.0.1"
 #endif
 #ifndef AppVersionNum
-  #define AppVersionNum "2.0.0"
+  #define AppVersionNum "2.0.1"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\dist\MirroringService"
@@ -161,6 +161,10 @@ begin
   begin
     Log('Apple Mobile Device Support installed');
     AmdsRestart := Code = 3010;
+    // The service often only starts after a restart of Windows (its USB
+    // driver loads then): ask for one when it does not start now.
+    if not Exec(ExpandConstant('{sys}\net.exe'), 'start "Apple Mobile Device Service"', '', SW_HIDE, ewWaitUntilTerminated, Code) or ((Code <> 0) and (Code <> 2)) then
+      AmdsRestart := True;
   end
   else
   begin

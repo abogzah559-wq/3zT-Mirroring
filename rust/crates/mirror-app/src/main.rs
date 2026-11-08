@@ -8,6 +8,7 @@ mod devprofiles;
 mod dots;
 mod filedrop;
 mod flow;
+mod i18n;
 mod input;
 mod prefs;
 mod shortcuts;
@@ -148,6 +149,8 @@ fn windows_version() -> String {
 
 #[derive(Default)]
 struct App {
+    /// Last "touch control is off" reason shown.
+    control_note: String,
     /// The "F2 shows the controls" hint was shown for this picture.
     clean_hint: bool,
     view: Option<VideoView>,
@@ -471,7 +474,7 @@ fn str_of<'a>(v: &'a Value, path: &[&str]) -> Option<&'a str> {
 }
 
 fn tr_ui(_ui: &AppWindow, en: &str) -> String {
-    en.into()
+    i18n::tr(en)
 }
 
 /// The Apple device list: connected devices first, then devices trusted
@@ -566,8 +569,27 @@ fn apple_rows(ui: &AppWindow, st: &Value, current: &str) -> Vec<AppleDev> {
 
 /// Backend state -> UI. Runs on the UI thread.
 fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
-    let tr = |en: &str| -> String { en.into() };
+    let tr = i18n::tr;
     let phase = str_of(st, &["phase"]).unwrap_or("idle").to_string();
+    // Why touch control is off while the picture runs (iOS 26 and older,
+    // Developer Mode...): say it once per reason.
+    let control_note = st
+        .get("control")
+        .filter(|c| c.get("control").and_then(Value::as_bool) == Some(false))
+        .and_then(|c| str_of(c, &["note"]))
+        .unwrap_or("")
+        .to_string();
+    let new_note = APP.with_borrow_mut(|a| {
+        if a.control_note != control_note {
+            a.control_note = control_note.clone();
+            !control_note.is_empty()
+        } else {
+            false
+        }
+    });
+    if new_note {
+        show_toast(ui, control_note);
+    }
     // The backend starts the picked device when it is connected, otherwise
     // the first ready one; show that one.
     let list = st.get("devices").and_then(Value::as_array);
@@ -595,7 +617,7 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         .or_else(|| str_of(st, &["connection", "active"]))
         .unwrap_or("");
     let link = match backend {
-        "usbdirect" => "Studio mode".to_string(),
+        "usbdirect" => tr("Studio mode"),
         "apple" | "hybrid" => format!("Apple · {}", if wifi { "Wi-Fi" } else { "USB" }),
         _ if wifi => "Wi-Fi".into(),
         _ if !device.is_empty() => "USB".into(),
@@ -627,10 +649,10 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
     ui.set_phase(phase.clone().into());
     ui.set_device(device.into());
     ui.set_link(link.into());
-    ui.set_message(message.into());
+    ui.set_message(tr(&message).into());
     let conn = match str_of(st, &["connection", "active"]) {
         Some("apple") => tr("Apple Driver (Standard)"),
-        Some("usbdirect") => "Studio mode".into(),
+        Some("usbdirect") => tr("Studio mode"),
         _ => tr("Not chosen yet"),
     };
     ui.set_connection(conn.into());
@@ -1026,7 +1048,8 @@ fn mode_remembered() -> bool {
 /// Short message above the dock for 3.5 s.
 fn show_toast(ui: &AppWindow, text: String) {
     ui.set_toast("".into());
-    ui.set_toast(text.into());
+    // Messages from the service arrive in English.
+    ui.set_toast(i18n::tr(&text).into());
     let w = ui.as_weak();
     slint::Timer::single_shot(Duration::from_millis(3500), move || {
         if let Some(ui) = w.upgrade() {
@@ -1432,7 +1455,7 @@ fn show_android(
             } else if list.is_empty() {
                 tr_ui(ui, "No Android device yet. Follow the steps below.")
             } else {
-                format!("{} {}", list.len(), tr_ui(ui, "device(s) seen through ADB."))
+                tr_ui(ui, &format!("{} device(s) seen through ADB.", list.len()))
             };
             if *other {
                 format!(
@@ -1514,9 +1537,12 @@ fn show_android(
     }
 }
 
-/// The bundled scrcpy server, read once.
-/// Whether Windows can decode H.265 (checked once; Media Foundation lookup).
+/// Whether H.265 can be decoded: Windows' own HEVC decoder (checked once,
+/// Media Foundation lookup) or the built-in FFmpeg one next to the exe.
 fn hevc_ok() -> bool {
+    if mirror_video::builtin_hevc_available() {
+        return true;
+    }
     static OK: OnceLock<bool> = OnceLock::new();
     // On its own thread: Media Foundation initialises COM as multithreaded,
     // and the UI thread must stay single-threaded for winit (OleInitialize
@@ -2619,12 +2645,15 @@ fn android_session_ok(ui: &AppWindow, st: &android::Status, using: &str) {
 }
 
 fn tr_ui_static(_ui: &AppWindow, en: &'static str) -> &'static str {
-    en
+    i18n::tr_static(en)
 }
 
 /// Tray menu words.
 fn tray_labels(_p: &Prefs) -> (&'static str, &'static str) {
-    ("Open 3zT Mirroring", "Quit")
+    (
+        i18n::tr_static("Open 3zT Mirroring"),
+        i18n::tr_static("Quit"),
+    )
 }
 
 /// "Close to the tray": hide the window, keep the session (sound keeps
@@ -2908,6 +2937,7 @@ fn main() -> Result<(), slint::PlatformError> {
     ui.global::<AppInfo>()
         .set_version(env!("CARGO_PKG_VERSION").into());
     ui.set_prefs(prefs::load());
+    i18n::apply(ui.get_prefs().language.as_str());
     {
         let weak = ui.as_weak();
         tray::install(move |e| {
@@ -2941,7 +2971,7 @@ fn main() -> Result<(), slint::PlatformError> {
     let input = Input::new(api.clone());
     let touch_on = Arc::new(AtomicBool::new(ui.get_prefs().touch));
     let gestures_on = Arc::new(AtomicBool::new(ui.get_prefs().gestures));
-    ui.set_message("Menyiapkan 3zT Mirroring…".into());
+    ui.set_message(i18n::tr("Starting 3zT Mirroring…").into());
     // Test hook: every settings card starts with its explanation open.
     if std::env::var_os("MIRROR_INFO_OPEN").is_some() {
         ui.global::<UiTest>().set_info_open(true);
@@ -3139,6 +3169,9 @@ fn main() -> Result<(), slint::PlatformError> {
         ui.on_prefs_changed(move |mut p| {
             // Video profile logic, then store for the device.
             devprofiles::normalize(&last.borrow(), &mut p);
+            if p.language != last.borrow().language {
+                i18n::apply(p.language.as_str());
+            }
             if p.start_with_windows != last.borrow().start_with_windows && !test_mode {
                 tray::set_start_with_windows(p.start_with_windows, true);
             }

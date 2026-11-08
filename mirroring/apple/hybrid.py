@@ -368,6 +368,9 @@ async def _drain(transport) -> None:
 def _control_error(error: Exception) -> str:
     low = str(error).lower()
     tail = " The picture keeps working over AirPlay."
+    if "requires ios 27" in low or ("code 9021" in low and "ios" in low):
+        return ("Mouse and keyboard control needs iOS 27 or later on this device. Update it in Settings > "
+                "General > Software Update.") + tail
     if "developer mode" in low or "developermode" in low:
         return "Touch control needs Developer Mode (Settings > Privacy & Security), then a restart." + tail
     if "pair" in low or "trust" in low:

@@ -2,7 +2,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn main() {
-    slint_build::compile("ui/app.slint").expect("compile Slint UI");
+    // Interface languages: English in the sources, the others bundled from
+    // translations/<lang>/LC_MESSAGES/mirror-app.po. No context, so Rust
+    // reads the same file (src/i18n.rs).
+    println!("cargo:rerun-if-changed=translations");
+    let config = slint_build::CompilerConfiguration::new()
+        .with_bundled_translations(concat!(env!("CARGO_MANIFEST_DIR"), "/translations"))
+        .with_default_translation_context(slint_build::DefaultTranslationContext::None);
+    slint_build::compile_with_config("ui/app.slint", config).expect("compile Slint UI");
     windows_resources();
     if std::env::var_os("CARGO_FEATURE_EMBEDDED_BACKEND").is_some() {
         pack_adb();

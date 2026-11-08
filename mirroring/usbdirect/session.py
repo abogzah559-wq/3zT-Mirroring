@@ -70,7 +70,7 @@ def backend():
         # libusb0.dll is installed to System32 together with the driver.
         dll = driver_status.libusb0_status()["dllPath"]
         if not os.path.exists(dll):
-            raise UsbDirectError("libusb0.dll is not installed. Open Settings > Connection & Drivers.")
+            raise UsbDirectError("libusb0.dll is not installed. Open Settings > Connection & driver.")
         _backend = usb.backend.libusb0.get_backend(find_library=lambda _name: dll)
         if _backend is None:
             raise UsbDirectError("libusb0.dll could not be loaded.")
@@ -244,8 +244,8 @@ class UsbDirectSession:
             raise UsbDirectError("The device is not connected.")
         if entry["mode"] != "replaced" or entry["unsafeFilter"]:
             raise UsbDirectError(
-                "USB Direct needs the libusb0 driver installed as the device's driver (no filters). "
-                "Open Settings > Connection & Drivers."
+                "Studio mode needs the libusb0 driver installed as the device's driver (no filters). "
+                "Open Settings > Connection & driver."
             )
 
     def _activate(self, force: bool = False) -> None:
@@ -258,8 +258,8 @@ class UsbDirectSession:
         dev = find(self.serial)
         if dev is None:
             raise UsbDirectError(
-                "3zT Mirroring can't open the device through libusb0. Open Settings > Connection & Drivers "
-                "and install the USB Direct driver, then reconnect the cable."
+                "3zT Mirroring can't open the device through libusb0. Open Settings > Connection & driver "
+                "and install the Studio mode driver, then reconnect the cable."
             )
         self._mux_cfg, qt = _configs(dev)
         self.on_state("activating", "Switching the device to screen capture")
@@ -372,7 +372,7 @@ class UsbDirectSession:
             if record is None:
                 raise UsbDirectError(
                     "This PC isn't trusted by the device yet. Use Apple mode once (or iTunes / Apple Devices), "
-                    "tap Trust on the device, then switch back to USB Direct."
+                    "tap Trust on the device, then switch back to Studio mode."
                 )
             client.start_session(record)
             client.stop_session()
