@@ -82,14 +82,15 @@ Logs are in `%LOCALAPPDATA%\3zT Mirroring\logs`.
 ## Build from source
 
 Requirements: Rust (stable), Python 3.13, Inno Setup 6.6+, MSYS2 (UCRT64
-gcc) and Visual Studio C++ build tools for the two native DLLs, and Google's
+gcc) and Visual Studio C++ build tools for the native DLLs, and Google's
 platform-tools (adb) for Windows. The steps match
 `.github/workflows/build.yml`.
 
 ```powershell
-# Native DLLs (see native\aacdec and native\playfair)
+# Native DLLs (see native\aacdec, native\videodec and native\playfair)
 #   MSYS2: bash native/build_ffmpeg.sh <ffmpeg-9.0.2-src> <build-dir> <prefix>
-#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.0
+#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.1
+#          bash native/videodec/build_videodec.sh <prefix> native/out 2.0.1
 native\playfair\build.bat
 # The scrcpy server is pinned in third_party\scrcpy (see SHA256SUMS.txt)
 Invoke-WebRequest https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-server-v5.0.1 `

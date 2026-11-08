@@ -444,7 +444,7 @@ fn session(
         // Windows without Microsoft's HEVC extension: the built-in decoder.
         Err(e) if matches!(info.codec, Codec::Hevc) && ffdec::available() => {
             log::info!("decoder: no Media Foundation HEVC decoder ({e}), using videodec");
-            return session_ff(gpu, ring, stats, stop, source, info, stream);
+            return session_ff(gpu, ring, stats, stop, source, info, stream, None);
         }
         Err(e) => return Err(e),
     };
@@ -461,10 +461,14 @@ fn session(
     let mut got_key = false;
     let mut pending: VecDeque<(i64, Instant)> = VecDeque::new();
     let mut upload = None;
-    // Windows' HEVC decoder can open and still refuse every frame (some
-    // drivers, 10-bit streams): then switch to the built-in decoder.
+    // Windows' HEVC decoder can open and still refuse or swallow every
+    // frame (some drivers, 10-bit streams): then the built-in decoder takes
+    // over, starting with the current keyframe.
     let decoded_at_start = stats.decoded.load(Relaxed);
     let mut failures = 0u32;
+    let mut fed = 0u32;
+    let mut first_key: Option<Instant> = None;
+    let fallback = matches!(info.codec, Codec::Hevc) && ffdec::available();
     while !stop.load(Relaxed) {
         let Some(rec) = stream.next_record() else {
             return Ok(());
@@ -487,6 +491,31 @@ fn session(
                 if !got_key {
                     continue;
                 }
+                let nothing_yet = stats.decoded.load(Relaxed) == decoded_at_start;
+                let since = *first_key.get_or_insert_with(Instant::now);
+                if fallback
+                    && nothing_yet
+                    && (failures >= 2 || (fed >= 90 && since.elapsed() > Duration::from_secs(3)))
+                {
+                    log::info!(
+                        "decoder: Media Foundation HEVC decoded nothing ({failures} errors, {fed} frames), using videodec"
+                    );
+                    drop(mft);
+                    let first = if key {
+                        Some(Record::Frame {
+                            key,
+                            rebuild: true,
+                            data,
+                        })
+                    } else {
+                        if info.keyframes_on_request {
+                            source.request_keyframe();
+                        }
+                        None
+                    };
+                    return session_ff(gpu, ring, stats, stop, source, info, stream, first);
+                }
+                fed += 1;
                 stats.bytes.fetch_add(data.len() as u64, Relaxed);
                 ts += FRAME_100NS;
                 pending.push_back((ts, Instant::now()));
@@ -518,19 +547,27 @@ fn session(
                     log::warn!("decode: {e}");
                     stats.errors.fetch_add(1, Relaxed);
                     failures += 1;
-                    if failures >= 6
-                        && matches!(info.codec, Codec::Hevc)
-                        && stats.decoded.load(Relaxed) == decoded_at_start
-                        && ffdec::available()
-                    {
+                    // A refused keyframe before any picture: no point waiting.
+                    if fallback && key && stats.decoded.load(Relaxed) == decoded_at_start {
                         log::info!(
-                            "decoder: Media Foundation HEVC decoded nothing, using videodec"
+                            "decoder: Media Foundation HEVC refused a keyframe, using videodec"
                         );
                         drop(mft);
-                        if info.keyframes_on_request {
-                            source.request_keyframe();
-                        }
-                        return session_ff(gpu, ring, stats, stop, source, info, stream);
+                        let first = Record::Frame {
+                            key,
+                            rebuild: true,
+                            data,
+                        };
+                        return session_ff(
+                            gpu,
+                            ring,
+                            stats,
+                            stop,
+                            source,
+                            info,
+                            stream,
+                            Some(first),
+                        );
                     }
                     mft.flush();
                     got_key = false;
@@ -553,6 +590,9 @@ fn session_ff(
     source: &dyn VideoSource,
     mut info: CodecInfo,
     stream: &mut dyn RecordStream,
+    // A record to decode before reading the stream (the keyframe Media
+    // Foundation could not decode).
+    mut first: Option<Record>,
 ) -> Result<()> {
     let open = || {
         FfDec::new(gpu).ok_or_else(|| {
@@ -569,7 +609,7 @@ fn session_ff(
     let mut got_key = false;
     let mut upload = None;
     while !stop.load(Relaxed) {
-        let Some(rec) = stream.next_record() else {
+        let Some(rec) = first.take().or_else(|| stream.next_record()) else {
             return Ok(());
         };
         match rec {
@@ -640,6 +680,8 @@ fn publish_ff(
     if w == 0 || h == 0 {
         return Ok(());
     }
+    // Per frame: a 10-bit stream is decoded in software even with a GPU.
+    stats.hardware.store(f.hardware != 0, Relaxed);
     let src = ffdec::full_rect(w, h);
     let idx = {
         let mut r = ring.lock().unwrap();

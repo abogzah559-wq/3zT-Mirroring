@@ -650,7 +650,7 @@ class CastManager:
         return self.snapshot()
 
 
-_AMDS_PROMPTED = -1e9
+_AMDS_LAST = (-1e9, False)  # (time, prompt shown)
 
 
 def _start_apple_service() -> bool:
@@ -659,10 +659,9 @@ def _start_apple_service() -> bool:
     import ctypes
     import time
 
-    global _AMDS_PROMPTED
-    if time.monotonic() - _AMDS_PROMPTED < 60:
-        return True  # one prompt a minute, however often Start is pressed
-    _AMDS_PROMPTED = time.monotonic()
+    global _AMDS_LAST
+    if time.monotonic() - _AMDS_LAST[0] < 60:
+        return _AMDS_LAST[1]  # one prompt a minute, however often Start is pressed
     script = ("Set-Service -Name 'Apple Mobile Device Service' -StartupType Automatic; "
               "Start-Service -Name 'Apple Mobile Device Service'")
     try:
@@ -670,5 +669,6 @@ def _start_apple_service() -> bool:
             None, "runas", "powershell.exe",
             f'-NoProfile -WindowStyle Hidden -Command "{script}"', None, 0)
     except (AttributeError, OSError):
-        return False
-    return int(r) > 32
+        r = 0
+    _AMDS_LAST = (time.monotonic(), int(r) > 32)
+    return _AMDS_LAST[1]

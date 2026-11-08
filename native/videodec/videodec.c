@@ -8,7 +8,8 @@
  * to FFmpeg's multithreaded software decoder when the GPU cannot.
  *
  * Input: Annex-B access units (parameter sets in-band). Output: a D3D11 NV12
- * texture + array slice (hardware) or YUV 4:2:0 planes (software).
+ * texture + array slice (8-bit, hardware) or 8-bit YUV 4:2:0 planes
+ * (software; 10-bit streams are decoded in software and shifted to 8 bits).
  *
  * Copyright (C) 2026 3zT. GPL-3.0-or-later.
  * FFmpeg is LGPL-2.1-or-later (see THIRD_PARTY_NOTICES.md).
@@ -46,13 +47,16 @@ typedef struct Vd {
     AVFrame *frame;
     AVBufferRef *hw;
     int hw_ok;
+    uint8_t *conv;   /* 8-bit planes for 10-bit streams */
+    size_t conv_size;
 } Vd;
 
 static enum AVPixelFormat pick_format(AVCodecContext *ctx, const enum AVPixelFormat *fmts)
 {
     Vd *d = ctx->opaque;
     const enum AVPixelFormat *p;
-    if (d && d->hw_ok) {
+    /* The window's frame slots are NV12: hardware only for 8-bit 4:2:0. */
+    if (d && d->hw_ok && (ctx->sw_pix_fmt == AV_PIX_FMT_YUV420P || ctx->sw_pix_fmt == AV_PIX_FMT_YUVJ420P)) {
         for (p = fmts; *p != AV_PIX_FMT_NONE; p++)
             if (*p == AV_PIX_FMT_D3D11)
                 return *p;
@@ -74,6 +78,7 @@ VD_API void vd_close(Vd *d)
     av_packet_free(&d->pkt);
     avcodec_free_context(&d->ctx);
     av_buffer_unref(&d->hw);
+    free(d->conv);
     free(d);
 }
 
@@ -119,12 +124,11 @@ VD_API Vd *vd_open(void *device, int *hardware)
             }
         }
     }
-    if (!d->hw_ok) {
-        /* Software: all cores, slices and frames. */
-        d->ctx->thread_count = 0;
-        d->ctx->thread_type = FF_THREAD_FRAME | FF_THREAD_SLICE;
-        d->ctx->flags &= ~AV_CODEC_FLAG_LOW_DELAY;
-    }
+    /* Used whenever a frame is decoded in software (no GPU path, or a
+     * format the GPU path does not take). Slice threads add no delay;
+     * frame threads would add one frame per thread. */
+    d->ctx->thread_count = 0;
+    d->ctx->thread_type = FF_THREAD_SLICE;
     if (avcodec_open2(d->ctx, codec, NULL) < 0)
         goto fail;
     if (hardware)
@@ -190,8 +194,35 @@ VD_API int vd_receive(Vd *d, VdFrame *out)
         out->stride[0] = d->frame->linesize[0];
         out->stride[1] = d->frame->linesize[1];
         return 1;
+    case AV_PIX_FMT_YUV420P10LE: {
+        /* 10-bit: keep the top 8 bits of each sample. */
+        int w = d->frame->width, h = d->frame->height;
+        int cw = (w + 1) / 2, ch = (h + 1) / 2;
+        size_t need = (size_t)w * h + 2 * (size_t)cw * ch;
+        int i, x, y;
+        if (need > d->conv_size) {
+            uint8_t *n = realloc(d->conv, need);
+            if (!n)
+                return -12;
+            d->conv = n;
+            d->conv_size = need;
+        }
+        for (i = 0; i < 3; i++) {
+            int pw = i ? cw : w, ph = i ? ch : h;
+            uint8_t *dst = d->conv + (i == 0 ? 0 : (size_t)w * h + (size_t)(i - 1) * cw * ch);
+            for (y = 0; y < ph; y++) {
+                const uint16_t *src = (const uint16_t *)(d->frame->data[i] + (size_t)y * d->frame->linesize[i]);
+                uint8_t *row = dst + (size_t)y * pw;
+                for (x = 0; x < pw; x++)
+                    row[x] = (uint8_t)(src[x] >> 2);
+            }
+            out->plane[i] = dst;
+            out->stride[i] = pw;
+        }
+        return 1;
+    }
     default:
-        /* 10-bit or 4:4:4: not something an iPhone screen stream sends. */
+        /* 4:2:2 / 4:4:4: not something a phone screen stream sends. */
         return -2;
     }
 }

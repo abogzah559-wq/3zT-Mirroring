@@ -5,9 +5,9 @@
 - Built-in HEVC decoder (FFmpeg, GPU-accelerated through D3D11 with a CPU
   fallback): iPhone and iPad on iOS 27 show their picture on PCs without the
   HEVC Video Extensions, and Android H.265 works there too. It also takes
-  over when Windows' own HEVC decoder opens but decodes nothing.
-- Arabic interface: Settings › Appearance › Language (System, English,
-  Arabic). System follows the Windows display language.
+  over when Windows' own HEVC decoder opens but decodes nothing, and handles
+  10-bit streams.
+- Interface language setting: Settings › Appearance › Language.
 - A stopped Apple Mobile Device Service is started for you after one Windows
   prompt; the installer starts it right after installing it and asks for a
   restart only when it could not.

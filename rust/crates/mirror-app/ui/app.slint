@@ -2132,10 +2132,10 @@ component SettingsPanel inherits Glass {
                     tint-b: #64748b;
                     info: @tr("Trim black bars or borders off the picture, in device pixels. Touches still land in the right place.");
                     for side[i] in [
-                        { key: "t", en: "Top" },
-                        { key: "b", en: "Bottom" },
-                        { key: "l", en: "Left" },
-                        { key: "r", en: "Right" },
+                        { key: "t", en: @tr("Top") },
+                        { key: "b", en: @tr("Bottom") },
+                        { key: "l", en: @tr("Left") },
+                        { key: "r", en: @tr("Right") },
                     ]: VerticalLayout {
                         spacing: 2px;
                         property <float> v: side.key == "t" ? prefs.crop-t : side.key == "b" ? prefs.crop-b : side.key == "l" ? prefs.crop-l : prefs.crop-r;

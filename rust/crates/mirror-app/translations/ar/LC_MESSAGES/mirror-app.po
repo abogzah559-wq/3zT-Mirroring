@@ -1646,3 +1646,24 @@ msgstr "فتح الجهاز التقاط الشاشة لكنه لم يرسل ش�
 
 msgid "Android: the scrcpy server (Genymobile & Romain Vimont, Apache-2.0) and Google's official adb (Android platform-tools, unmodified; NOTICE.txt in third_party). Apple: pymobiledevice3 (GPL-3.0), pane-iphone-mirror-windows (GPL-3.0), quicktime_video_hack (MIT), libusb-win32, UxPlay/playfair (GPL-3.0). AAC sound and the built-in HEVC decoder: FFmpeg (LGPL). Details: README and THIRD_PARTY_NOTICES.md."
 msgstr "Android: خادم scrcpy ‏(Genymobile وRomain Vimont، Apache-2.0) وadb الرسمي من Google ‏(Android platform-tools دون تعديل؛ NOTICE.txt في third_party). Apple: ‏pymobiledevice3 ‏(GPL-3.0)، pane-iphone-mirror-windows ‏(GPL-3.0)، quicktime_video_hack ‏(MIT)، libusb-win32، UxPlay/playfair ‏(GPL-3.0). صوت AAC وفاك ترميز HEVC المدمج: FFmpeg ‏(LGPL). التفاصيل: README وTHIRD_PARTY_NOTICES.md."
+
+msgid "Mouse and keyboard control needs iOS 27 or later on this device."
+msgstr "التحكم بالماوس ولوحة المفاتيح يحتاج iOS 27 أو أحدث على هذا الجهاز."
+
+msgid "Update it in Settings > General > Software Update."
+msgstr "حدّثه من الإعدادات > عام > تحديث البرامج."
+
+msgid "The picture keeps working over AirPlay."
+msgstr "الصورة تبقى تعمل عبر AirPlay."
+
+msgid "Top"
+msgstr "أعلى"
+
+msgid "Bottom"
+msgstr "أسفل"
+
+msgid "Left"
+msgstr "يسار"
+
+msgid "Right"
+msgstr "يمين"

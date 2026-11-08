@@ -1670,7 +1670,7 @@ fn refresh_encoder_ui(ui: &AppWindow) {
     let Some(list) = list else {
         g.set_options(slint::ModelRc::new(slint::VecModel::from(vec!["".into()])));
         g.set_labels(slint::ModelRc::new(slint::VecModel::from(vec![
-            slint::SharedString::from("Auto"),
+            slint::SharedString::from(i18n::tr("Auto")),
         ])));
         g.set_codecs(slint::ModelRc::new(slint::VecModel::from(Vec::<
             slint::SharedString,
@@ -1685,7 +1685,7 @@ fn refresh_encoder_ui(ui: &AppWindow) {
     };
     let encs = video_encoders(&list, codec);
     let mut options: Vec<slint::SharedString> = vec!["".into()];
-    let mut labels: Vec<slint::SharedString> = vec!["Auto".into()];
+    let mut labels: Vec<slint::SharedString> = vec![i18n::tr("Auto").into()];
     // Seg shows at most six options.
     for e in encs.iter().take(5) {
         options.push(e.name.as_str().into());

@@ -163,7 +163,8 @@ begin
     AmdsRestart := Code = 3010;
     // The service often only starts after a restart of Windows (its USB
     // driver loads then): ask for one when it does not start now.
-    if not Exec(ExpandConstant('{sys}\net.exe'), 'start "Apple Mobile Device Service"', '', SW_HIDE, ewWaitUntilTerminated, Code) or ((Code <> 0) and (Code <> 2)) then
+    // Start-Service exits 0 when the service runs (or already ran), 1 if not.
+    if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'), '-NoProfile -NonInteractive -Command "Start-Service -Name ''Apple Mobile Device Service'' -ErrorAction Stop"', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       AmdsRestart := True;
   end
   else
