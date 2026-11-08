@@ -89,8 +89,8 @@ platform-tools (adb) for Windows. The steps match
 ```powershell
 # Native DLLs (see native\aacdec, native\videodec and native\playfair)
 #   MSYS2: bash native/build_ffmpeg.sh <ffmpeg-9.0.2-src> <build-dir> <prefix>
-#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.1
-#          bash native/videodec/build_videodec.sh <prefix> native/out 2.0.1
+#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.2
+#          bash native/videodec/build_videodec.sh <prefix> native/out 2.0.2
 native\playfair\build.bat
 # The scrcpy server is pinned in third_party\scrcpy (see SHA256SUMS.txt)
 Invoke-WebRequest https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-server-v5.0.1 `

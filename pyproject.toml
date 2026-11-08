@@ -1,6 +1,6 @@
 [project]
 name = "mirroring"
-version = "2.0.1"
+version = "2.0.2"
 description = "3zT Mirroring service: mirror and control an iPhone, iPad or Android phone on Windows."
 readme = "README.md"
 license = "GPL-3.0-or-later"

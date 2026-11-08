@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.2
+
+- Updates no longer stop at "Closing applications": Setup now closes
+  3zT Mirroring, its service and its adb server before copying files.
+- A failed or cancelled update leaves the installed version working; files
+  the new version no longer ships are removed only after it is in place.
+
 ## 2.0.1
 
 - Built-in HEVC decoder (FFmpeg, GPU-accelerated through D3D11 with a CPU

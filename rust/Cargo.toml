@@ -3,7 +3,7 @@ resolver = "2"
 members = ["crates/mirror-core", "crates/mirror-video", "crates/mirror-app", "crates/mirror-android", "crates/mirror-audio"]
 
 [workspace.package]
-version = "2.0.1"
+version = "2.0.2"
 edition = "2021"
 license = "GPL-3.0-or-later"
 authors = ["3zT", "Zenvy Zenshiro"]

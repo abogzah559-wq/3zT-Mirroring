@@ -1,10 +1,10 @@
 ; 3zT Mirroring installer (Inno Setup 6.6 or newer, for the dark wizard).
 ; Built by packaging\build.ps1.
 #ifndef AppVersion
-  #define AppVersion "2.0.1"
+  #define AppVersion "2.0.2"
 #endif
 #ifndef AppVersionNum
-  #define AppVersionNum "2.0.1"
+  #define AppVersionNum "2.0.2"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\dist\MirroringService"
@@ -105,6 +105,7 @@ var
   DownloadPage: TDownloadWizardPage;
   AmdsResult: String;
   AmdsRestart: Boolean;
+  OldNames: TArrayOfString;
 
 function AppleServiceInstalled(): Boolean;
 var
@@ -175,37 +176,82 @@ begin
 end;
 
 // Clean update: install-manifest.txt lists the top-level files and folders
-// the previous version installed in {app}. Remove exactly those before the
-// new files are copied, so nothing a newer version no longer ships stays.
-procedure RemovePreviousFiles();
-var
-  Lines: TArrayOfString;
-  I: Integer;
-  Name, Path: String;
+// a version installs in {app}. The previous list is read before the new
+// files are copied; once they are in place, whatever the previous version
+// had and this one no longer ships is removed. Nothing is deleted before
+// the copy, so a failed or cancelled update leaves the old version working.
+function ReadManifest(var Names: TArrayOfString): Boolean;
 begin
-  if not LoadStringsFromFile(ExpandConstant('{app}\install-manifest.txt'), Lines) then
+  Result := LoadStringsFromFile(ExpandConstant('{app}\install-manifest.txt'), Names);
+end;
+
+function SafeName(Name: String): Boolean;
+begin
+  Result := (Name <> '') and (Name <> '.') and (Pos('..', Name) = 0) and (Pos('\', Name) = 0) and
+    (Pos('/', Name) = 0) and (Pos(':', Name) = 0) and (CompareText(Copy(Name, 1, 5), 'unins') <> 0);
+end;
+
+procedure RemoveDroppedFiles();
+var
+  NewNames: TArrayOfString;
+  I, J: Integer;
+  Name: String;
+  Kept: Boolean;
+begin
+  if (GetArrayLength(OldNames) = 0) or not ReadManifest(NewNames) then
     Exit;
-  for I := 0 to GetArrayLength(Lines) - 1 do
+  for I := 0 to GetArrayLength(OldNames) - 1 do
   begin
-    Name := Trim(Lines[I]);
-    if (Name = '') or (Name = '.') or (Pos('..', Name) > 0) or (Pos('\', Name) > 0) or (Pos('/', Name) > 0) or (Pos(':', Name) > 0) then
+    Name := Trim(OldNames[I]);
+    if not SafeName(Name) then
       Continue;
-    if CompareText(Copy(Name, 1, 5), 'unins') = 0 then
+    Kept := False;
+    for J := 0 to GetArrayLength(NewNames) - 1 do
+      if CompareText(Trim(NewNames[J]), Name) = 0 then
+      begin
+        Kept := True;
+        Break;
+      end;
+    if Kept then
       Continue;
-    Path := ExpandConstant('{app}\') + Name;
-    if DirExists(Path) then
-      DelTree(Path, True, True, True)
-    else if FileExists(Path) then
-      DeleteFile(Path);
+    if DirExists(ExpandConstant('{app}\') + Name) then
+      DelTree(ExpandConstant('{app}\') + Name, True, True, True)
+    else
+      DeleteFile(ExpandConstant('{app}\') + Name);
   end;
+end;
+
+// 3zT Mirroring, its service and the adb server it may have started keep
+// files in {app} open. Stop the ones running from this folder before
+// Windows' Restart Manager is asked (it cannot close a hidden service).
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+  Dir: String;
+begin
+  Result := '';
+  Dir := ExpandConstant('{app}');
+  if not DirExists(Dir) then
+    Exit;
+  Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -NonInteractive -Command "$d = ''' + AddBackslash(Dir) + '''; ' +
+    '$p = Get-Process 3zTMirroring,MirroringService,adb -ErrorAction SilentlyContinue | ' +
+    'Where-Object { $_.Path -and $_.Path.StartsWith($d, [StringComparison]::OrdinalIgnoreCase) }; ' +
+    '$p | Stop-Process -Force -ErrorAction SilentlyContinue; ' +
+    '$p | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue"',
+    '', SW_HIDE, ewWaitUntilTerminated, Code);
+  Log('Stopped running 3zT Mirroring processes (exit ' + IntToStr(Code) + ')');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssInstall then
-    RemovePreviousFiles();
+    ReadManifest(OldNames);
   if CurStep = ssPostInstall then
+  begin
+    RemoveDroppedFiles();
     InstallAppleSupport();
+  end;
   if CurStep = ssDone then
     FileCopy(ExpandConstant('{log}'), ExpandConstant('{localappdata}\3zT Mirroring\logs\setup.log'), False);
 end;
