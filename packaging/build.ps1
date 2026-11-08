@@ -149,6 +149,9 @@ Write-Host "[3/4] 3zTMirroring.exe (Rust)" -ForegroundColor Cyan
 & cargo build --release --manifest-path rust\Cargo.toml -p mirror-app
 if ($LASTEXITCODE) { throw "cargo build failed" }
 Copy-Item "rust\target\release\Mirroring.exe" (Join-Path $app "3zTMirroring.exe")
+# Built-in HEVC decoder for the window (native\videodec, FFmpeg).
+if (-not (Test-Path "native\out\videodec.dll")) { throw "native\out\videodec.dll missing (native\videodec\build_videodec.sh)" }
+Copy-Item "native\out\videodec.dll" $app
 
 Write-Host "[4/4] Setup" -ForegroundColor Cyan
 $names = @(Get-ChildItem -Force $app | ForEach-Object { $_.Name }) + "install-manifest.txt"

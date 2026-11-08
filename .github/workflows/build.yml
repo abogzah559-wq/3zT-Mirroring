@@ -75,14 +75,16 @@ jobs:
             make
             diffutils
             mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-nasm
+            mingw-w64-ucrt-x86_64-pkgconf
 
       - uses: actions/cache@v4
         id: ffmpeg
         with:
           path: ${{ runner.temp }}/ffmpeg-out
-          key: ffmpeg-${{ env.FFMPEG_VERSION }}-${{ hashFiles('native/aacdec/build_ffmpeg.sh') }}
+          key: ffmpeg-${{ env.FFMPEG_VERSION }}-${{ hashFiles('native/build_ffmpeg.sh') }}
 
-      - name: FFmpeg AAC decoder (static, LGPL)
+      - name: FFmpeg (static, LGPL)
         if: steps.ffmpeg.outputs.cache-hit != 'true'
         shell: msys2 {0}
         run: |
@@ -91,14 +93,16 @@ jobs:
           curl -sSfL "https://ffmpeg.org/releases/ffmpeg-$FFMPEG_VERSION.tar.xz" -o "$T/ffmpeg.tar.xz"
           echo "$FFMPEG_SHA256  $T/ffmpeg.tar.xz" | sha256sum -c -
           tar -xJf "$T/ffmpeg.tar.xz" -C "$T"
-          bash native/aacdec/build_ffmpeg.sh "$T/ffmpeg-$FFMPEG_VERSION" "$T/ffmpeg-build" "$T/ffmpeg-out" > "$T/ffmpeg-build.log" 2>&1 || { tail -50 "$T/ffmpeg-build.log"; exit 1; }
+          bash native/build_ffmpeg.sh "$T/ffmpeg-$FFMPEG_VERSION" "$T/ffmpeg-build" "$T/ffmpeg-out" > "$T/ffmpeg-build.log" 2>&1 || { tail -50 "$T/ffmpeg-build.log"; exit 1; }
 
-      - name: aacdec.dll
+      - name: aacdec.dll and videodec.dll
         shell: msys2 {0}
         run: |
           set -e
           V=$(sed -n 's/^version = "\(.*\)"$/\1/p' rust/Cargo.toml | head -1)
-          bash native/aacdec/build_aacdec.sh "$(cygpath -u "$RUNNER_TEMP")/ffmpeg-out" mirroring "$V"
+          FF="$(cygpath -u "$RUNNER_TEMP")/ffmpeg-out"
+          bash native/aacdec/build_aacdec.sh "$FF" mirroring "$V"
+          bash native/videodec/build_videodec.sh "$FF" native/out "$V"
 
       - name: playfair.dll
         shell: cmd

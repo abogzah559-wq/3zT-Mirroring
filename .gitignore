@@ -26,3 +26,4 @@ native/playfair/*.obj
 # Built by the release workflow (native/)
 mirroring/aacdec.dll
 mirroring/airplay/playfair.dll
+native/out/

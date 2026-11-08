@@ -20,6 +20,7 @@ use mirror_core::source::{RecordStream, VideoSource};
 use mirror_core::stream::Record;
 
 use crate::d3d::{Gpu, SharedRing, Slot};
+use crate::ffdec::{self, FfDec, VdFrame};
 use crate::stats::Stats;
 
 const MF_VERSION: u32 = 0x0002_0070;
@@ -438,7 +439,15 @@ fn session(
     stream: &mut dyn RecordStream,
 ) -> Result<()> {
     let mut ps: ParamSets = parse_config(&info.codec, &info.description).unwrap_or_default();
-    let mut mft = Mft::new(gpu, &info.codec)?;
+    let mut mft = match Mft::new(gpu, &info.codec) {
+        Ok(m) => m,
+        // Windows without Microsoft's HEVC extension: the built-in decoder.
+        Err(e) if matches!(info.codec, Codec::Hevc) && ffdec::available() => {
+            log::info!("decoder: no Media Foundation HEVC decoder ({e}), using videodec");
+            return session_ff(gpu, ring, stats, stop, source, info, stream);
+        }
+        Err(e) => return Err(e),
+    };
     stats.hardware.store(mft.hardware, Relaxed);
     log::info!(
         "decoder {:?} hardware={} provides_samples={} {}x{}",
@@ -513,5 +522,138 @@ fn session(
             }
         }
     }
+    Ok(())
+}
+
+/// [`session`] with the built-in HEVC decoder (videodec.dll).
+fn session_ff(
+    gpu: &Gpu,
+    ring: &SharedRing,
+    stats: &Stats,
+    stop: &AtomicBool,
+    source: &dyn VideoSource,
+    mut info: CodecInfo,
+    stream: &mut dyn RecordStream,
+) -> Result<()> {
+    let open = || {
+        FfDec::new(gpu).ok_or_else(|| {
+            windows::core::Error::new(
+                windows::Win32::Foundation::E_FAIL,
+                "videodec: the HEVC decoder could not start",
+            )
+        })
+    };
+    let mut ps: ParamSets = parse_config(&info.codec, &info.description).unwrap_or_default();
+    let mut dec = open()?;
+    stats.hardware.store(dec.hardware, Relaxed);
+    log::info!("decoder Hevc (videodec) hardware={}", dec.hardware);
+    let mut got_key = false;
+    let mut upload = None;
+    while !stop.load(Relaxed) {
+        let Some(rec) = stream.next_record() else {
+            return Ok(());
+        };
+        match rec {
+            Record::Config(c) => {
+                info = c;
+                ps = parse_config(&info.codec, &info.description).unwrap_or_default();
+                if !matches!(info.codec, Codec::Hevc) {
+                    // The stream switched codec: Media Foundation takes over.
+                    return Ok(());
+                }
+                dec = open()?;
+                stats.hardware.store(dec.hardware, Relaxed);
+                got_key = false;
+            }
+            Record::Frame { key, rebuild, data } => {
+                if rebuild {
+                    dec.flush();
+                }
+                if key {
+                    got_key = true;
+                }
+                if !got_key {
+                    continue;
+                }
+                stats.bytes.fetch_add(data.len() as u64, Relaxed);
+                let au = to_annexb(&data, &ps, key);
+                let start = Instant::now();
+                let mut sink = |f: &VdFrame| {
+                    stats
+                        .decode_us
+                        .store(start.elapsed().as_micros() as u32, Relaxed);
+                    match publish_ff(gpu, ring, stats, f, &mut upload) {
+                        Ok(()) => {
+                            stats.decoded.fetch_add(1, Relaxed);
+                        }
+                        Err(e) => {
+                            if stats.errors.fetch_add(1, Relaxed) < 5 {
+                                log::warn!("publish: {e}");
+                            }
+                        }
+                    }
+                };
+                if let Err(e) = dec.decode(&au, &mut sink) {
+                    log::warn!("decode: {e}");
+                    stats.errors.fetch_add(1, Relaxed);
+                    dec.flush();
+                    got_key = false;
+                    if info.keyframes_on_request {
+                        source.request_keyframe();
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// [`publish`] for a videodec frame.
+fn publish_ff(
+    gpu: &Gpu,
+    ring: &SharedRing,
+    stats: &Stats,
+    f: &VdFrame,
+    upload: &mut Option<(ID3D11Texture2D, u32, u32)>,
+) -> Result<()> {
+    // NV12 needs even sizes.
+    let (w, h) = ((f.width.max(0) as u32) & !1, (f.height.max(0) as u32) & !1);
+    if w == 0 || h == 0 {
+        return Ok(());
+    }
+    let src = ffdec::full_rect(w, h);
+    let idx = {
+        let mut r = ring.lock().unwrap();
+        let (idx, dropped) = r.free_slot();
+        if dropped > 0 {
+            stats.replaced.fetch_add(dropped, Relaxed);
+        }
+        let ok = matches!(&r.slots[idx], Some(s) if s.w == w && s.h == h);
+        if !ok {
+            r.slots[idx] = Some(Slot {
+                tex: gpu.nv12_texture(w, h, false)?,
+                w,
+                h,
+                src,
+            });
+        }
+        if let Some(s) = r.slots[idx].as_mut() {
+            s.src = src;
+        }
+        idx
+    };
+    let dst = ring.lock().unwrap().slots[idx]
+        .as_ref()
+        .unwrap()
+        .tex
+        .clone();
+    ffdec::copy_frame(gpu, f, &dst, w, h, upload)?;
+    let mut r = ring.lock().unwrap();
+    let dropped = r.push(idx);
+    if dropped > 0 {
+        stats.replaced.fetch_add(dropped, Relaxed);
+    }
+    stats.width.store(w, Relaxed);
+    stats.height.store(h, Relaxed);
     Ok(())
 }

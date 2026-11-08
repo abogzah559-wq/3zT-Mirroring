@@ -1,0 +1,31 @@
+#include <winver.h>
+#include "videodec_ver.h"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION VIDEODEC_VER_NUM
+PRODUCTVERSION VIDEODEC_VER_NUM
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "3zT"
+            VALUE "FileDescription", "3zT Mirroring video decoder (FFmpeg, LGPL-2.1+)"
+            VALUE "FileVersion", VIDEODEC_VER_STR
+            VALUE "InternalName", "videodec"
+            VALUE "LegalCopyright", "Copyright (C) 2026 3zT and Zenvy Zenshiro. GPL-3.0-or-later. Uses FFmpeg (LGPL-2.1-or-later)."
+            VALUE "OriginalFilename", "videodec.dll"
+            VALUE "ProductName", "3zT Mirroring"
+            VALUE "ProductVersion", VIDEODEC_VER_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END

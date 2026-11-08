@@ -35,7 +35,7 @@ unmodified (signed binaries); source: https://sourceforge.net/projects/libusb-wi
 - FFmpeg **9.0.2**, https://ffmpeg.org/releases/ffmpeg-9.0.2.tar.xz
   (SHA-256 `8c3850283eb25fa026482078a04051e0be17347b09ef81a0849bec15a96e002e`).
 - Licence: **LGPL-2.1-or-later** (no `--enable-gpl`, no `--enable-nonfree`).
-  The configure line is in `native/aacdec/build_ffmpeg.sh`.
+  The configure line is in `native/build_ffmpeg.sh`.
 
 ## scrcpy server, in `third_party/scrcpy`
 
