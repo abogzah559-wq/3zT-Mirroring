@@ -39,6 +39,10 @@ const SWITCH_AFTER_MS: u64 = 300;
 /// they came back to back (a fast burst or Alt+V paste); with a short gap
 /// none were lost.
 const KEY_GAP_MS: u64 = 12;
+/// How long a key stays down (ms). Pressed and released in the same instant,
+/// iOS typed letters but dropped Space and Return (iOS 27.2, even with gaps
+/// between taps); the upstream touch tap holds 50 ms for the same reason.
+const KEY_HOLD_MS: u64 = 25;
 
 /// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
 /// `kb-timing.txt` ("before after gap" in ms) in the data folder overrides
@@ -162,17 +166,14 @@ fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
                 let _ = reply.send(r);
             }
             Cmd::Keys(usages) => {
-                for report in key_reports(&usages) {
-                    api.key(&serde_json::json!({ "usages": report }));
-                }
-                std::thread::sleep(Duration::from_millis(pauses().2.min(200)));
+                let (_, _, gap, hold) = pauses();
+                tap(&api, &usages, hold);
+                std::thread::sleep(Duration::from_millis(gap.min(200)));
             }
             Cmd::SwitchLanguage => {
-                let (before, after, _) = pauses();
+                let (before, after, _, hold) = pauses();
                 std::thread::sleep(Duration::from_millis(before.min(2000)));
-                for report in key_reports(&[crate::shortcuts::HID_CTRL, 0x2c]) {
-                    api.key(&serde_json::json!({ "usages": report }));
-                }
+                tap(&api, &[crate::shortcuts::HID_CTRL, 0x2c], hold);
                 std::thread::sleep(Duration::from_millis(after.min(2000)));
             }
         }

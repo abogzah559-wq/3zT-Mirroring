@@ -2954,7 +2954,9 @@ export component AppWindow inherits Window {
     Rectangle {
         // Full screen has nothing behind the glass (Windows shows grey or
         // black there): solid theme colour instead, so light stays light.
-        background: root.clean ? #000000 : root.fullscreen ? (Theme.dark ? #161618 : #f2f2f7) : Theme.base;
+        // Clean view with the iPhone frame: nothing around the frame (the
+        // window is transparent there, the desktop shows).
+        background: root.clean ? (root.frame-show ? transparent : #000000) : root.fullscreen ? (Theme.dark ? #161618 : #f2f2f7) : Theme.base;
         border-radius: root.edge || root.clean ? 0px : 12px;
         clip: true;
         VerticalLayout {
@@ -3011,7 +3013,7 @@ export component AppWindow inherits Window {
                     stage := Rectangle {
                         vertical-stretch: 1;
                         border-radius: root.clean ? 0px : 22px;
-                        background: root.clean ? #000000 : root.picture ? Theme.stage : Theme.panel;
+                        background: root.clean ? (root.frame-show ? transparent : #000000) : root.picture ? Theme.stage : Theme.panel;
                         border-width: root.clean ? 0px : 1px;
                         border-color: Theme.edge;
                         clip: true;
