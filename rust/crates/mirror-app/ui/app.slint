@@ -59,6 +59,7 @@ export struct Prefs {
     language: string,         // "" = as Windows | en | ar
     ios-kb-layout: string,    // iPhone/iPad hardware keyboard: arabic | arabic-pc
     frame-on: bool,           // iPhone frame around the picture
+    shot-frame: bool,         // screenshots inside the frame (when it is shown)
 }
 
 // Window controls in the macOS style: close, minimise, zoom. The symbols
@@ -451,6 +452,7 @@ component BottomBar inherits Rectangle {
                 Chip { icon: "\u{E72E}"; tip: root.android ? @tr("Power button (lock / wake the screen)") : @tr("Lock screen"); label: compact ? "" : @tr("Lock"); clicked => { root.action("lock"); } }
                 if !root.android: Chip { icon: "\u{E785}"; tip: @tr("Wake and unlock (Alt+U)"); label: compact ? "" : @tr("Unlock"); clicked => { root.action("wake"); } }
                 if !root.android: Rectangle { width: 1px; background: Theme.dark ? #ffffff1f : #0000001a; }
+                Chip { icon: "\u{E722}"; tip: @tr("Screenshot (Alt+P): saved in Pictures › 3zT Screenshots and copied"); label: compact ? "" : @tr("Screenshot"); clicked => { root.action("screenshot"); } }
                 if !root.android: Chip { icon: "\u{E898}"; tip: @tr("Send files to the phone…"); label: compact ? "" : @tr("Send"); clicked => { root.action("files-send"); } }
                 if !root.android: Chip { icon: "\u{E896}"; tip: @tr("Import photos, videos and files from the phone…"); label: compact ? "" : @tr("Import"); clicked => { root.action("files-import"); } }
                 if !root.android: Chip { icon: "\u{E92E}"; tip: @tr("Show / hide the phone's on-screen keyboard (Ctrl+K)"); label: ""; clicked => { root.action("toggle-keyboard"); } }
@@ -1957,6 +1959,10 @@ component SettingsPanel inherits Glass {
                         hint: @tr("Alt+F at any time");
                         Toggle { checked: prefs.frame-on; toggled(v) => { root.prefs.frame-on = v; root.changed(root.prefs); } }
                     }
+                    if prefs.frame-on: Row {
+                        label: @tr("Screenshots with the frame");
+                        Toggle { checked: prefs.shot-frame; toggled(v) => { root.prefs.shot-frame = v; root.changed(root.prefs); } }
+                    }
                     if prefs.frame-on: swatches := FocusScope {
                         property <[{id: string, c: color, name: string}]> list: [
                             { id: "graphite", c: #4a4a50, name: @tr("Graphite") },
@@ -2164,6 +2170,7 @@ component SettingsPanel inherits Glass {
                     tint-b: #7c3aed;
                     info: @tr("While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.");
                     KeyRow { keys: "Alt + M"; text: @tr("Sound on the PC on / off"); }
+                    KeyRow { keys: "Alt + P"; text: @tr("Screenshot (Pictures › 3zT Screenshots, also copied)"); }
                     KeyRow { keys: "F2"; text: @tr("Show / hide the controls around the picture"); }
                     KeyRow { keys: "F11 · Esc"; text: @tr("Full screen / leave"); }
                     KeyRow { keys: "Ctrl + ,"; text: @tr("Open / close Settings"); }

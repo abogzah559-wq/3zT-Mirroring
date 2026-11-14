@@ -26,6 +26,8 @@ pub enum Shortcut {
     ClearText,
     /// Alt+F: iPhone frame on / off.
     Frame,
+    /// Alt+P: screenshot.
+    Screenshot,
     /// Apple Driver mode actions (`/api/keyboard/action`).
     Apple(&'static str),
     /// Android buttons (`android::Shared::action`).
@@ -70,6 +72,7 @@ pub fn route(
             ('s', true) => Some(Shortcut::Android("switcher")),
             ('r', _) => Some(Shortcut::ClearText),
             ('f', false) => Some(Shortcut::Frame),
+            ('p', _) => Some(Shortcut::Screenshot),
             (UP, true) => Some(Shortcut::Android("vol-up")),
             (DOWN, true) => Some(Shortcut::Android("vol-down")),
             _ => None,
@@ -595,6 +598,10 @@ mod tests {
             Some(Shortcut::Frame)
         );
         assert_eq!(route(true, "f", false, false, true, true), None);
+        assert_eq!(
+            route(true, "p", false, false, true, true),
+            Some(Shortcut::Screenshot)
+        );
         // Plain F types on the device.
         assert_eq!(route(false, "f", false, false, false, true), None);
     }

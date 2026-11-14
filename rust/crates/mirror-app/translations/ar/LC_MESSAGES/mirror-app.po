@@ -1940,3 +1940,27 @@ msgstr "فتح المجلد"
 
 msgid "Another transfer is running."
 msgstr "يوجد نقل آخر قيد التنفيذ."
+
+msgid "Screenshot (Alt+P): saved in Pictures › 3zT Screenshots and copied"
+msgstr "لقطة شاشة (Alt+P): تُحفظ في الصور › 3zT Screenshots وتُنسخ"
+
+msgid "Screenshot"
+msgstr "لقطة"
+
+msgid "Screenshots with the frame"
+msgstr "لقطات الشاشة مع الإطار"
+
+msgid "Screenshot (Pictures › 3zT Screenshots, also copied)"
+msgstr "لقطة شاشة (الصور › 3zT Screenshots، وتُنسخ أيضاً)"
+
+msgid "No picture to save yet."
+msgstr "لا توجد صورة لحفظها بعد."
+
+msgid "Screenshot saved in Pictures › 3zT Screenshots and copied."
+msgstr "تم حفظ اللقطة في الصور › 3zT Screenshots ونسخها."
+
+msgid "Screenshot saved in Pictures › 3zT Screenshots."
+msgstr "تم حفظ اللقطة في الصور › 3zT Screenshots."
+
+msgid "The screenshot was not saved: {}"
+msgstr "لم تُحفظ اللقطة: {}"

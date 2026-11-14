@@ -54,6 +54,7 @@ pub fn defaults() -> Prefs {
         language: "".into(),
         ios_kb_layout: "arabic".into(),
         frame_on: true,
+        shot_frame: true,
     }
 }
 
@@ -214,7 +215,7 @@ pub fn to_value(p: &Prefs) -> Value {
         "androidProfile": p.android_profile.as_str(), "androidEncoder": p.android_encoder.as_str(),
         "updateCheck": p.update_check, "updateChannel": p.update_channel.as_str(),
         "language": p.language.as_str(), "iosKbLayout": p.ios_kb_layout.as_str(),
-        "frameOn": p.frame_on,
+        "frameOn": p.frame_on, "shotFrame": p.shot_frame,
     })
 }
 

@@ -586,43 +586,6 @@ mod ios {
         ui.set_import_items(std::rc::Rc::new(slint::VecModel::from(rows)).into());
     }
 
-    fn date_text(t: i64) -> String {
-        // Local date and time from a Unix time, without a date crate:
-        // days since 1970 → civil date (Howard Hinnant's algorithm).
-        let offset = local_offset_secs();
-        let t = t + offset;
-        let (days, secs) = (t.div_euclid(86_400), t.rem_euclid(86_400));
-        let z = days + 719_468;
-        let era = z.div_euclid(146_097);
-        let doe = z - era * 146_097;
-        let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-        let y = yoe + era * 400;
-        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-        let mp = (5 * doy + 2) / 153;
-        let d = doy - (153 * mp + 2) / 5 + 1;
-        let m = if mp < 10 { mp + 3 } else { mp - 9 };
-        let y = if m <= 2 { y + 1 } else { y };
-        format!(
-            "{y}-{m:02}-{d:02} {:02}:{:02}",
-            secs / 3600,
-            secs % 3600 / 60
-        )
-    }
-
-    #[cfg(windows)]
-    fn local_offset_secs() -> i64 {
-        use windows::Win32::System::Time::{GetTimeZoneInformation, TIME_ZONE_INFORMATION};
-        let mut tz = TIME_ZONE_INFORMATION::default();
-        let r = unsafe { GetTimeZoneInformation(&mut tz) };
-        let bias = tz.Bias + if r == 2 { tz.DaylightBias } else { 0 };
-        -(bias as i64) * 60
-    }
-
-    #[cfg(not(windows))]
-    fn local_offset_secs() -> i64 {
-        0
-    }
-
     pub fn import_source(ui: &AppWindow, source: &str) {
         ui.set_import_source(if source == "apps" { "apps" } else { "media" }.into());
         set_rows(ui, Vec::new(), Vec::new());
@@ -721,7 +684,7 @@ mod ios {
             let time = it.get("time").and_then(Value::as_i64).unwrap_or(0);
             rows.push(ImportRow {
                 name: name.into(),
-                sub: format!("{} · {}", date_text(time), size_text(size)).into(),
+                sub: format!("{} · {}", crate::shot::date_text(time), size_text(size)).into(),
                 kind: it
                     .get("kind")
                     .and_then(Value::as_str)

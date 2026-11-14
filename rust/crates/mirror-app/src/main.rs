@@ -14,6 +14,7 @@ mod i18n;
 mod input;
 mod prefs;
 mod shortcuts;
+mod shot;
 mod tray;
 mod updater;
 mod usbphones;
@@ -2675,6 +2676,7 @@ fn run_shortcut(
         ),
         Shortcut::Lock => ui.invoke_action("lock".into()),
         Shortcut::CopyText => copy_screen_text(ui),
+        Shortcut::Screenshot => take_screenshot(ui),
         Shortcut::Frame => {
             let mut p = ui.get_prefs();
             p.frame_on = !p.frame_on;
@@ -2805,6 +2807,57 @@ fn unlock_device(ui: &AppWindow, input: &Input, auto: bool) {
                 _ => "The device didn't take the unlock. Enter the passcode on the device.",
             };
             show_toast(&ui, tr_ui(&ui, text));
+        });
+    });
+}
+
+/// Screenshot (Alt+P, dock): the picture at the stream's own size as PNG in
+/// Pictures › 3zT Screenshots, also on the clipboard; inside the iPhone
+/// frame when the frame is shown and "Screenshots with the frame" is on.
+fn take_screenshot(ui: &AppWindow) {
+    let live = APP.with_borrow(|a| a.streaming || a.android_live);
+    if !live {
+        show_toast(ui, tr_ui(ui, "Start mirroring first."));
+        return;
+    }
+    let shot = APP.with_borrow(|a| a.view.as_ref()?.snapshot_full(Duration::from_millis(800)));
+    let Some(shot) = shot else {
+        show_toast(ui, tr_ui(ui, "No picture to save yet."));
+        return;
+    };
+    let framed = FRAME_ON.load(Relaxed) && ui.get_prefs().shot_frame;
+    let finish = APP.with_borrow(|a| a.frame_finish.clone());
+    let weak = ui.as_weak();
+    std::thread::spawn(move || {
+        let mut pic = shot::Picture {
+            width: shot.width,
+            height: shot.height,
+            bgra: shot.bgra,
+        };
+        if framed {
+            pic = shot::framed(&pic, frame::finish(&finish));
+        }
+        let dir = shot::folder();
+        let saved = std::fs::create_dir_all(&dir)
+            .map_err(|e| e.to_string())
+            .and_then(|()| shot::png(&pic))
+            .and_then(|bytes| {
+                let path = shot::file_name(&dir, &shot::stamp_now(), "png");
+                std::fs::write(&path, bytes)
+                    .map(|()| path)
+                    .map_err(|e| e.to_string())
+            });
+        let copied = shot::to_clipboard(&pic);
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let en = match (&saved, copied) {
+                (Ok(_), true) => {
+                    "Screenshot saved in Pictures › 3zT Screenshots and copied.".to_string()
+                }
+                (Ok(_), false) => "Screenshot saved in Pictures › 3zT Screenshots.".to_string(),
+                (Err(e), _) => format!("The screenshot was not saved: {e}"),
+            };
+            show_toast(&ui, tr_ui(&ui, &en));
         });
     });
 }
@@ -3843,6 +3896,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 "wake" => unlock_device(&ui, &input, false),
                 "toggle-keyboard" => input.send(Cmd::Action("toggle-keyboard")),
                 "files-send" => filedrop::send_dialog(&ui),
+                "screenshot" => take_screenshot(&ui),
                 "files-import" => filedrop::import_open(&ui),
                 "mute" => {
                     let m = !ui.get_muted();
