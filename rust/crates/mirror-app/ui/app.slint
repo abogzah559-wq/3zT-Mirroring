@@ -2194,6 +2194,8 @@ component SettingsPanel inherits Glass {
                     info: @tr("While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.");
                     KeyRow { keys: "Alt + M"; text: @tr("Sound on the PC on / off"); }
                     KeyRow { keys: "Alt + P"; text: @tr("Screenshot (Pictures › 3zT Screenshots, also copied)"); }
+                    KeyRow { keys: "Ctrl + = / −"; text: @tr("Zoom in / out (Ctrl + 0 back to 100%, Ctrl + arrows move)"); }
+                    KeyRow { keys: "Ctrl + 1 / 9"; text: @tr("Actual size / fit the window"); }
                     if root.screen != "android": KeyRow { keys: "Alt + O"; text: @tr("Start / stop recording (Videos › 3zT Recordings)"); }
                     KeyRow { keys: "F2"; text: @tr("Show / hide the controls around the picture"); }
                     KeyRow { keys: "F11 · Esc"; text: @tr("Full screen / leave"); }

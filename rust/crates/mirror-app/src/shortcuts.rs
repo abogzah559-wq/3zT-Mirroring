@@ -30,6 +30,13 @@ pub enum Shortcut {
     Screenshot,
     /// Alt+O: start / stop recording (iPhone / iPad).
     Record,
+    /// Ctrl+= / Ctrl+- : zoom the picture in / out (Ctrl+0 back to 100%).
+    Zoom(i8),
+    /// Ctrl+arrows: move the zoomed picture (dx, dy).
+    Pan(i8, i8),
+    /// Ctrl+1: the picture at its own pixel size; Ctrl+9: fit the window.
+    ActualSize,
+    FitWindow,
     /// Apple Driver mode actions (`/api/keyboard/action`).
     Apple(&'static str),
     /// Android buttons (`android::Shared::action`).
@@ -40,6 +47,7 @@ pub enum Shortcut {
 const LEFT: char = '\u{F702}';
 const UP: char = '\u{F700}';
 const DOWN: char = '\u{F701}';
+const RIGHT: char = '\u{F703}';
 
 /// `typing`: the PC keyboard currently types on a live device.
 pub fn route(
@@ -84,6 +92,18 @@ pub fn route(
     if ctrl && !alt {
         if c == ',' {
             return Some(Shortcut::Settings);
+        }
+        match c {
+            '=' | '+' => return Some(Shortcut::Zoom(1)),
+            '-' | '_' => return Some(Shortcut::Zoom(-1)),
+            '0' => return Some(Shortcut::Zoom(0)),
+            '1' => return Some(Shortcut::ActualSize),
+            '9' => return Some(Shortcut::FitWindow),
+            LEFT => return Some(Shortcut::Pan(-1, 0)),
+            RIGHT => return Some(Shortcut::Pan(1, 0)),
+            UP => return Some(Shortcut::Pan(0, -1)),
+            DOWN => return Some(Shortcut::Pan(0, 1)),
+            _ => {}
         }
         // Apple: Ctrl+letter = Cmd+letter on the device; Ctrl+K keyboard.
         // (Android maps Ctrl+letter itself in `android::key_input`.)
@@ -607,6 +627,34 @@ mod tests {
         );
         // Plain F types on the device.
         assert_eq!(route(false, "f", false, false, false, true), None);
+    }
+
+    #[test]
+    fn zoom_and_pan_on_ctrl() {
+        for android in [false, true] {
+            assert_eq!(
+                route(android, "=", true, false, false, true),
+                Some(Shortcut::Zoom(1))
+            );
+            assert_eq!(
+                route(android, "-", true, false, false, true),
+                Some(Shortcut::Zoom(-1))
+            );
+            assert_eq!(
+                route(android, "0", true, false, false, true),
+                Some(Shortcut::Zoom(0))
+            );
+            assert_eq!(
+                route(android, "\u{F703}", true, false, false, true),
+                Some(Shortcut::Pan(1, 0))
+            );
+            assert_eq!(
+                route(android, "1", true, false, false, true),
+                Some(Shortcut::ActualSize)
+            );
+        }
+        // Plain arrows still go to the device.
+        assert_eq!(route(false, "\u{F703}", false, false, false, true), None);
     }
 
     #[test]

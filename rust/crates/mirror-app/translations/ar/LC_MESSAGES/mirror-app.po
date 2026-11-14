@@ -1994,3 +1994,18 @@ msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings.
 
 msgid "Recording saved in Videos › 3zT Recordings as {} parts (the device turned)."
 msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings في {} أجزاء (الجهاز دار)."
+
+msgid "Zoom {}%"
+msgstr "التكبير {}%"
+
+msgid "Actual size (as far as the screen allows)"
+msgstr "الحجم الفعلي (بقدر ما تسمح الشاشة)"
+
+msgid "Fit to the window"
+msgstr "ملاءمة النافذة"
+
+msgid "Zoom in / out (Ctrl + 0 back to 100%, Ctrl + arrows move)"
+msgstr "تكبير / تصغير (Ctrl + 0 للعودة إلى 100%، Ctrl + الأسهم للتحريك)"
+
+msgid "Actual size / fit the window"
+msgstr "الحجم الفعلي / ملاءمة النافذة"

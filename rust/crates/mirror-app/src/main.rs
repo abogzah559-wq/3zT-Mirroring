@@ -228,6 +228,10 @@ struct App {
     /// The Apple device shown (UDID) and whether it is an iPad (no frame).
     apple_udid: String,
     apple_ipad: bool,
+    /// Zoom (1 = whole picture, up to 4) and the centre of the zoomed part
+    /// (0..1 of the picture, in the device's own orientation).
+    zoom: f32,
+    pan: (f32, f32),
     /// The screen recording running, if any.
     recording: Option<record::Recording>,
     /// Folder the last import from the phone went to ("Open folder").
@@ -864,6 +868,8 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         if live != a.streaming {
             a.streaming = live;
             a.fitted = None;
+            a.zoom = 1.0;
+            a.pan = (0.5, 0.5);
             if let Some(v) = a.view.as_mut() {
                 if live {
                     v.start(api.clone());
@@ -2682,6 +2688,52 @@ fn run_shortcut(
         Shortcut::CopyText => copy_screen_text(ui),
         Shortcut::Screenshot => take_screenshot(ui),
         Shortcut::Record => toggle_recording(ui),
+        Shortcut::Zoom(d) => {
+            let z = APP.with_borrow_mut(|a| {
+                let z = if a.zoom < 1.0 { 1.0 } else { a.zoom };
+                a.zoom = match d {
+                    1 => (z * 1.25).min(4.0),
+                    -1 => (z / 1.25).max(1.0),
+                    _ => 1.0,
+                };
+                if a.zoom <= 1.0 {
+                    a.pan = (0.5, 0.5);
+                }
+                a.zoom
+            });
+            show_toast(ui, tr_ui(ui, &format!("Zoom {}%", (z * 100.0).round())));
+        }
+        Shortcut::Pan(dx, dy) => APP.with_borrow_mut(|a| {
+            if a.zoom > 1.0 {
+                let (dx, dy) = (dx as f32, dy as f32);
+                let step = 0.1;
+                a.pan.0 = (a.pan.0 + dx * step).clamp(0.0, 1.0);
+                a.pan.1 = (a.pan.1 + dy * step).clamp(0.0, 1.0);
+            }
+        }),
+        Shortcut::ActualSize => {
+            let size = APP.with_borrow(|a| a.view.as_ref().map(|v| v.shown_size()));
+            let sf = ui.window().scale_factor();
+            if let Some(shown) = size.filter(|s| s.0 > 0) {
+                if let Some((_, dh)) = default_fit(ui, shown) {
+                    let native_h = framed_size(shown).1 as f32 / sf;
+                    APP.with_borrow_mut(|a| {
+                        a.user_scale = (native_h / dh).clamp(0.2, 4.0);
+                        a.fitted = None;
+                    });
+                    show_toast(ui, tr_ui(ui, "Actual size (as far as the screen allows)"));
+                }
+            }
+        }
+        Shortcut::FitWindow => {
+            APP.with_borrow_mut(|a| {
+                a.user_scale = 0.0;
+                a.zoom = 1.0;
+                a.pan = (0.5, 0.5);
+                a.fitted = None;
+            });
+            show_toast(ui, tr_ui(ui, "Fit to the window"));
+        }
         Shortcut::Frame => {
             let mut p = ui.get_prefs();
             p.frame_on = !p.frame_on;
@@ -2937,6 +2989,32 @@ fn recording_tick(ui: &AppWindow) {
             show_toast(ui, tr_ui(ui, &en));
         }
     }
+}
+
+/// The crop that shows the zoomed part: the user's own crop plus what
+/// zoom `z` leaves out around the centre `pan` (0..1). The view's touch
+/// mapping already accounts for the crop, so taps land where they point.
+fn zoom_crop(
+    frame: (u32, u32),
+    user: (u32, u32, u32, u32),
+    z: f32,
+    pan: (f32, f32),
+) -> (u32, u32, u32, u32) {
+    let (l, t, r, b) = user;
+    if z <= 1.0 || frame.0 == 0 || frame.1 == 0 {
+        return user;
+    }
+    let w = frame.0.saturating_sub(l + r) as f32;
+    let h = frame.1.saturating_sub(t + b) as f32;
+    let (fw, fh) = (w - w / z, h - h / z);
+    let el = (fw * pan.0.clamp(0.0, 1.0)).round();
+    let et = (fh * pan.1.clamp(0.0, 1.0)).round();
+    (
+        l + el as u32,
+        t + et as u32,
+        r + (fw - el).max(0.0) as u32,
+        b + (fh - et).max(0.0) as u32,
+    )
 }
 
 /// Alt+G and the AR / EN mark: the device typed the other language than
@@ -4630,7 +4708,13 @@ fn main() -> Result<(), slint::PlatformError> {
                 // scrcpy sends the picture already turned; Apple reports the angle separately.
                 let device_rotation = if on_android { 0 } else { a.device_rotation };
                 let Some(v) = a.view.as_ref() else { return };
-                v.set_crop(p.crop_l as u32, p.crop_t as u32, p.crop_r as u32, p.crop_b as u32);
+                let (zl, zt, zr, zb) = zoom_crop(
+                    v.frame_size(),
+                    (p.crop_l as u32, p.crop_t as u32, p.crop_r as u32, p.crop_b as u32),
+                    a.zoom,
+                    a.pan,
+                );
+                v.set_crop(zl, zt, zr, zb);
                 v.set_fit(match p.fit.as_str() {
                     "cover" => Fit::Cover,
                     "fill" => Fit::Fill,
