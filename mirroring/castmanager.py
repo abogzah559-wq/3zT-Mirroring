@@ -93,6 +93,7 @@ def _receiver_name() -> str:
 
 class CastManager:
     def __init__(self) -> None:
+        self._picture: str | None = None
         self._lock = threading.Lock()
         self._listeners: set[Listener] = set()
         self.connection = ConnectionModeManager()
@@ -319,7 +320,7 @@ class CastManager:
         """Add what 3zT Mirroring will try for this device (not yet verified)."""
         level = capability.expected(self.connection.active, d.get("os"))
         out = {**d, "control": level}
-        if level == "hybrid":
+        if level == "hybrid" or (level == "native" and self._picture == "airplay"):
             out.update(hybrid=True, receiver=_receiver_name())
         return out
 
@@ -334,6 +335,8 @@ class CastManager:
 
     def start(self, options: dict | None = None) -> dict:
         self._airplay_paused = False
+        # iOS 27+ picture choice ("airplay" = Hybrid), also for the UI's guide.
+        self._picture = (options or {}).get("picture")
         if self._session is not None or self.driver_busy:
             return self.snapshot()
         mode = self.connection.active
