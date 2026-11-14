@@ -932,6 +932,13 @@ static FRAME_ON: AtomicBool = AtomicBool::new(false);
 /// Whether to draw the iPhone frame: Apple screen, picture running, an
 /// iPhone (no frames for iPad / Android in this version), "Whole picture"
 /// fit and the frame turned on. F2 (clean view) keeps it.
+/// Session options for the backend: where an iOS 27+ device's picture comes
+/// from in Apple Driver mode ("airplay" = Hybrid: AirPlay picture at up to
+/// 60 fps, touch and keys over the Apple driver).
+fn cast_options(p: &Prefs) -> Value {
+    serde_json::json!({ "picture": p.apple_picture.as_str() })
+}
+
 fn frame_wanted(ui: &AppWindow, streaming: bool, ipad: bool) -> bool {
     let p = ui.get_prefs();
     p.frame_on
@@ -2814,15 +2821,6 @@ fn type_on_apple(input: &Input, text: &str, layout: shortcuts::KbLayout) -> (boo
                 (usage, shifted) = (u, sh);
             }
         }
-        // TEMPORARY (2.1 keyboard diagnosis, removed before the release):
-        // only with MIRROR_KEYLOG set on a test PC.
-        if std::env::var_os("MIRROR_KEYLOG").is_some() {
-            log::info!(
-                "keylog: got U+{:04X} usage 0x{usage:02x} shift {shifted} arabic_before {arabic_now} arabic_now {} layout {layout:?}",
-                c as u32,
-                IOS_ARABIC.load(Relaxed)
-            );
-        }
         let mut usages = Vec::with_capacity(2);
         if shifted {
             usages.push(shortcuts::HID_SHIFT);
@@ -3558,7 +3556,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             }
             let a = api.clone();
-            std::thread::spawn(move || a.start_cast());
+            let options = cast_options(&prefs::load());
+            std::thread::spawn(move || a.start_cast(options));
         });
     }
     {
@@ -3691,7 +3690,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     }
                 }
                 std::thread::sleep(Duration::from_millis(300));
-                a.start_cast();
+                a.start_cast(cast_options(&prefs::load()));
             });
         });
     }

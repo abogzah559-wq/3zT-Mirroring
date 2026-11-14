@@ -60,6 +60,7 @@ export struct Prefs {
     ios-kb-layout: string,    // iPhone/iPad hardware keyboard: arabic | arabic-pc
     frame-on: bool,           // iPhone frame around the picture
     shot-frame: bool,         // screenshots inside the frame (when it is shown)
+    apple-picture: string,    // iOS 27+ Apple Driver picture: apple | airplay (Hybrid, 60 fps)
 }
 
 // Window controls in the macOS style: close, minimise, zoom. The symbols
@@ -2151,6 +2152,25 @@ component SettingsPanel inherits Glass {
                         labels: [@tr("Low"), @tr("Normal"), @tr("High")];
                         value: prefs.audio-buffer;
                         changed(v) => { root.prefs.audio-buffer = v; root.changed(root.prefs); }
+                    }
+                }
+
+                if !root.studio && root.screen != "android": Card {
+                    title: @tr("iPhone picture");
+                    icon: "\u{E7F4}";
+                    tint-a: #34d399;
+                    tint-b: #059669;
+                    info: @tr("Apple: the picture comes over Apple's own channel; sharp, but the iPhone lowers the frame rate (often 20–40 fps). AirPlay: up to 60 fps; touch, keyboard and buttons still go over the Apple driver. With AirPlay, open Control Center on the iPhone › Screen Mirroring and pick this PC. Applies the next time mirroring starts (Restart). Experimental on iOS 27.");
+                    Row {
+                        label: @tr("Picture source");
+                        hint: @tr("AirPlay: smoother, up to 60 fps (experimental)");
+                        Seg {
+                            width: 190px;
+                            options: ["apple", "airplay"];
+                            labels: [@tr("Apple"), @tr("AirPlay · 60 fps")];
+                            value: prefs.apple-picture;
+                            changed(v) => { root.prefs.apple-picture = v; root.changed(root.prefs); }
+                        }
                     }
                 }
 

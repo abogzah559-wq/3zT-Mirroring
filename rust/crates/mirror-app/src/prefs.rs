@@ -55,6 +55,7 @@ pub fn defaults() -> Prefs {
         ios_kb_layout: "arabic".into(),
         frame_on: true,
         shot_frame: true,
+        apple_picture: "apple".into(),
     }
 }
 
@@ -144,6 +145,9 @@ pub fn from_value(v: &Value) -> Prefs {
         &mut p.ios_kb_layout,
         &["arabic", "arabic-pc"],
     );
+    b("frameOn", &mut p.frame_on);
+    b("shotFrame", &mut p.shot_frame);
+    s("applePicture", &mut p.apple_picture, &["apple", "airplay"]);
     // Android picture: scrcpy server options.
     s(
         "androidMaxSize",
@@ -216,6 +220,7 @@ pub fn to_value(p: &Prefs) -> Value {
         "updateCheck": p.update_check, "updateChannel": p.update_channel.as_str(),
         "language": p.language.as_str(), "iosKbLayout": p.ios_kb_layout.as_str(),
         "frameOn": p.frame_on, "shotFrame": p.shot_frame,
+        "applePicture": p.apple_picture.as_str(),
     })
 }
 

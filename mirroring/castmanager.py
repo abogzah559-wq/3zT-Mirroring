@@ -394,7 +394,9 @@ class CastManager:
                 self._set_state("error", error=_old_ios_message(str(target.get("os"))))
                 return self.snapshot()
             options = {**(options or {}), "wifi": bool(target.get("wifi"))}
-            if level == "hybrid":
+            # iOS 27+ can choose Hybrid too: AirPlay's picture runs at up to
+            # 60 fps where Apple's screen service drops to 20-40 under motion.
+            if level == "hybrid" or (level == "native" and options.get("picture") == "airplay"):
                 from mirroring.apple.hybrid import HybridSession
                 from mirroring.usbdirect.hub import MediaHub
 

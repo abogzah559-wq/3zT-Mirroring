@@ -48,24 +48,12 @@ async def _reset_userspace_tunnel() -> None:
         log.debug("tunnel reset: %s", error)
 
 
-class AppleCastSession:
-    def __init__(self, udid: str, on_state: Callable[[str, str], None], options: dict,
-                 on_rotation: Callable[[int | None], None] | None = None) -> None:
-        self.udid = udid
-        self.on_state = on_state
-        self.on_rotation = on_rotation or (lambda _r: None)
-        self.options = options
-        self.wifi = bool(options.get("wifi"))
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self._task: asyncio.Task | None = None
-        self._server = None
-        self._rsd = None
+class TunnelHooks:
+    """Work through a session's own CoreDevice tunnel (USB and Wi-Fi), for
+    sessions that keep `_loop` and `_rsd` (Apple and Hybrid)."""
 
-    # ------------------------------------------------------------ control
-
-    def run(self) -> None:
-        """Blocking; returns when stopped or when the stream ends."""
-        asyncio.run(self._main())
+    _loop: asyncio.AbstractEventLoop | None = None
+    _rsd = None
 
     def submit(self, make):
         """Runs `make(rsd)` (a coroutine using this session's tunnel) on the
@@ -94,6 +82,26 @@ class AppleCastSession:
         except Exception:  # noqa: BLE001
             return None
         return value if isinstance(value, bool) else None
+
+
+class AppleCastSession(TunnelHooks):
+    def __init__(self, udid: str, on_state: Callable[[str, str], None], options: dict,
+                 on_rotation: Callable[[int | None], None] | None = None) -> None:
+        self.udid = udid
+        self.on_state = on_state
+        self.on_rotation = on_rotation or (lambda _r: None)
+        self.options = options
+        self.wifi = bool(options.get("wifi"))
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._task: asyncio.Task | None = None
+        self._server = None
+        self._rsd = None
+
+    # ------------------------------------------------------------ control
+
+    def run(self) -> None:
+        """Blocking; returns when stopped or when the stream ends."""
+        asyncio.run(self._main())
 
     def stop(self) -> None:
         loop, task = self._loop, self._task
