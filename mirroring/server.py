@@ -214,28 +214,108 @@ def build_app(manager: CastManager) -> web.Application:
             return web.json_response({"ok": False, "message": files._short(error)}, status=502)
         return web.json_response({"ok": True, "device": dev.get("deviceName") or dev.get("name"), "apps": apps})
 
+    def json_only(request: web.Request) -> web.Response | None:
+        # A JSON content type keeps web pages from posting here (CORS preflight).
+        if request.content_type != "application/json":
+            return web.json_response({"ok": False, "message": "JSON only."}, status=415)
+        return None
+
+    def no_device() -> web.Response:
+        return web.json_response({"ok": False, "message": "Needs Apple Driver mode and a connected device."},
+                                 status=409)
+
+    def busy() -> web.Response | None:
+        from mirroring.apple import files
+
+        if files.job.get("state") == "running":
+            return web.json_response({"ok": False, "message": "Another transfer is running."}, status=409)
+        return None
+
     @routes.post("/api/files/send")
     async def files_send(request: web.Request) -> web.Response:
         from pathlib import Path
 
         from mirroring.apple import files
 
-        # A JSON content type keeps web pages from posting here (CORS preflight).
-        if request.content_type != "application/json":
-            return web.json_response({"ok": False, "message": "JSON only."}, status=415)
+        if (r := json_only(request)) is not None:
+            return r
         body = await request.json()
         dev = files_device()
-        local = Path(str(body.get("path") or ""))
+        raw = body.get("paths") if isinstance(body.get("paths"), list) else [body.get("path")]
+        paths = [Path(str(p)) for p in raw if p][:5000]
         bundle = str(body.get("bundle") or "")
         if dev is None:
-            return web.json_response({"ok": False, "message": "Needs Apple Driver mode and a connected device."},
-                                     status=409)
-        if not local.is_absolute() or not local.is_file() or not re.fullmatch(r"[A-Za-z0-9.\-]+", bundle):
+            return no_device()
+        if not paths or any(not p.is_absolute() or not p.exists() for p in paths) \
+                or not re.fullmatch(r"[A-Za-z0-9.\-]+", bundle):
             return web.json_response({"ok": False, "message": "Bad file or app."}, status=400)
-        if files.job.get("state") == "running":
-            return web.json_response({"ok": False, "message": "Another file is being sent."}, status=409)
-        files.start(asyncio.get_running_loop(), dev["id"], bundle, str(body.get("app") or bundle), local)
+        if (r := busy()) is not None:
+            return r
+        app_name = str(body.get("app") or bundle)
+        files.start(asyncio.get_running_loop(), lambda: files.send_many(dev["id"], bundle, app_name, paths))
         return web.json_response({"ok": True})
+
+    @routes.get("/api/files/media")
+    async def files_media(_request: web.Request) -> web.Response:
+        from mirroring.apple import files
+
+        dev = files_device()
+        if dev is None:
+            return no_device()
+        try:
+            items = await files.list_media(dev["id"])
+        except Exception as error:
+            log.warning("files: media list failed: %s", type(error).__name__)
+            return web.json_response({"ok": False, "message": files._short(error)}, status=502)
+        return web.json_response({"ok": True, "items": items})
+
+    @routes.get("/api/files/app-files")
+    async def files_app_files(request: web.Request) -> web.Response:
+        from mirroring.apple import files
+
+        dev = files_device()
+        bundle = request.query.get("bundle", "")
+        if dev is None:
+            return no_device()
+        if not re.fullmatch(r"[A-Za-z0-9.\-]+", bundle):
+            return web.json_response({"ok": False, "message": "Bad app."}, status=400)
+        try:
+            items = await files.list_app_files(dev["id"], bundle)
+        except Exception as error:
+            log.warning("files: app file list failed: %s", type(error).__name__)
+            return web.json_response({"ok": False, "message": files._short(error)}, status=502)
+        return web.json_response({"ok": True, "items": items})
+
+    @routes.post("/api/files/pull")
+    async def files_pull(request: web.Request) -> web.Response:
+        from pathlib import Path
+
+        from mirroring.apple import files
+
+        if (r := json_only(request)) is not None:
+            return r
+        body = await request.json()
+        dev = files_device()
+        source = str(body.get("source") or "")
+        items = [str(i) for i in body.get("items") or [] if isinstance(i, str)][:5000]
+        dest = Path(str(body.get("dest") or ""))
+        if dev is None:
+            return no_device()
+        if not (source == "media" or re.fullmatch(r"[A-Za-z0-9.\-]+", source)) or not items \
+                or not dest.is_absolute():
+            return web.json_response({"ok": False, "message": "Bad request."}, status=400)
+        if (r := busy()) is not None:
+            return r
+        files.start(asyncio.get_running_loop(), lambda: files.pull_many(dev["id"], source, items, dest))
+        return web.json_response({"ok": True})
+
+    @routes.post("/api/files/cancel")
+    async def files_cancel(request: web.Request) -> web.Response:
+        from mirroring.apple import files
+
+        if (r := json_only(request)) is not None:
+            return r
+        return web.json_response({"ok": files.cancel()})
 
     @routes.get("/api/files/job")
     async def files_job(_request: web.Request) -> web.Response:

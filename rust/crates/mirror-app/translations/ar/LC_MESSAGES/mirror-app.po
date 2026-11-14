@@ -1817,3 +1817,126 @@ msgstr "إطار الآيفون ظاهر"
 
 msgid "iPhone frame off"
 msgstr "إطار الآيفون مخفي"
+
+msgid "Import from the phone"
+msgstr "استيراد من الجوال"
+
+msgid "Photos & videos"
+msgstr "الصور والفيديو"
+
+msgid "App files"
+msgstr "ملفات التطبيقات"
+
+msgid "Select all"
+msgstr "تحديد الكل"
+
+msgid "None"
+msgstr "لا شيء"
+
+msgid "To: "
+msgstr "إلى: "
+
+msgid "Change…"
+msgstr "تغيير…"
+
+msgid "Import {} file(s)"
+msgstr "استيراد {} ملف"
+
+msgid "Import"
+msgstr "استيراد"
+
+msgid "Wake and unlock (Alt+U)"
+msgstr "تنبيه وفتح القفل (Alt+U)"
+
+msgid "Unlock"
+msgstr "فتح القفل"
+
+msgid "Send files to the phone…"
+msgstr "إرسال ملفات إلى الجوال…"
+
+msgid "Send"
+msgstr "إرسال"
+
+msgid "Import photos, videos and files from the phone…"
+msgstr "استيراد صور وفيديو وملفات من الجوال…"
+
+msgid "Show / hide the phone's on-screen keyboard (Ctrl+K)"
+msgstr "إظهار / إخفاء كيبورد الجوال (Ctrl+K)"
+
+msgid "Files to and from an iPhone/iPad need Apple Driver mode (Studio mode cannot)."
+msgstr "نقل الملفات من وإلى الآيفون/الآيباد يحتاج وضع Apple Driver (لا يمكن في Studio mode)."
+
+msgid "Send {} item(s) to an app on the iPhone/iPad"
+msgstr "إرسال {} عنصر إلى تطبيق في الآيفون/الآيباد"
+
+msgid "The files were not sent."
+msgstr "لم تُرسل الملفات."
+
+msgid "{} file(s) sent to {}. Open {} or Files › On My iPhone."
+msgstr "تم إرسال {} ملف إلى {}. افتح {} أو الملفات › على الـ iPhone."
+
+msgid "Cancelled: {} of {} file(s) sent; the unfinished one was removed."
+msgstr "أُلغي النقل: تم إرسال {} من {} ملف، وحُذف الملف غير المكتمل."
+
+msgid "{} of {} file(s) sent to {}. {}"
+msgstr "تم إرسال {} من {} ملف إلى {}. {}"
+
+msgid "Sending {} ({}/{}) · {}%"
+msgstr "جارٍ إرسال {} ({}/{}) · {}%"
+
+msgid "Importing {} ({}/{}) · {}%"
+msgstr "جارٍ استيراد {} ({}/{}) · {}%"
+
+msgid "Sending {} ({}/{}) · {}% · {}/s"
+msgstr "جارٍ إرسال {} ({}/{}) · {}% · {}/ث"
+
+msgid "Importing {} ({}/{}) · {}% · {}/s"
+msgstr "جارٍ استيراد {} ({}/{}) · {}% · {}/ث"
+
+msgid "Reading the photos and videos on the device…"
+msgstr "جارٍ قراءة الصور والفيديو في الجهاز…"
+
+msgid "No app shares files (File Sharing). Apps like VLC or Documents do."
+msgstr "لا يوجد تطبيق يشارك ملفاته (File Sharing). تطبيقات مثل VLC وDocuments تشاركها."
+
+msgid "Pick an app to see the files it shares."
+msgstr "اختر تطبيقاً لترى الملفات التي يشاركها."
+
+msgid "No photos or videos on the device. Photos kept only in iCloud are not on the device and can't be imported here."
+msgstr "لا توجد صور أو فيديو في الجهاز. الصور المحفوظة في iCloud فقط ليست على الجهاز ولا يمكن استيرادها من هنا."
+
+msgid "This app shares no files."
+msgstr "هذا التطبيق لا يشارك أي ملفات."
+
+msgid "Newest first. Photos kept only in iCloud are not listed. Files come as they are (HEIC stays HEIC)."
+msgstr "الأحدث أولاً. الصور المحفوظة في iCloud فقط لا تظهر. تُنقل الملفات كما هي (HEIC يبقى HEIC)."
+
+msgid "Newest first. Files come as they are."
+msgstr "الأحدث أولاً. تُنقل الملفات كما هي."
+
+msgid "Reading the app's files…"
+msgstr "جارٍ قراءة ملفات التطبيق…"
+
+msgid "Folder for files from the phone"
+msgstr "مجلد الملفات القادمة من الجوال"
+
+msgid "Send to the phone"
+msgstr "إرسال إلى الجوال"
+
+msgid "Nothing was imported."
+msgstr "لم يُستورد شيء."
+
+msgid "{} file(s) saved in {}."
+msgstr "تم حفظ {} ملف في {}."
+
+msgid "Cancelled: {} of {} file(s) saved; the unfinished one was removed."
+msgstr "أُلغي النقل: تم حفظ {} من {} ملف، وحُذف الملف غير المكتمل."
+
+msgid "{} of {} file(s) saved. {}"
+msgstr "تم حفظ {} من {} ملف. {}"
+
+msgid "Open folder"
+msgstr "فتح المجلد"
+
+msgid "Another transfer is running."
+msgstr "يوجد نقل آخر قيد التنفيذ."

@@ -449,6 +449,11 @@ component BottomBar inherits Rectangle {
                 if root.android: Chip { icon: "\u{E993}"; tip: @tr("Phone volume down"); label: ""; clicked => { root.action("vol-down"); } }
                 if root.android: Chip { icon: "\u{E995}"; tip: @tr("Phone volume up"); label: ""; clicked => { root.action("vol-up"); } }
                 Chip { icon: "\u{E72E}"; tip: root.android ? @tr("Power button (lock / wake the screen)") : @tr("Lock screen"); label: compact ? "" : @tr("Lock"); clicked => { root.action("lock"); } }
+                if !root.android: Chip { icon: "\u{E785}"; tip: @tr("Wake and unlock (Alt+U)"); label: compact ? "" : @tr("Unlock"); clicked => { root.action("wake"); } }
+                if !root.android: Rectangle { width: 1px; background: Theme.dark ? #ffffff1f : #0000001a; }
+                if !root.android: Chip { icon: "\u{E898}"; tip: @tr("Send files to the phone…"); label: compact ? "" : @tr("Send"); clicked => { root.action("files-send"); } }
+                if !root.android: Chip { icon: "\u{E896}"; tip: @tr("Import photos, videos and files from the phone…"); label: compact ? "" : @tr("Import"); clicked => { root.action("files-import"); } }
+                if !root.android: Chip { icon: "\u{E92E}"; tip: @tr("Show / hide the phone's on-screen keyboard (Ctrl+K)"); label: ""; clicked => { root.action("toggle-keyboard"); } }
             }
         }
     }
@@ -2448,6 +2453,134 @@ component SettingsPanel inherits Glass {
 // Android app launcher: a grid like the phone's app drawer, over
 // the picture while a phone is mirrored (dock › Apps). The picture leaves its
 // rectangle open (main.rs, VideoView::set_holes).
+// One item in the "Import from the phone" list: a photo, a video, a file,
+// or an app (to open its shared files).
+export struct ImportRow {
+    name: string,
+    sub: string,
+    kind: string,   // photo | video | other | app
+    checked: bool,
+}
+
+// iPhone/iPad → PC: pick photos, videos or app files and a folder.
+component ImportSheet inherits Rectangle {
+    in property <bool> open;
+    in property <string> status;
+    in property <bool> busy;
+    in property <string> source;   // media | app | apps (the app list)
+    in property <[ImportRow]> items;
+    in property <int> picked;
+    in property <string> dest;
+    callback toggle(int);
+    callback all(bool);
+    callback set-source(string);
+    callback change-dest();
+    callback start();
+    callback close();
+    border-radius: 22px;
+    background: Theme.dark ? #18181cf5 : #f6f6f9f5;
+    border-width: 0.75px;
+    border-color: Theme.dark ? #ffffff24 : #0000001c;
+    drop-shadow-blur: 24px;
+    drop-shadow-offset-y: 8px;
+    drop-shadow-color: #00000055;
+    clip: true;
+    property <float> t: root.open ? 1 : 0;
+    animate t { duration: 220ms; easing: cubic-bezier(0.2, 0.9, 0.3, 1); }
+    opacity: self.t;
+    visible: self.t > 0.01;
+    TouchArea { }
+    VerticalLayout {
+        y: 14px * (1 - root.t);
+        padding: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text { text: @tr("Import from the phone"); font-size: 14px; font-weight: 700; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; overflow: elide; }
+            GlassButton { icon: "\u{E711}"; tip: @tr("Close"); clicked => { root.close(); } }
+        }
+        Seg {
+            options: ["media", "apps"];
+            labels: [@tr("Photos & videos"), @tr("App files")];
+            value: root.source == "app" ? "apps" : root.source;
+            changed(v) => { root.set-source(v); }
+        }
+        Text { text: root.status; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
+        if root.source != "apps" && root.items.length > 0: HorizontalLayout {
+            spacing: 8px;
+            Text { text: root.picked + " / " + root.items.length; font-size: 11.5px; color: Theme.text-3; vertical-alignment: center; horizontal-stretch: 1; }
+            GlassButton { label: @tr("Select all"); clicked => { root.all(true); } }
+            GlassButton { label: @tr("None"); clicked => { root.all(false); } }
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            min-height: 120px;
+            VerticalLayout {
+                spacing: 2px;
+                for it[i] in root.items: Rectangle {
+                    height: 40px;
+                    border-radius: 10px;
+                    background: rowTa.has-hover ? Theme.hover : it.checked ? Theme.accent-soft : transparent;
+                    rowTa := TouchArea { mouse-cursor: pointer; clicked => { root.toggle(i); } }
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        spacing: 10px;
+                        Rectangle {
+                            layout-order: Theme.rtl ? 3 : 0;
+                            width: 18px;
+                            Rectangle {
+                                width: 18px;
+                                height: 18px;
+                                y: (parent.height - self.height) / 2;
+                                border-radius: it.kind == "app" ? 9px : 5px;
+                                border-width: 1.5px;
+                                border-color: it.checked ? Theme.accent : Theme.text-3;
+                                background: it.checked ? Theme.accent : transparent;
+                                Icon {
+                                    text: it.kind == "app" ? "\u{E76C}" : "\u{E73E}";
+                                    font-size: 10px;
+                                    color: it.kind == "app" ? Theme.text-2 : Theme.btn-text;
+                                    visible: it.checked || it.kind == "app";
+                                }
+                            }
+                        }
+                        Icon {
+                            layout-order: Theme.rtl ? 2 : 0;
+                            width: 18px;
+                            text: it.kind == "photo" ? "\u{EB9F}" : it.kind == "video" ? "\u{E714}" : it.kind == "app" ? "\u{E71D}" : "\u{E8A5}";
+                            font-size: 14px;
+                            color: Theme.text-2;
+                        }
+                        VerticalLayout {
+                            layout-order: Theme.rtl ? 1 : 0;
+                            alignment: center;
+                            horizontal-stretch: 1;
+                            Text { text: it.name; font-size: 12.5px; color: Theme.text; overflow: elide; }
+                            Text { text: it.sub; font-size: 10.5px; color: Theme.text-3; overflow: elide; }
+                        }
+                    }
+                }
+            }
+        }
+        if root.source != "apps": HorizontalLayout {
+            spacing: 8px;
+            Text { text: @tr("To: ") + root.dest; font-size: 11px; color: Theme.text-2; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+            GlassButton { label: @tr("Change…"); clicked => { root.change-dest(); } }
+        }
+        if root.source != "apps": HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            GlassButton {
+                primary: true;
+                label: root.picked > 0 ? @tr("Import {} file(s)", root.picked) : @tr("Import");
+                enabled: root.picked > 0 && !root.busy;
+                clicked => { root.start(); }
+            }
+        }
+    }
+}
+
 component AppLauncher inherits Rectangle {
     in property <bool> open;
     in property <string> title;
@@ -2674,6 +2807,22 @@ export component AppWindow inherits Window {
     callback files-close();
     in property <string> transfer;
     in property <float> transfer-p: -1;
+    in property <bool> transfer-can-cancel;
+    callback transfer-cancel();
+    // Import from the iPhone/iPad (filedrop.rs).
+    in property <bool> import-open;
+    in property <string> import-status;
+    in property <bool> import-busy;
+    in property <string> import-source: "media";
+    in property <[ImportRow]> import-items;
+    in property <int> import-picked;
+    in property <string> import-dest;
+    callback import-toggle(int);
+    callback import-all(bool);
+    callback import-set-source(string);
+    callback import-change-dest();
+    callback import-start();
+    callback import-close();
     out property <length> transfer-w: min(self.width - 40px, 360px);
     callback android-app-launch(int, string);
     // Launcher rectangle (logical px), kept open in the picture by Rust.
@@ -3059,6 +3208,25 @@ export component AppWindow inherits Window {
             launch(i, where) => { root.files-pick(i); }
             close => { root.files-close(); }
         }
+        ImportSheet {
+            x: root.launcher-x;
+            y: root.launcher-y;
+            width: root.launcher-w;
+            height: root.launcher-h;
+            open: root.import-open;
+            status: root.import-status;
+            busy: root.import-busy;
+            source: root.import-source;
+            items: root.import-items;
+            picked: root.import-picked;
+            dest: root.import-dest;
+            toggle(i) => { root.import-toggle(i); }
+            all(v) => { root.import-all(v); }
+            set-source(v) => { root.import-set-source(v); }
+            change-dest => { root.import-change-dest(); }
+            start => { root.import-start(); }
+            close => { root.import-close(); }
+        }
         // Files dragged in from Explorer.
         Rectangle {
             x: root.launcher-x;
@@ -3118,7 +3286,17 @@ export component AppWindow inherits Window {
                 padding-top: 7px;
                 padding-bottom: 7px;
                 spacing: 5px;
-                Text { text: root.transfer; font-size: 12px; color: Theme.text; overflow: elide; horizontal-alignment: center; }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: root.transfer; font-size: 12px; color: Theme.text; overflow: elide; horizontal-alignment: center; horizontal-stretch: 1; }
+                    if root.transfer-can-cancel: Text {
+                        text: @tr("Cancel");
+                        font-size: 11.5px;
+                        font-weight: 600;
+                        color: cancelTa.has-hover ? Theme.text : Theme.text-2;
+                        cancelTa := TouchArea { mouse-cursor: pointer; clicked => { root.transfer-cancel(); } }
+                    }
+                }
                 Rectangle {
                     height: 4px;
                     border-radius: 2px;

@@ -5,6 +5,7 @@ mod android;
 mod appwin;
 mod backdrop;
 mod devprofiles;
+mod dialogs;
 mod dots;
 mod filedrop;
 mod flow;
@@ -224,6 +225,8 @@ struct App {
     /// The Apple device shown (UDID) and whether it is an iPad (no frame).
     apple_udid: String,
     apple_ipad: bool,
+    /// Folder the last import from the phone went to ("Open folder").
+    import_folder: Option<std::path::PathBuf>,
     /// Its saved iPhone frame finish, and one being previewed in the picker.
     frame_finish: String,
     frame_preview: Option<String>,
@@ -1202,6 +1205,23 @@ fn check_media_foundation(ui: &AppWindow) {
         tr_ui(ui, "This Windows (an N or KN edition) has no Windows video components, so 3zT Mirroring cannot show the picture. Add the free \"Media Feature Pack\" from Microsoft: Settings › Apps › Optional features › View features › Media Feature Pack. Then restart the PC."),
         tr_ui(ui, "Open Optional features"),
         tr_ui(ui, "Later"),
+    );
+}
+
+/// After an import from the phone: what arrived, and "Open folder".
+fn import_done_sheet(ui: &AppWindow, body: String, any: bool, folder: std::path::PathBuf) {
+    APP.with_borrow_mut(|a| a.import_folder = Some(folder));
+    open_sheet(
+        ui,
+        "import-done",
+        tr_ui(ui, "Import from the phone"),
+        body,
+        if any {
+            tr_ui(ui, "Open folder")
+        } else {
+            String::new()
+        },
+        tr_ui(ui, "Close"),
     );
 }
 
@@ -3408,7 +3428,11 @@ fn main() -> Result<(), slint::PlatformError> {
             if !yes {
                 return;
             }
-            if kind == "mfp" {
+            if kind == "import-done" {
+                if let Some(dir) = APP.with_borrow(|a| a.import_folder.clone()) {
+                    let _ = std::process::Command::new("explorer.exe").arg(dir).spawn();
+                }
+            } else if kind == "mfp" {
                 // Windows' own Settings page (no download by 3zT Mirroring).
                 let _ = std::process::Command::new("explorer.exe")
                     .arg("ms-settings:optionalfeatures")
@@ -3816,6 +3840,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 "control-center" => input.send(Cmd::Stroke(0.92, 0.0, 0.92, 0.62, 12, 16)),
                 "notifications" => input.send(Cmd::Stroke(0.22, 0.0, 0.22, 0.62, 12, 16)),
                 "lock" => input.send(Cmd::Action("lock")),
+                "wake" => unlock_device(&ui, &input, false),
+                "toggle-keyboard" => input.send(Cmd::Action("toggle-keyboard")),
+                "files-send" => filedrop::send_dialog(&ui),
+                "files-import" => filedrop::import_open(&ui),
                 "mute" => {
                     let m = !ui.get_muted();
                     ui.set_muted(m);
@@ -4545,7 +4573,11 @@ fn main() -> Result<(), slint::PlatformError> {
                     let tw = ui.get_transfer_w();
                     holes.push((px((ww - tw) / 2.0), px(wh - 150.0), px(tw), px(40.0)));
                 }
-                if (ui.get_android_apps_open() && on_android) || ui.get_drop_hover() || ui.get_files_open() {
+                if (ui.get_android_apps_open() && on_android)
+                    || ui.get_drop_hover()
+                    || ui.get_files_open()
+                    || ui.get_import_open()
+                {
                     holes.push((
                         px(ui.get_launcher_x()),
                         px(ui.get_launcher_y()),
