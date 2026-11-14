@@ -149,7 +149,8 @@ impl Api {
 
     /// `options` go to the backend session (e.g. `{"picture": "airplay"}`).
     pub fn start_cast(&self, options: Value) -> bool {
-        self.post("/api/cast/start", &json!({ "options": options })).is_some()
+        self.post("/api/cast/start", &json!({ "options": options }))
+            .is_some()
     }
 
     pub fn stop_cast(&self) -> bool {
