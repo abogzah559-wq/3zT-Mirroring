@@ -1,3 +1,10 @@
+// Arabic interface font (SIL OFL 1.1, see THIRD_PARTY_NOTICES.md): Segoe UI
+// Variable has no Arabic letters, and the fallback Windows picked was blurry.
+import "fonts/IBMPlexSansArabic-Regular.ttf";
+import "fonts/IBMPlexSansArabic-Medium.ttf";
+import "fonts/IBMPlexSansArabic-SemiBold.ttf";
+import "fonts/IBMPlexSansArabic-Bold.ttf";
+
 // Colour tokens. Dark (soft black) is the default; Light is its twin.
 // `glass` (0..1) is clarity, set from Rust: 0 = solid (glass off),
 // 1 = fully clear (thickness 0%), in between = thicker frosted glass.
@@ -44,4 +51,7 @@ export global Theme {
     // Set from Rust: "Segoe Fluent Icons" (Windows 11) or "Segoe MDL2 Assets"
     // (Windows 10, same code points).
     in-out property <string> icons: "Segoe Fluent Icons";
+    // Arabic interface: right-to-left rows and the Arabic font. Set from Rust.
+    in-out property <bool> rtl: false;
+    out property <string> font: rtl ? "IBM Plex Sans Arabic" : "Segoe UI Variable Text";
 }

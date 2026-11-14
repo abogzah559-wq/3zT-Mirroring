@@ -63,6 +63,22 @@ Not bundled. When it is missing, Setup downloads Apple's own
 `AppleMobileDeviceSupport64.msi` from Apple's servers (checked against its
 SHA-256) and installs it. It is Apple software under Apple's licence.
 
+## IBM Plex Sans Arabic, in `rust/crates/mirror-app/ui/fonts`
+
+Copyright © 2017 IBM Corp., with Reserved Font Name "Plex". The Arabic
+interface font (Regular, Medium, SemiBold, Bold), embedded in the window
+unmodified. Licence: **SIL Open Font License 1.1** — full text in
+`rust/crates/mirror-app/ui/fonts/IBMPlexSansArabic-OFL.txt`. Source:
+https://github.com/IBM/plex
+
+## Unicode CLDR keyboard data
+
+The Shift layer of the iPhone/iPad "Arabic" hardware keyboard in
+`rust/crates/mirror-app/src/shortcuts.rs` follows Apple's macOS "Arabic"
+layout as published in Unicode CLDR (`keyboards/osx/ar-t-k0-osx.xml`,
+release 43), checked key by key on an iPhone. Copyright © 1991-2023 Unicode,
+Inc.; Unicode License v3 (https://www.unicode.org/license.txt).
+
 ## Design references
 
 Motion constants and the glass look are re-implemented from these projects

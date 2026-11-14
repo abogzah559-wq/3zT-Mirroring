@@ -3117,6 +3117,7 @@ fn main() -> Result<(), slint::PlatformError> {
         .set_version(env!("CARGO_PKG_VERSION").into());
     ui.set_prefs(prefs::load());
     i18n::apply(ui.get_prefs().language.as_str());
+    ui.global::<Theme>().set_rtl(i18n::is_arabic());
     {
         let weak = ui.as_weak();
         tray::install(move |e| {
@@ -3357,6 +3358,9 @@ fn main() -> Result<(), slint::PlatformError> {
             devprofiles::normalize(&last.borrow(), &mut p);
             if p.language != last.borrow().language {
                 i18n::apply(p.language.as_str());
+                if let Some(ui) = weak.upgrade() {
+                    ui.global::<Theme>().set_rtl(i18n::is_arabic());
+                }
             }
             if p.start_with_windows != last.borrow().start_with_windows && !test_mode {
                 tray::set_start_with_windows(p.start_with_windows, true);
