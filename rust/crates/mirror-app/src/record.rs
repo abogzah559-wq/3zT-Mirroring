@@ -175,6 +175,7 @@ fn run(
             q.clear(); // sound from before this part's first picture
         }
         let mut started = false;
+        let mut debt = 0.0f64;
         let mut last: Option<(Vec<u8>, bool, Instant)> = None;
         let mut flushed = Instant::now();
         loop {
@@ -210,8 +211,14 @@ fn run(
                     started = true;
                     let now = Instant::now();
                     if let Some((d, k, at)) = last.take() {
-                        let ticks = ((now - at).as_secs_f64() * VIDEO_TIMESCALE as f64).round();
-                        w.video(d, ticks.clamp(1.0, VIDEO_TIMESCALE as f64) as u32, k);
+                        // Frames arrive in bursts over Wi-Fi: give each at
+                        // least 1/120 s and take the extra back from the
+                        // next ones, so the file stays in time.
+                        let real = (now - at).as_secs_f64() * VIDEO_TIMESCALE as f64;
+                        let want = (real - debt).round();
+                        let ticks = want.clamp(750.0, VIDEO_TIMESCALE as f64);
+                        debt += ticks - real;
+                        w.video(d, ticks as u32, k);
                     }
                     last = Some((data, key, now));
                     if flushed.elapsed() >= Duration::from_secs(1) {

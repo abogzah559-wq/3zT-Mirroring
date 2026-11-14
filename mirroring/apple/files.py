@@ -74,10 +74,10 @@ async def _lockdown(udid: str):
     return await create_using_usbmux(serial=udid, autopair=False)
 
 
-async def list_apps(udid: str) -> list[dict]:
+async def list_apps(udid: str, provider=None) -> list[dict]:
     from pymobiledevice3.services.installation_proxy import InstallationProxyService
 
-    lockdown = await _lockdown(udid)
+    lockdown = provider or await _lockdown(udid)
     try:
         proxy = InstallationProxyService(lockdown)
         try:
@@ -85,7 +85,8 @@ async def list_apps(udid: str) -> list[dict]:
         finally:
             await proxy.close()
     finally:
-        await lockdown.close()
+        if provider is None:
+            await lockdown.close()
     return sharing_apps(apps)
 
 
@@ -188,14 +189,14 @@ async def _send_one(afc, local: Path, folder: str) -> str:
     return remote.rsplit("/", 1)[1]
 
 
-async def send_many(udid: str, bundle: str, app_name: str, paths: list[Path]) -> int:
+async def send_many(udid: str, bundle: str, app_name: str, paths: list[Path], provider=None) -> int:
     """Sends files and folders into the app's Documents folder; returns how
     many arrived complete."""
     from pymobiledevice3.services.house_arrest import HouseArrestService
 
     items = local_files(paths)
     _begin("send", len(items), app_name)
-    lockdown = await _lockdown(udid)
+    lockdown = provider or await _lockdown(udid)
     try:
         afc = await HouseArrestService.create(lockdown, bundle, documents_only=True)
         try:
@@ -212,7 +213,8 @@ async def send_many(udid: str, bundle: str, app_name: str, paths: list[Path]) ->
         finally:
             await afc.close()
     finally:
-        await lockdown.close()
+        if provider is None:
+            await lockdown.close()
     return job["done"]
 
 
@@ -254,26 +256,27 @@ async def _list(afc, root: str, limit: int) -> list[dict]:
     return out
 
 
-async def list_media(udid: str, limit: int = 3000) -> list[dict]:
+async def list_media(udid: str, limit: int = 3000, provider=None) -> list[dict]:
     """Photos and videos in the camera roll folder (DCIM), newest first.
     Only what is on the device: iCloud photos not downloaded are not there."""
     from pymobiledevice3.services.afc import AfcService
 
-    lockdown = await _lockdown(udid)
+    lockdown = provider or await _lockdown(udid)
     try:
         async with AfcService(lockdown) as afc:
             if not await afc.exists(MEDIA_ROOT):
                 return []
             return await _list(afc, MEDIA_ROOT, limit)
     finally:
-        await lockdown.close()
+        if provider is None:
+            await lockdown.close()
 
 
-async def list_app_files(udid: str, bundle: str, limit: int = 3000) -> list[dict]:
+async def list_app_files(udid: str, bundle: str, limit: int = 3000, provider=None) -> list[dict]:
     """Files in an app's shared Documents folder (File Sharing), newest first."""
     from pymobiledevice3.services.house_arrest import HouseArrestService
 
-    lockdown = await _lockdown(udid)
+    lockdown = provider or await _lockdown(udid)
     try:
         afc = await HouseArrestService.create(lockdown, bundle, documents_only=True)
         try:
@@ -281,7 +284,8 @@ async def list_app_files(udid: str, bundle: str, limit: int = 3000) -> list[dict
         finally:
             await afc.close()
     finally:
-        await lockdown.close()
+        if provider is None:
+            await lockdown.close()
 
 
 def unique_local(dest: Path, name: str) -> Path:
@@ -325,7 +329,7 @@ async def _pull_one(afc, remote: str, dest: Path) -> Path:
     return target
 
 
-async def pull_many(udid: str, source: str, items: list[str], dest: Path) -> int:
+async def pull_many(udid: str, source: str, items: list[str], dest: Path, provider=None) -> int:
     """Copies device files (`source` "media" = DCIM, else an app bundle id)
     into `dest`, as they are (HEIC stays HEIC, Live Photos come as their
     photo and video files). Returns how many arrived complete."""
@@ -336,7 +340,7 @@ async def pull_many(udid: str, source: str, items: list[str], dest: Path) -> int
     items = [p for p in items if device_path_ok(p, root)]
     dest.mkdir(parents=True, exist_ok=True)
     _begin("import", len(items), dest=str(dest))
-    lockdown = await _lockdown(udid)
+    lockdown = provider or await _lockdown(udid)
     try:
         if source == "media":
             afc = AfcService(lockdown)
@@ -352,7 +356,8 @@ async def pull_many(udid: str, source: str, items: list[str], dest: Path) -> int
         finally:
             await afc.close()
     finally:
-        await lockdown.close()
+        if provider is None:
+            await lockdown.close()
     return job["done"]
 
 
@@ -381,4 +386,6 @@ def start(loop: asyncio.AbstractEventLoop | None, coro_factory) -> None:
 
 def _short(error: Exception) -> str:
     text = str(error) or type(error).__name__
+    if "usbmux" in text or "Device not found" in text:
+        return "The device's files can't be reached right now. Check the cable or Wi-Fi and try again."
     return re.sub(r"\s+", " ", text)[:200]

@@ -2009,3 +2009,6 @@ msgstr "تكبير / تصغير (Ctrl + 0 للعودة إلى 100%، Ctrl + ال
 
 msgid "Actual size / fit the window"
 msgstr "الحجم الفعلي / ملاءمة النافذة"
+
+msgid "The device's files can't be reached right now. Check the cable or Wi-Fi and try again."
+msgstr "لا يمكن الوصول لملفات الجهاز الآن. تأكد من الكيبل أو الواي فاي وحاول مرة ثانية."

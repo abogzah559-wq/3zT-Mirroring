@@ -67,6 +67,16 @@ class AppleCastSession:
         """Blocking; returns when stopped or when the stream ends."""
         asyncio.run(self._main())
 
+    def submit(self, make):
+        """Runs `make(rsd)` (a coroutine using this session's tunnel) on the
+        session's own event loop; returns a concurrent Future, or None
+        without a tunnel. Files over Wi-Fi go this way: usbmux only knows
+        USB devices."""
+        loop, rsd = self._loop, self._rsd
+        if loop is None or rsd is None or not loop.is_running():
+            return None
+        return asyncio.run_coroutine_threadsafe(make(rsd), loop)
+
     async def device_locked(self) -> bool | None:
         """Whether the device is locked now (lockdown's PasswordProtected,
         read through this session's own tunnel, so USB and Wi-Fi alike), or

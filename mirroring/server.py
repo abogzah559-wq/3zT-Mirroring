@@ -214,11 +214,20 @@ def build_app(manager: CastManager) -> web.Application:
             return web.json_response({"ok": False, "message": "Needs Apple Driver mode and a connected device."},
                                      status=409)
         try:
-            apps = await files.list_apps(dev["id"])
+            apps = await on_device(lambda p: files.list_apps(dev["id"], provider=p))
         except Exception as error:
             log.warning("files: app list failed: %s", error)
             return web.json_response({"ok": False, "message": files._short(error)}, status=502)
         return web.json_response({"ok": True, "device": dev.get("deviceName") or dev.get("name"), "apps": apps})
+
+    async def on_device(make):
+        """Runs `make(provider)` through the Apple session's own tunnel (USB
+        and Wi-Fi) when there is one, else over usbmux (provider None)."""
+        session = getattr(manager, "_session", None)
+        fut = session.submit(make) if hasattr(session, "submit") else None
+        if fut is not None:
+            return await asyncio.wrap_future(fut)
+        return await make(None)
 
     def json_only(request: web.Request) -> web.Response | None:
         # A JSON content type keeps web pages from posting here (CORS preflight).
@@ -258,7 +267,8 @@ def build_app(manager: CastManager) -> web.Application:
         if (r := busy()) is not None:
             return r
         app_name = str(body.get("app") or bundle)
-        files.start(asyncio.get_running_loop(), lambda: files.send_many(dev["id"], bundle, app_name, paths))
+        files.start(asyncio.get_running_loop(), lambda: on_device(
+            lambda p: files.send_many(dev["id"], bundle, app_name, paths, provider=p)))
         return web.json_response({"ok": True})
 
     @routes.get("/api/files/media")
@@ -269,7 +279,7 @@ def build_app(manager: CastManager) -> web.Application:
         if dev is None:
             return no_device()
         try:
-            items = await files.list_media(dev["id"])
+            items = await on_device(lambda p: files.list_media(dev["id"], provider=p))
         except Exception as error:
             log.warning("files: media list failed: %s", type(error).__name__)
             return web.json_response({"ok": False, "message": files._short(error)}, status=502)
@@ -286,7 +296,7 @@ def build_app(manager: CastManager) -> web.Application:
         if not re.fullmatch(r"[A-Za-z0-9.\-]+", bundle):
             return web.json_response({"ok": False, "message": "Bad app."}, status=400)
         try:
-            items = await files.list_app_files(dev["id"], bundle)
+            items = await on_device(lambda p: files.list_app_files(dev["id"], bundle, provider=p))
         except Exception as error:
             log.warning("files: app file list failed: %s", type(error).__name__)
             return web.json_response({"ok": False, "message": files._short(error)}, status=502)
@@ -312,7 +322,8 @@ def build_app(manager: CastManager) -> web.Application:
             return web.json_response({"ok": False, "message": "Bad request."}, status=400)
         if (r := busy()) is not None:
             return r
-        files.start(asyncio.get_running_loop(), lambda: files.pull_many(dev["id"], source, items, dest))
+        files.start(asyncio.get_running_loop(), lambda: on_device(
+            lambda p: files.pull_many(dev["id"], source, items, dest, provider=p)))
         return web.json_response({"ok": True})
 
     @routes.post("/api/files/cancel")
