@@ -193,6 +193,15 @@ impl KbLayout {
         }
     }
 
+    /// The key types something else on this Arabic layout than on the US one.
+    fn key_differs(self, usage: u8, shift: bool) -> bool {
+        let other: &[(u8, bool)] = match self {
+            KbLayout::Arabic => APPLE_ARABIC_OTHER,
+            KbLayout::ArabicPc => &[],
+        };
+        self.table().iter().any(|e| (e.1, e.2) == (usage, shift)) || other.contains(&(usage, shift))
+    }
+
     fn table(self) -> &'static [(char, u8, bool)] {
         match self {
             KbLayout::Arabic => APPLE_ARABIC,
@@ -275,10 +284,26 @@ const ARABIC_PC: &[(char, u8, bool)] = &[
     ('’', 0x10, true), // Shift+M
 ];
 
-/// iOS "Arabic" (Apple's layout), as typed on a real iPhone (iOS 27.2) key by
-/// key: character, HID usage, Shift.
+/// iOS "Arabic" (Apple's layout): character, HID usage, Shift. The keys
+/// were typed one by one on an iPhone (iOS 27.2); they match Apple's macOS
+/// "Arabic" layout as published in Unicode CLDR (keyboards/osx/
+/// ar-t-k0-osx.xml), which also gave the Shift layer.
 const APPLE_ARABIC: &[(char, u8, bool)] = &[
-    // Top letter row: q w e r t y u i o p [ ]
+    // Digit row: Arabic-Indic digits.
+    ('١', 0x1e, false),
+    ('٢', 0x1f, false),
+    ('٣', 0x20, false),
+    ('٤', 0x21, false),
+    ('٥', 0x22, false),
+    ('٦', 0x23, false),
+    ('٧', 0x24, false),
+    ('٨', 0x25, false),
+    ('٩', 0x26, false),
+    ('٠', 0x27, false),
+    ('٪', 0x22, true),
+    (')', 0x26, true), // Shift+9 (mirrored, as on the Mac)
+    ('(', 0x27, true), // Shift+0
+    // Top letter row: q w e r t y u i o p [ ] \
     ('ض', 0x14, false),
     ('ص', 0x1a, false),
     ('ث', 0x08, false),
@@ -291,6 +316,20 @@ const APPLE_ARABIC: &[(char, u8, bool)] = &[
     ('ح', 0x13, false),
     ('ج', 0x2f, false),
     ('ة', 0x30, false),
+    ('\\', 0x31, false),
+    ('\u{064e}', 0x14, true), // fatha
+    ('\u{064b}', 0x1a, true), // fathatan
+    ('\u{0650}', 0x08, true), // kasra
+    ('\u{064d}', 0x15, true), // kasratan
+    ('\u{064f}', 0x17, true), // damma
+    ('\u{064c}', 0x1c, true), // dammatan
+    ('\u{0652}', 0x18, true), // sukun
+    ('\u{0651}', 0x0c, true), // shadda
+    (']', 0x12, true),
+    ('[', 0x13, true),
+    ('}', 0x2f, true),
+    ('{', 0x30, true),
+    ('|', 0x31, true),
     // Home row: a s d f g h j k l ; '
     ('ش', 0x04, false),
     ('س', 0x16, false),
@@ -303,6 +342,14 @@ const APPLE_ARABIC: &[(char, u8, bool)] = &[
     ('م', 0x0f, false),
     ('ك', 0x33, false),
     ('؛', 0x34, false),
+    ('«', 0x04, true),
+    ('»', 0x16, true),
+    ('ى', 0x07, true),
+    ('آ', 0x0b, true),
+    ('٫', 0x0e, true),
+    ('٬', 0x0f, true),
+    (':', 0x33, true),
+    ('"', 0x34, true),
     // Bottom row: z x c v b n m , . /
     ('ظ', 0x1d, false),
     ('ط', 0x1b, false),
@@ -314,15 +361,29 @@ const APPLE_ARABIC: &[(char, u8, bool)] = &[
     ('،', 0x36, false),
     ('.', 0x37, false),
     ('/', 0x38, false),
+    ('\'', 0x1d, true),
+    ('ء', 0x1b, true),
+    ('ئ', 0x06, true),
+    ('أ', 0x05, true),
+    ('إ', 0x11, true),
+    ('ؤ', 0x10, true),
+    ('>', 0x36, true),
+    ('<', 0x37, true),
+    ('؟', 0x38, true),
     // ` key
     ('ـ', 0x35, false),
 ];
+
+/// Keys that do not type the US character on the Arabic layout but cannot be
+/// in the table: Shift+- types ـ (already on the ` key), and Shift+` is not
+/// in Apple's layout, so ~ is typed on the English one.
+const APPLE_ARABIC_OTHER: &[(u8, bool)] = &[(0x2d, true), (0x35, true)];
 
 /// HID usage (and Shift) of the key that types the Arabic character `c` on
 /// the device's `layout`. Only characters that need the Arabic layout are
 /// listed; everything else goes through [`hid_usage`].
 pub fn arabic_usage(layout: KbLayout, c: char) -> Option<(u8, bool)> {
-    if c.is_ascii() || matches!(c, '÷' | '×' | '‘' | '’') {
+    if c.is_ascii() {
         return None;
     }
     layout.table().iter().find(|e| e.0 == c).map(|e| (e.1, e.2))
@@ -332,7 +393,7 @@ pub fn arabic_usage(layout: KbLayout, c: char) -> Option<(u8, bool)> {
 /// on the US layout (or is only there): typed on the Arabic layout so the
 /// device need not switch back to English for it.
 pub fn arabic_ascii(layout: KbLayout, c: char) -> Option<(u8, bool)> {
-    if !(c.is_ascii_punctuation() || matches!(c, '÷' | '×' | '‘' | '’')) {
+    if !c.is_ascii_punctuation() {
         return None;
     }
     layout.table().iter().find(|e| e.0 == c).map(|e| (e.1, e.2))
@@ -362,10 +423,11 @@ pub fn device_key(c: char, arabic: bool, layout: KbLayout) -> Option<(Script, u8
         }
     }
     let (u, s) = hid_usage(c)?;
-    // Digits, the shifted digits, - = and the control keys (Enter, Esc,
-    // Backspace, Tab, Space, Delete, arrows...) are the same in both layouts.
-    let either =
-        c.is_ascii_digit() || "!@#$%^&*-_=+".contains(c) || (0x28..=0x2c).contains(&u) || u >= 0x4a;
+    // The control keys (Enter, Esc, Backspace, Tab, Space, Delete,
+    // arrows...) and any key the Arabic layout leaves as on the US layout
+    // (digits on "Arabic – PC", - = ...) type the same in both.
+    let control = (0x28..=0x2c).contains(&u) || u >= 0x4a;
+    let either = control || (!c.is_ascii_alphabetic() && !layout.key_differs(u, s));
     let script = if either {
         Script::Either
     } else {
@@ -602,7 +664,8 @@ mod tests {
     #[test]
     fn apple_arabic_layout_matches_the_iphone() {
         let ap = KbLayout::Arabic;
-        // The keys reported wrong with the PC table (و ز ظ د ط ذ).
+        // The keys reported wrong with the PC table (و ز ظ د ط ذ), as typed
+        // on the iPhone.
         assert_eq!(arabic_usage(ap, 'و'), Some((0x10, false)));
         assert_eq!(arabic_usage(ap, 'ز'), Some((0x05, false)));
         assert_eq!(arabic_usage(ap, 'ظ'), Some((0x1d, false)));
@@ -610,6 +673,8 @@ mod tests {
         assert_eq!(arabic_usage(ap, 'ط'), Some((0x1b, false)));
         assert_eq!(arabic_usage(ap, 'ذ'), Some((0x06, false)));
         assert_eq!(arabic_usage(ap, 'ة'), Some((0x30, false)));
+        assert_eq!(arabic_usage(ap, 'ى'), Some((0x07, true)));
+        assert_eq!(arabic_usage(ap, '٢'), Some((0x1f, false)));
         assert_eq!(
             device_key('.', true, ap),
             Some((Script::Arabic, 0x37, false))
@@ -617,6 +682,78 @@ mod tests {
         assert_eq!(
             device_key('،', false, ap),
             Some((Script::Arabic, 0x36, false))
+        );
+        // Western digits need the English layout there (Arabic types ٢).
+        assert_eq!(
+            device_key('2', true, ap),
+            Some((Script::English, 0x1f, false))
+        );
+        // ( ) are swapped on the Arabic layout, as on the Mac.
+        assert_eq!(
+            device_key('(', true, ap),
+            Some((Script::Arabic, 0x27, true))
+        );
+        assert_eq!(
+            device_key('(', false, ap),
+            Some((Script::English, 0x26, true))
+        );
+        // Shift+- types ـ there, so _ needs English; - is the same in both.
+        assert_eq!(
+            device_key('_', true, ap),
+            Some((Script::English, 0x2d, true))
+        );
+        assert_eq!(
+            device_key('-', true, ap),
+            Some((Script::Either, 0x2d, false))
+        );
+        // A comma only exists on the English layout (the key types ،).
+        assert_eq!(
+            device_key(',', true, ap),
+            Some((Script::English, 0x36, false))
+        );
+    }
+
+    #[test]
+    fn every_table_entry_is_typed_with_its_own_key() {
+        for layout in [KbLayout::Arabic, KbLayout::ArabicPc] {
+            for &(c, u, s) in layout.table() {
+                assert_eq!(
+                    device_key(c, true, layout),
+                    Some((Script::Arabic, u, s)),
+                    "{layout:?} {c}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn everything_windows_arabic_types_reaches_the_device() {
+        // Every character of Windows "Arabic (101)", plain and with Shift.
+        const WINDOWS: &str = "ذضصثقفغعهخحجدشسيبلاتنمكطئءؤرلاىةوزظ\
+            ّ!@#$%^&*)(_+َ ًُ ٌلإإ‘÷×؛<>ِ ٍ][لأأـ،/:\"~ْ}{لآآ’,.؟\
+            1234567890-=\\|`";
+        for layout in [KbLayout::Arabic, KbLayout::ArabicPc] {
+            for arabic in [false, true] {
+                for c in WINDOWS.chars().filter(|c| !c.is_whitespace()) {
+                    let missing = matches!(c, '÷' | '×' | '‘' | '’' | '~' | '`')
+                        && layout == KbLayout::Arabic;
+                    if missing {
+                        // Not on Apple's Arabic layout; ~ and ` still type
+                        // on the English one.
+                        continue;
+                    }
+                    assert!(
+                        device_key(c, arabic, layout).is_some(),
+                        "{layout:?} arabic={arabic}: {c} (U+{:04X})",
+                        c as u32
+                    );
+                }
+            }
+        }
+        // ~ and ` come from the English layout on an Apple-Arabic device.
+        assert_eq!(
+            device_key('~', true, KbLayout::Arabic).map(|k| k.0),
+            Some(Script::English)
         );
     }
 

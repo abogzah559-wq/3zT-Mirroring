@@ -19,14 +19,35 @@ pub enum Cmd {
     Action(&'static str),
     /// Apple hardware keyboard: one key tap (HID usages held, then none).
     Keys(Vec<u8>),
+    /// Unlock ("wake" = Alt+U, "auto-unlock" = when mirroring starts): in
+    /// the same queue as the keys so a language switch before it is done
+    /// first. The backend's reply goes to the sender.
+    Unlock(&'static str, Sender<Option<serde_json::Value>>),
     /// Apple hardware keyboard: switch the device's keyboard language
     /// (Ctrl+Space), then wait until iOS has switched its layout.
     SwitchLanguage,
 }
 
-/// How long iOS needs after Ctrl+Space before the next key lands in the new
-/// layout (ms).
-pub static SWITCH_WAIT_MS: AtomicU32 = AtomicU32::new(150);
+/// Pauses around Ctrl+Space (ms). iOS switches the layout on its own
+/// schedule: keys still on their way are typed in the new layout and keys
+/// right after it in the old one (seen on iOS 27.2 with fast typing), so
+/// the switch waits for the keys before it and the keys after it wait for
+/// the switch.
+const SWITCH_BEFORE_MS: u64 = 150;
+const SWITCH_AFTER_MS: u64 = 300;
+
+/// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
+/// `kb-timing.txt` ("before after" in ms) in the data folder overrides the
+/// pauses without a rebuild.
+fn switch_pauses() -> (u64, u64) {
+    let tuned = mirror_core::local_data_dir()
+        .and_then(|d| std::fs::read_to_string(d.join("kb-timing.txt")).ok())
+        .and_then(|t| {
+            let mut it = t.split_whitespace().map(|n| n.parse::<u64>().ok());
+            Some((it.next()??, it.next()??))
+        });
+    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS))
+}
 
 #[derive(Clone)]
 pub struct Input {
@@ -124,16 +145,26 @@ fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
                 }
             }
             Cmd::Action(a) => api.keyboard_action(a),
+            Cmd::Unlock(a, reply) => {
+                let r = api.post_slow(
+                    "/api/keyboard/action",
+                    &serde_json::json!({ "action": a }),
+                    30,
+                );
+                let _ = reply.send(r);
+            }
             Cmd::Keys(usages) => {
                 for report in key_reports(&usages) {
                     api.key(&serde_json::json!({ "usages": report }));
                 }
             }
             Cmd::SwitchLanguage => {
+                let (before, after) = switch_pauses();
+                std::thread::sleep(Duration::from_millis(before.min(2000)));
                 for report in key_reports(&[crate::shortcuts::HID_CTRL, 0x2c]) {
                     api.key(&serde_json::json!({ "usages": report }));
                 }
-                std::thread::sleep(Duration::from_millis(SWITCH_WAIT_MS.load(Relaxed) as u64));
+                std::thread::sleep(Duration::from_millis(after.min(2000)));
             }
         }
     }
