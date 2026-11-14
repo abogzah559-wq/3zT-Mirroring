@@ -4483,20 +4483,37 @@ fn main() -> Result<(), slint::PlatformError> {
                             .and_then(|sh| sh.audio_ms())
                             .map(|ms| format!("  ·  {} {ms} ms", tr_ui_static(&ui, "sound")))
                             .unwrap_or_default();
-                        ui.set_stats_line(format!("{}×{}  ·  {:.0} fps  ·  {:.1} Mbps  ·  decode {:.1} ms{sound}", s.width, s.height, s.presented_fps.min(s.decoded_fps), s.mbps, s.decode_ms).into());
-                        ui.set_stats_full(
+                        // Received (decoded) and shown frame rates side by
+                        // side: the device's own rate is the first number.
+                        let dec = if s.hardware { "GPU" } else { "CPU" };
+                        ui.set_stats_line(
                             format!(
-                                "Resolution    {}×{}\nDecode        {:.1} fps ({})\nPresented     {:.1} fps\nSkipped       {}\nDecode frame  {:.1} ms\nBitrate       {:.1} Mbps",
+                                "{}×{}  ·  {:.0}/{:.0} fps  ·  {:.1} Mbps  ·  {dec}  ·  {} {:.1} ms{sound}",
                                 s.width,
                                 s.height,
                                 s.decoded_fps,
-                                if s.hardware { "GPU" } else { "CPU" },
                                 s.presented_fps,
-                                s.replaced,
-                                s.decode_ms,
-                                s.mbps
+                                s.mbps,
+                                tr_ui_static(&ui, "decode"),
+                                s.decode_ms
                             )
                             .into(),
+                        );
+                        let rows = [
+                            (tr_ui_static(&ui, "Resolution"), format!("{}×{}", s.width, s.height)),
+                            (tr_ui_static(&ui, "Received"), format!("{:.1} fps", s.decoded_fps)),
+                            (tr_ui_static(&ui, "Shown"), format!("{:.1} fps", s.presented_fps)),
+                            (tr_ui_static(&ui, "Skipped frames"), s.replaced.to_string()),
+                            (tr_ui_static(&ui, "Decoder"), dec.to_string()),
+                            (tr_ui_static(&ui, "Decode time"), format!("{:.1} ms", s.decode_ms)),
+                            (tr_ui_static(&ui, "Bitrate"), format!("{:.1} Mbps", s.mbps)),
+                        ];
+                        ui.set_stats_full(
+                            rows.iter()
+                                .map(|(k, v)| format!("{k}: {v}"))
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                                .into(),
                         );
                     } else {
                         ui.set_stats_line("".into());

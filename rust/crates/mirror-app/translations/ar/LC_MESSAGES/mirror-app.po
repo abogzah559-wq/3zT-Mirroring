@@ -1739,3 +1739,21 @@ msgstr "غير متاح في Studio mode لأنه لا يرسل لمساً ول�
 
 msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring types your passcode only while the iPhone/iPad is locked, then checks that it unlocked. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
 msgstr "وضع Apple Driver فقط (ليس Studio mode). يكتب 3zT Mirroring رمزك فقط عندما يكون الآيفون/الآيباد مقفلاً، ثم يتحقق أنه انفتح. يُحفظ الرمز مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."
+
+msgid "decode"
+msgstr "فك الترميز"
+
+msgid "Received"
+msgstr "المستلَم"
+
+msgid "Shown"
+msgstr "المعروض"
+
+msgid "Skipped frames"
+msgstr "إطارات متخطّاة"
+
+msgid "Decoder"
+msgstr "فك الترميز عبر"
+
+msgid "Decode time"
+msgstr "زمن فك الترميز"
