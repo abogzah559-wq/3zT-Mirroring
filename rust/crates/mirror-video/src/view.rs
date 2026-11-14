@@ -1290,7 +1290,9 @@ fn render_session(inner: &Inner) -> Result<()> {
                     }
                     if inner.snap_asked.swap(false, Relaxed) {
                         let shot = if inner.snap_full.load(Relaxed) {
-                            native_shot(gpu, p, &tex, src_full, rot)
+                            proc_
+                                .as_ref()
+                                .and_then(|p| native_shot(gpu, p, &tex, src_full, rot))
                         } else {
                             read_back(gpu, &back, dest, cw, ch)
                         };
