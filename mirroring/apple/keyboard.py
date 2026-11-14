@@ -116,7 +116,10 @@ async def unlock(button, touch, key, passcode: str, is_locked: LockCheck, auto: 
     locked = await is_locked()
     if locked is False:
         return True, "already-unlocked"
-    if locked is None and auto:
+    if locked is None:
+        # Typing the passcode into an unlocked device would put it in
+        # whatever app is open, so without a readable lock state nothing is
+        # typed (manual Alt+U too).
         return False, "unknown-state"
     code = clean_passcode(passcode)
 

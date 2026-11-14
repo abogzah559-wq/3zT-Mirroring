@@ -1725,8 +1725,8 @@ msgstr "لا يوجد رمز محفوظ، فتم تنبيه الجهاز فقط.
 msgid "Passcode typed. The lock state can't be read on this connection, so check the device."
 msgstr "تمت كتابة الرمز. لا يمكن قراءة حالة القفل عبر هذا الاتصال، فتأكد من الجهاز."
 
-msgid "Couldn't tell whether the device is locked, so the passcode wasn't typed. Press Alt+U to unlock."
-msgstr "تعذّر معرفة هل الجهاز مقفل، فلم يُكتب الرمز. اضغط Alt+U للفتح."
+msgid "Couldn't tell whether the device is locked, so the passcode wasn't typed (it could have gone into an open app). Enter it on the device."
+msgstr "تعذّر معرفة هل الجهاز مقفل، فلم يُكتب الرمز (كان ممكن ينكتب داخل تطبيق مفتوح). أدخله على الجهاز."
 
 msgid "Couldn't unlock. Enter the passcode on the device."
 msgstr "تعذّر الفتح، أدخل الرمز على الجهاز."

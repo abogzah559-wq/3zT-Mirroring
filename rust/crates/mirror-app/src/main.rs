@@ -2859,7 +2859,7 @@ fn unlock_device(ui: &AppWindow, input: &Input, auto: bool) {
                 "already-unlocked" => "The device is already unlocked.",
                 "woken" => "No passcode is saved, so the device was only woken.",
                 "unverified" => "Passcode typed. The lock state can't be read on this connection, so check the device.",
-                "unknown-state" => "Couldn't tell whether the device is locked, so the passcode wasn't typed. Press Alt+U to unlock.",
+                "unknown-state" => "Couldn't tell whether the device is locked, so the passcode wasn't typed (it could have gone into an open app). Enter it on the device.",
                 "failed" => "Couldn't unlock. Enter the passcode on the device.",
                 _ => "The device didn't take the unlock. Enter the passcode on the device.",
             };

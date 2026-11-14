@@ -59,12 +59,31 @@ class AppleCastSession:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._task: asyncio.Task | None = None
         self._server = None
+        self._rsd = None
 
     # ------------------------------------------------------------ control
 
     def run(self) -> None:
         """Blocking; returns when stopped or when the stream ends."""
         asyncio.run(self._main())
+
+    async def device_locked(self) -> bool | None:
+        """Whether the device is locked now (lockdown's PasswordProtected,
+        read through this session's own tunnel, so USB and Wi-Fi alike), or
+        None when it can't be read. Safe to call from another event loop."""
+        loop, rsd = self._loop, self._rsd
+        if loop is None or rsd is None or not loop.is_running():
+            return None
+
+        async def query():
+            return await rsd.get_value(key="PasswordProtected")
+
+        try:
+            fut = asyncio.run_coroutine_threadsafe(query(), loop)
+            value = await asyncio.wait_for(asyncio.wrap_future(fut), 5)
+        except Exception:  # noqa: BLE001
+            return None
+        return value if isinstance(value, bool) else None
 
     def stop(self) -> None:
         loop, task = self._loop, self._task
@@ -148,6 +167,7 @@ class AppleCastSession:
 
         server._eager_stream_start = eager_video_only
         self._server = server
+        self._rsd = rsd
         orientation = asyncio.create_task(self._watch_orientation(rsd))
         self.on_state("streaming", "")
         try:
@@ -158,6 +178,7 @@ class AppleCastSession:
                 await orientation
             self.on_rotation(None)
             self._server = None
+            self._rsd = None
 
     async def _watch_orientation(self, rsd) -> None:
         """Poll SpringBoard's interface orientation (read-only, never rotates

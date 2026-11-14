@@ -171,6 +171,12 @@ def build_app(manager: CastManager) -> web.Application:
             dev = files_device() if unlocking else None
 
             async def is_locked():
+                # The session's own tunnel first (USB and Wi-Fi), then usbmux.
+                session = getattr(manager, "_session", None)
+                if hasattr(session, "device_locked"):
+                    state = await session.device_locked()
+                    if state is not None:
+                        return state
                 return await keyboard.device_locked(dev["id"]) if dev else None
 
             ok, message = await keyboard.run(request.app[CLIENT_KEY], UPSTREAM, str(body.get("action")),
