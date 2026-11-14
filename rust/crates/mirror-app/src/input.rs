@@ -35,18 +35,26 @@ pub enum Cmd {
 /// the switch.
 const SWITCH_BEFORE_MS: u64 = 150;
 const SWITCH_AFTER_MS: u64 = 300;
+/// Pause after each key tap (ms): iOS dropped keys (Space, Return, ء) when
+/// they came back to back (a fast burst or Alt+V paste); with a short gap
+/// none were lost.
+const KEY_GAP_MS: u64 = 12;
 
 /// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
-/// `kb-timing.txt` ("before after" in ms) in the data folder overrides the
-/// pauses without a rebuild.
-fn switch_pauses() -> (u64, u64) {
+/// `kb-timing.txt` ("before after gap" in ms) in the data folder overrides
+/// the pauses without a rebuild.
+fn pauses() -> (u64, u64, u64) {
     let tuned = mirror_core::local_data_dir()
         .and_then(|d| std::fs::read_to_string(d.join("kb-timing.txt")).ok())
         .and_then(|t| {
             let mut it = t.split_whitespace().map(|n| n.parse::<u64>().ok());
-            Some((it.next()??, it.next()??))
+            Some((
+                it.next()??,
+                it.next()??,
+                it.next().flatten().unwrap_or(KEY_GAP_MS),
+            ))
         });
-    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS))
+    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS))
 }
 
 #[derive(Clone)]
@@ -157,9 +165,10 @@ fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
                 for report in key_reports(&usages) {
                     api.key(&serde_json::json!({ "usages": report }));
                 }
+                std::thread::sleep(Duration::from_millis(pauses().2.min(200)));
             }
             Cmd::SwitchLanguage => {
-                let (before, after) = switch_pauses();
+                let (before, after, _) = pauses();
                 std::thread::sleep(Duration::from_millis(before.min(2000)));
                 for report in key_reports(&[crate::shortcuts::HID_CTRL, 0x2c]) {
                     api.key(&serde_json::json!({ "usages": report }));
