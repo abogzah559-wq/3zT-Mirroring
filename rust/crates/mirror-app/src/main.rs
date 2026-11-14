@@ -3911,6 +3911,15 @@ fn main() -> Result<(), slint::PlatformError> {
                             (usage, shifted) = (u, sh);
                         }
                     }
+                    // TEMPORARY (2.1 keyboard diagnosis, removed before the
+                    // release): only with MIRROR_KEYLOG set on a test PC.
+                    if std::env::var_os("MIRROR_KEYLOG").is_some() {
+                        log::info!(
+                            "keylog: got U+{:04X} usage 0x{usage:02x} shift {shifted} arabic_before {arabic_now} arabic_now {}",
+                            c as u32,
+                            IOS_ARABIC.load(Relaxed)
+                        );
+                    }
                     let mut usages = Vec::with_capacity(2);
                     if shifted {
                         usages.push(shortcuts::HID_SHIFT);
