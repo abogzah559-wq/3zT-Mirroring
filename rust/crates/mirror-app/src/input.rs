@@ -19,12 +19,14 @@ pub enum Cmd {
     Action(&'static str),
     /// Apple hardware keyboard: one key tap (HID usages held, then none).
     Keys(Vec<u8>),
-    /// Apple `paste-pc`: type this text on the device.
-    TypeText(String),
     /// Apple hardware keyboard: switch the device's keyboard language
     /// (Ctrl+Space), then wait until iOS has switched its layout.
     SwitchLanguage,
 }
+
+/// How long iOS needs after Ctrl+Space before the next key lands in the new
+/// layout (ms).
+pub static SWITCH_WAIT_MS: AtomicU32 = AtomicU32::new(150);
 
 #[derive(Clone)]
 pub struct Input {
@@ -48,6 +50,23 @@ impl Input {
     pub fn send(&self, c: Cmd) {
         let _ = self.tx.send(c);
     }
+}
+
+/// The HID reports of one key tap. iOS ignores a modifier that arrives in the
+/// same report as the key (tested on iOS 27.2: Shift+A typed "a"), so the
+/// modifiers go down first, are held with the key, and come up last.
+pub fn key_reports(usages: &[u8]) -> Vec<Vec<u8>> {
+    let mods: Vec<u8> = usages.iter().copied().filter(|u| *u >= 0xe0).collect();
+    let mut out = Vec::with_capacity(4);
+    if !mods.is_empty() && mods.len() < usages.len() {
+        out.push(mods.clone());
+        out.push(usages.to_vec());
+        out.push(mods);
+    } else {
+        out.push(usages.to_vec());
+    }
+    out.push(Vec::new());
+    out
 }
 
 fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
@@ -106,18 +125,32 @@ fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
             }
             Cmd::Action(a) => api.keyboard_action(a),
             Cmd::Keys(usages) => {
-                api.key(&serde_json::json!({ "usages": usages }));
-                api.key(&serde_json::json!({ "usages": [] }));
-            }
-            Cmd::TypeText(text) => {
-                let _ = api.keyboard_text("paste-pc", &text);
+                for report in key_reports(&usages) {
+                    api.key(&serde_json::json!({ "usages": report }));
+                }
             }
             Cmd::SwitchLanguage => {
-                let usages = [crate::shortcuts::HID_CTRL, 0x2c];
-                api.key(&serde_json::json!({ "usages": usages }));
-                api.key(&serde_json::json!({ "usages": [] }));
-                std::thread::sleep(Duration::from_millis(150));
+                for report in key_reports(&[crate::shortcuts::HID_CTRL, 0x2c]) {
+                    api.key(&serde_json::json!({ "usages": report }));
+                }
+                std::thread::sleep(Duration::from_millis(SWITCH_WAIT_MS.load(Relaxed) as u64));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::key_reports;
+
+    #[test]
+    fn modifiers_go_down_before_the_key_and_up_after_it() {
+        assert_eq!(key_reports(&[0x04]), vec![vec![0x04], vec![]]);
+        assert_eq!(
+            key_reports(&[0xe1, 0x04]),
+            vec![vec![0xe1], vec![0xe1, 0x04], vec![0xe1], vec![]]
+        );
+        // A modifier on its own is just pressed and released.
+        assert_eq!(key_reports(&[0xe0]), vec![vec![0xe0], vec![]]);
     }
 }

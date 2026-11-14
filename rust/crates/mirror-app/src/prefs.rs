@@ -52,6 +52,7 @@ pub fn defaults() -> Prefs {
         update_check: true,
         update_channel: "".into(),
         language: "".into(),
+        ios_kb_layout: "arabic".into(),
     }
 }
 
@@ -136,6 +137,11 @@ pub fn from_value(v: &Value) -> Prefs {
     b("updateCheck", &mut p.update_check);
     s("updateChannel", &mut p.update_channel, &["stable", "beta"]);
     s("language", &mut p.language, &["en", "ar"]);
+    s(
+        "iosKbLayout",
+        &mut p.ios_kb_layout,
+        &["arabic", "arabic-pc"],
+    );
     // Android picture: scrcpy server options.
     s(
         "androidMaxSize",
@@ -206,7 +212,7 @@ pub fn to_value(p: &Prefs) -> Value {
         "androidBitrate": p.android_bitrate.as_str(), "androidCodec": p.android_codec.as_str(),
         "androidProfile": p.android_profile.as_str(), "androidEncoder": p.android_encoder.as_str(),
         "updateCheck": p.update_check, "updateChannel": p.update_channel.as_str(),
-        "language": p.language.as_str(),
+        "language": p.language.as_str(), "iosKbLayout": p.ios_kb_layout.as_str(),
     })
 }
 
@@ -247,6 +253,9 @@ mod tests {
         p.remember_platform = true;
         let back = from_value(&to_value(&p));
         assert_eq!(back.platform.as_str(), "android");
+        assert_eq!(back.ios_kb_layout.as_str(), "arabic");
+        let pc = from_value(&json!({"iosKbLayout": "arabic-pc"}));
+        assert_eq!(pc.ios_kb_layout.as_str(), "arabic-pc");
         assert!(back.remember_platform);
         let bad = from_value(&json!({"platform": "windows-phone"}));
         assert_eq!(bad.platform.as_str(), "");

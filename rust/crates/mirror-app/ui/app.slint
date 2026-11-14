@@ -57,6 +57,7 @@ export struct Prefs {
     update-check: bool,       // look for a new version at start
     update-channel: string,   // "" = this build's own | stable | beta
     language: string,         // "" = as Windows | en | ar
+    ios-kb-layout: string,    // iPhone/iPad hardware keyboard: arabic | arabic-pc
 }
 
 // Window controls in the macOS style: close, minimise, zoom. The symbols
@@ -229,6 +230,9 @@ component TopBar inherits Rectangle {
     in property <bool> upd-busy;
     in property <float> upd-progress: -1;
     callback update-now();
+    // Language the iPhone/iPad hardware keyboard types now ("" = hidden):
+    // AR / EN, click (or Alt+G) when it no longer matches the device.
+    in property <string> kb-lang;
     height: 46px;
     // Empty header space moves the window; double-click maximises.
     TouchArea {
@@ -325,6 +329,28 @@ component TopBar inherits Rectangle {
                 overflow: elide;
             }
             if stats != "": Text { text: stats; font-size: 10.5px; color: Theme.text-3; overflow: elide; font-family: "Cascadia Mono"; }
+        }
+        if root.kb-lang != "": VerticalLayout {
+            alignment: center;
+            kbPill := Rectangle {
+                width: 30px;
+                height: 22px;
+                border-radius: 11px;
+                background: kbTa.has-hover ? Theme.fill-hover : Theme.raise;
+                border-width: 1px;
+                border-color: Theme.line;
+                Text {
+                    text: root.kb-lang;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    color: Theme.text-2;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                kbTa := TouchArea {
+                    clicked => { root.window-action("kb-lang"); }
+                }
+            }
         }
         GlassButton {
             y: (parent.height - self.height) / 2;
@@ -1930,6 +1956,25 @@ component SettingsPanel inherits Glass {
                     Row { label: @tr("Touch with the mouse"); Toggle { checked: prefs.touch; toggled(v) => { root.prefs.touch = v; root.changed(root.prefs); } } }
                     Row { label: @tr("PC keyboard to the device"); Toggle { checked: prefs.keyboard; toggled(v) => { root.prefs.keyboard = v; root.changed(root.prefs); } } }
                     if root.screen != "android": Row { label: @tr("Gestures (scroll, mouse Back button)"); Toggle { checked: prefs.gestures; toggled(v) => { root.prefs.gestures = v; root.changed(root.prefs); } } }
+                    if root.screen != "android": Row {
+                        label: @tr("Arabic keyboard layout on the device");
+                        hint: @tr("As set on the iPhone/iPad: Settings › General › Keyboard › Hardware Keyboard › Arabic");
+                        Seg {
+                            width: 170px;
+                            options: ["arabic", "arabic-pc"];
+                            labels: [@tr("Arabic"), @tr("Arabic – PC")];
+                            value: prefs.ios-kb-layout;
+                            changed(v) => { root.prefs.ios-kb-layout = v; root.changed(root.prefs); }
+                        }
+                    }
+                    if root.screen != "android": HorizontalLayout {
+                        alignment: start;
+                        GlassButton {
+                            label: @tr("Test the keyboard");
+                            tip: @tr("Types three Arabic letters on the device and asks whether they came out right");
+                            clicked => { root.driver-action("keyboard-test"); }
+                        }
+                    }
                 }
 
                 Card {
@@ -1958,7 +2003,7 @@ component SettingsPanel inherits Glass {
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + V"); text: @tr("Type the PC clipboard text on the device"); }
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + K"); text: @tr("Show / hide the on-screen keyboard"); }
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + C / X / V / A / Z"); text: @tr("Copy, cut, paste, select all, undo in iOS"); }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + G"); text: @tr("Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + G"); text: @tr("The device keyboard typed the wrong language: switch it (the AR / EN mark at the top shows which one 3zT Mirroring expects)"); }
                     if root.screen != "android": Text {
                         text: root.studio ? @tr("Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode.")
                             : @tr("Apple device shortcuts work in Apple Driver mode while mirroring.");
@@ -2364,6 +2409,7 @@ export component AppWindow inherits Window {
     in property <bool> passcode-set;
     callback save-passcode(string);
     // Notice sheet (driver changes).
+    in property <string> ios-kb-lang;
     in property <bool> sheet-open;
     in property <string> sheet-title;
     in property <string> sheet-body;
@@ -2543,6 +2589,7 @@ export component AppWindow inherits Window {
                 upd-version: root.upd-switch ? "" : root.upd-version;
                 upd-busy: root.upd-busy;
                 upd-progress: root.upd-progress;
+                kb-lang: root.ios-kb-lang;
                 update-now => { root.update-action("install"); }
                 window-action(a) => { root.window-action(a); }
                 start => {

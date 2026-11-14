@@ -828,9 +828,6 @@ msgstr "إظهار / إخفاء لوحة المفاتيح على الشاشة"
 msgid "Copy, cut, paste, select all, undo in iOS"
 msgstr "نسخ، قص، لصق، تحديد الكل، تراجع في iOS"
 
-msgid "Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"
-msgstr "تبديل لوحة مفاتيح الجهاز بين الإنجليزية والعربية (العربية تحتاج تخطيط «العربية – PC» للوحة المفاتيح الخارجية على الجهاز)"
-
 msgid "Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode."
 msgstr "وضع الاستوديو صورة وصوت فقط: التحكم بالجهاز واختصاراته في وضع تعريف Apple."
 
@@ -1667,3 +1664,54 @@ msgstr "يسار"
 
 msgid "Right"
 msgstr "يمين"
+
+msgid "Arabic keyboard layout on the device"
+msgstr "تخطيط الكيبورد العربي في الجهاز"
+
+msgid "As set on the iPhone/iPad: Settings › General › Keyboard › Hardware Keyboard › Arabic"
+msgstr "كما هو مضبوط في الآيفون/الآيباد: الإعدادات › عام › لوحة المفاتيح › لوحة المفاتيح الخارجية › العربية"
+
+msgid "Arabic"
+msgstr "العربية"
+
+msgid "Arabic – PC"
+msgstr "العربية – PC"
+
+msgid "Test the keyboard"
+msgstr "اختبار الكيبورد"
+
+msgid "Types three Arabic letters on the device and asks whether they came out right"
+msgstr "يكتب ثلاثة حروف عربية في الجهاز ويسألك هل ظهرت صحيحة"
+
+msgid "The device keyboard typed the wrong language: switch it (the AR / EN mark at the top shows which one 3zT Mirroring expects)"
+msgstr "كتب الجهاز بلغة غير المطلوبة: بدّل لغته (علامة AR / EN في الأعلى توضّح اللغة التي يتوقعها 3zT Mirroring)"
+
+msgid "Start mirroring in Apple Driver mode with \"PC keyboard to the device\" on, then test."
+msgstr "ابدأ العرض في وضع Apple Driver مع تفعيل «لوحة مفاتيح الكمبيوتر للجهاز»، ثم اختبر."
+
+msgid "Keyboard test"
+msgstr "اختبار الكيبورد"
+
+msgid "Open an empty text field on the device (a new note, for example), then press Type. 3zT Mirroring types three Arabic letters there."
+msgstr "افتح حقل نص فارغاً في الجهاز (ملاحظة جديدة مثلاً)، ثم اضغط «اكتب». سيكتب 3zT Mirroring ثلاثة حروف عربية فيه."
+
+msgid "Type"
+msgstr "اكتب"
+
+msgid "Did these three letters appear on the device: و ز ظ ?"
+msgstr "هل ظهرت هذه الحروف الثلاثة في الجهاز: و ز ظ ؟"
+
+msgid "Yes"
+msgstr "نعم"
+
+msgid "No"
+msgstr "لا"
+
+msgid "The keyboard layout is right. You can delete the test letters."
+msgstr "تخطيط الكيبورد صحيح. تقدر تحذف حروف الاختبار."
+
+msgid "Switched to the \"{}\" layout. Delete the test letters and test again; if it is still wrong, press Alt+G once and test again."
+msgstr "تم التبديل إلى تخطيط «{}». احذف حروف الاختبار واختبر مرة ثانية؛ وإن بقي الخطأ اضغط Alt+G مرة واحدة ثم اختبر."
+
+msgid "Typing {} characters on the device ({} have no key and were skipped)."
+msgstr "جارٍ كتابة {} حرف على الجهاز (تم تخطّي {} لا يوجد لها مفتاح)."

@@ -2568,13 +2568,20 @@ fn run_shortcut(
         Shortcut::Apple(_) if !apple_live => need_apple(),
         Shortcut::Apple("paste-pc") => match pc_clipboard_text() {
             Some(t) => {
-                let n = t.chars().count();
-                device_keyboard_english(input);
-                input.send(Cmd::TypeText(t));
-                show_toast(
-                    ui,
-                    tr_ui(ui, &format!("Typing {n} characters on the device.")),
-                );
+                // Arabic and English alike, on the device's own layout.
+                let t: String = t.chars().take(MAX_PASTE).collect();
+                let layout = shortcuts::KbLayout::from_pref(ui.get_prefs().ios_kb_layout.as_str());
+                let n = t.chars().filter(|c| *c != '\r').count();
+                let (_, skipped) = type_on_apple(input, &t, layout);
+                let msg = if skipped > 0 {
+                    format!(
+                        "Typing {} characters on the device ({skipped} have no key and were skipped).",
+                        n - skipped
+                    )
+                } else {
+                    format!("Typing {n} characters on the device.")
+                };
+                show_toast(ui, tr_ui(ui, &msg));
             }
             None => show_toast(ui, tr_ui(ui, "The PC clipboard has no text.")),
         },
@@ -2583,6 +2590,143 @@ fn run_shortcut(
                 device_keyboard_english(input);
             }
             input.send(Cmd::Action(a));
+        }
+    }
+}
+
+/// Types `text` with the Apple device's hardware keyboard (Apple Driver /
+/// Hybrid), switching the device keyboard language whenever the script
+/// changes. `layout`: the device's Arabic hardware layout. Returns whether
+/// anything was typed and how many characters have no key.
+fn type_on_apple(input: &Input, text: &str, layout: shortcuts::KbLayout) -> (bool, usize) {
+    let mut sent = false;
+    let mut skipped = 0;
+    for c in text.chars() {
+        let c = if c == '\r' { continue } else { c };
+        let arabic_now = IOS_ARABIC.load(Relaxed);
+        let Some((script, mut usage, mut shifted)) = shortcuts::device_key(c, arabic_now, layout)
+        else {
+            skipped += 1;
+            continue;
+        };
+        // Switch the device keyboard when the PC starts typing in the other
+        // script; the key may then sit elsewhere.
+        let want = match script {
+            shortcuts::Script::Arabic => Some(true),
+            shortcuts::Script::English => Some(false),
+            shortcuts::Script::Either => None,
+        };
+        if let Some(want) = want.filter(|w| *w != arabic_now) {
+            IOS_ARABIC.store(want, Relaxed);
+            input.send(Cmd::SwitchLanguage);
+            if let Some((_, u, sh)) = shortcuts::device_key(c, want, layout) {
+                (usage, shifted) = (u, sh);
+            }
+        }
+        // TEMPORARY (2.1 keyboard diagnosis, removed before the release):
+        // only with MIRROR_KEYLOG set on a test PC.
+        if std::env::var_os("MIRROR_KEYLOG").is_some() {
+            log::info!(
+                "keylog: got U+{:04X} usage 0x{usage:02x} shift {shifted} arabic_before {arabic_now} arabic_now {} layout {layout:?}",
+                c as u32,
+                IOS_ARABIC.load(Relaxed)
+            );
+        }
+        let mut usages = Vec::with_capacity(2);
+        if shifted {
+            usages.push(shortcuts::HID_SHIFT);
+        }
+        usages.push(usage);
+        input.send(Cmd::Keys(usages));
+        sent = true;
+    }
+    (sent, skipped)
+}
+
+/// Alt+G and the AR / EN mark: the device typed the other language than
+/// 3zT Mirroring expected, so switch it (and what 3zT Mirroring expects).
+fn switch_device_language(input: &Input) {
+    IOS_ARABIC.fetch_xor(true, Relaxed);
+    input.send(Cmd::SwitchLanguage);
+}
+
+/// Letters only the right layout types right: و ز ظ were the keys reported
+/// as punctuation with the wrong one.
+const KB_TEST_TEXT: &str = "وزظ";
+
+enum KbTest {
+    /// Settings › Test the keyboard: ask for a text field first.
+    Start,
+    /// The user has a text field open: type the letters, ask what came out.
+    Type,
+    /// The answer: did the letters come out right?
+    Answer(bool),
+}
+
+/// Settings › Control › Test the keyboard. Types و ز ظ with the chosen
+/// Arabic layout and asks one question; a "no" switches to the other layout
+/// (iOS has two Arabic hardware layouts, and nothing tells 3zT Mirroring
+/// which one the device uses).
+fn keyboard_test(ui: &AppWindow, input: &Input, step: KbTest) {
+    let apple_live = ui.get_screen().as_str() != "android" && APP.with_borrow(|a| a.streaming);
+    if !apple_live || !ui.get_prefs().keyboard {
+        show_toast(
+            ui,
+            tr_ui(
+                ui,
+                "Start mirroring in Apple Driver mode with \"PC keyboard to the device\" on, then test.",
+            ),
+        );
+        return;
+    }
+    let mut p = ui.get_prefs();
+    let layout = shortcuts::KbLayout::from_pref(p.ios_kb_layout.as_str());
+    match step {
+        KbTest::Start => open_sheet(
+            ui,
+            "kbtest",
+            tr_ui(ui, "Keyboard test"),
+            tr_ui(
+                ui,
+                "Open an empty text field on the device (a new note, for example), then press Type. 3zT Mirroring types three Arabic letters there.",
+            ),
+            tr_ui(ui, "Type"),
+            tr_ui(ui, "Cancel"),
+        ),
+        KbTest::Type => {
+            type_on_apple(input, KB_TEST_TEXT, layout);
+            open_sheet(
+                ui,
+                "kbcheck",
+                tr_ui(ui, "Keyboard test"),
+                tr_ui(ui, "Did these three letters appear on the device: و ز ظ ?"),
+                tr_ui(ui, "Yes"),
+                tr_ui(ui, "No"),
+            );
+        }
+        KbTest::Answer(true) => show_toast(
+            ui,
+            tr_ui(ui, "The keyboard layout is right. You can delete the test letters."),
+        ),
+        KbTest::Answer(false) => {
+            let other = layout.other();
+            p.ios_kb_layout = other.pref().into();
+            ui.set_prefs(p.clone());
+            prefs::save(&p);
+            let name = match other {
+                shortcuts::KbLayout::Arabic => "Arabic",
+                shortcuts::KbLayout::ArabicPc => "Arabic – PC",
+            };
+            show_toast(
+                ui,
+                tr_ui(
+                    ui,
+                    &format!(
+                        "Switched to the \"{}\" layout. Delete the test letters and test again; if it is still wrong, press Alt+G once and test again.",
+                        tr_ui(ui, name)
+                    ),
+                ),
+            );
         }
     }
 }
@@ -2599,8 +2743,9 @@ fn device_keyboard_english(input: &Input) {
 /// what the next session assumes.
 fn device_keyboard_reset_now(api: &Api) {
     if IOS_ARABIC.swap(false, Relaxed) && APP.with_borrow(|a| a.streaming) {
-        api.key(&json!({ "usages": [0xe0, 0x2c] }));
-        api.key(&json!({ "usages": [] }));
+        for r in input::key_reports(&[shortcuts::HID_CTRL, 0x2c]) {
+            api.key(&json!({ "usages": r }));
+        }
     }
 }
 
@@ -2785,6 +2930,9 @@ fn update_check(ui: &AppWindow, manual: bool) {
         });
     });
 }
+
+/// Longest PC clipboard text Alt+V types on an iPhone/iPad.
+const MAX_PASTE: usize = 4000;
 
 /// The iPhone/iPad hardware keyboard is set to Arabic (as far as 3zT Mirroring
 /// switched it; Alt+G switches by hand when they disagree).
@@ -3096,6 +3244,7 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak = ui.as_weak();
         let api = api.clone();
+        let input_sheet = input.clone();
         ui.on_sheet_answer(move |yes| {
             let Some(ui) = weak.upgrade() else { return };
             let kind = APP.with_borrow_mut(|a| a.sheet.take()).unwrap_or_default();
@@ -3104,6 +3253,11 @@ fn main() -> Result<(), slint::PlatformError> {
                 return; // no buttons while the change runs
             }
             ui.set_sheet_open(false);
+            match (kind.as_str(), yes) {
+                ("kbtest", true) => return keyboard_test(&ui, &input_sheet, KbTest::Type),
+                ("kbcheck", _) => return keyboard_test(&ui, &input_sheet, KbTest::Answer(yes)),
+                _ => {}
+            }
             if !yes {
                 return;
             }
@@ -3129,8 +3283,9 @@ fn main() -> Result<(), slint::PlatformError> {
             IOS_ARABIC.store(false, Relaxed);
             std::thread::spawn(move || {
                 if arabic {
-                    a.key(&json!({ "usages": [0xe0, 0x2c] }));
-                    a.key(&json!({ "usages": [] }));
+                    for r in input::key_reports(&[shortcuts::HID_CTRL, 0x2c]) {
+                        a.key(&json!({ "usages": r }));
+                    }
                 }
                 a.stop_cast()
             });
@@ -3672,7 +3827,14 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let api = api.clone();
         let weak = ui.as_weak();
+        let input_kb = input.clone();
         ui.on_driver_action(move |a: slint::SharedString| {
+            if a.as_str() == "keyboard-test" {
+                if let Some(ui) = weak.upgrade() {
+                    keyboard_test(&ui, &input_kb, KbTest::Start);
+                }
+                return;
+            }
             if matches!(a.as_str(), "restore" | "bind" | "removefilter") {
                 if let Some(ui) = weak.upgrade() {
                     confirm_driver(&ui, a.as_str());
@@ -3751,12 +3913,15 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak = ui.as_weak();
         let last_drag = std::cell::Cell::new(None::<Instant>);
+        let input_win = input.clone();
         ui.on_window_action(move |a| {
             use slint::winit_030::winit::window::ResizeDirection as R;
             let Some(ui) = weak.upgrade() else { return };
             let w = ui.window();
             match a.as_str() {
                 "close" => close_requested(&ui),
+                // The AR / EN mark: same as Alt+G.
+                "kb-lang" => switch_device_language(&input_win),
                 "coffee" => open_url(SUPPORT_URL),
                 // F2 showed or hid the header and dock: fit the window again
                 // so they sit around the picture.
@@ -3871,8 +4036,7 @@ fn main() -> Result<(), slint::PlatformError> {
             // Alt+G: switch the iPhone/iPad keyboard language by hand, for
             // when it no longer matches what the PC types.
             if alt && !ctrl && apple_live && keyboard && route_text.eq_ignore_ascii_case("g") {
-                IOS_ARABIC.fetch_xor(true, Relaxed);
-                input_keys.send(Cmd::SwitchLanguage);
+                switch_device_language(&input_keys);
                 return true;
             }
             if let Some(s) = shortcuts::route(android_screen, &route_text, ctrl, shift, alt, typing)
@@ -3889,45 +4053,8 @@ fn main() -> Result<(), slint::PlatformError> {
                     return false;
                 }
                 // Every character: the Arabic "لا" key types two.
-                let mut sent = false;
-                for c in text.chars() {
-                    let arabic_now = IOS_ARABIC.load(Relaxed);
-                    let Some((script, mut usage, mut shifted)) =
-                        shortcuts::device_key(c, arabic_now)
-                    else {
-                        continue;
-                    };
-                    // Switch the device keyboard when the PC starts typing in
-                    // the other script; the key may then sit elsewhere.
-                    let want = match script {
-                        shortcuts::Script::Arabic => Some(true),
-                        shortcuts::Script::English => Some(false),
-                        shortcuts::Script::Either => None,
-                    };
-                    if let Some(want) = want.filter(|w| *w != arabic_now) {
-                        IOS_ARABIC.store(want, Relaxed);
-                        input_keys.send(Cmd::SwitchLanguage);
-                        if let Some((_, u, sh)) = shortcuts::device_key(c, want) {
-                            (usage, shifted) = (u, sh);
-                        }
-                    }
-                    // TEMPORARY (2.1 keyboard diagnosis, removed before the
-                    // release): only with MIRROR_KEYLOG set on a test PC.
-                    if std::env::var_os("MIRROR_KEYLOG").is_some() {
-                        log::info!(
-                            "keylog: got U+{:04X} usage 0x{usage:02x} shift {shifted} arabic_before {arabic_now} arabic_now {}",
-                            c as u32,
-                            IOS_ARABIC.load(Relaxed)
-                        );
-                    }
-                    let mut usages = Vec::with_capacity(2);
-                    if shifted {
-                        usages.push(shortcuts::HID_SHIFT);
-                    }
-                    usages.push(usage);
-                    input_keys.send(Cmd::Keys(usages));
-                    sent = true;
-                }
+                let layout = shortcuts::KbLayout::from_pref(ui.get_prefs().ios_kb_layout.as_str());
+                let (sent, _) = type_on_apple(&input_keys, &text, layout);
                 return sent;
             }
             let Some(sh) = android::active() else {
@@ -3958,6 +4085,24 @@ fn main() -> Result<(), slint::PlatformError> {
         let centring = std::cell::Cell::new(None::<(Instant, slint::PhysicalPosition)>);
         timer.start(slint::TimerMode::Repeated, Duration::from_millis(16), move || {
             let Some(ui) = weak.upgrade() else { return };
+            // The AR / EN mark: what 3zT Mirroring expects the device
+            // keyboard to type (Apple Driver / Hybrid, PC keyboard on).
+            let kb_lang = if ui.get_screen().as_str() != "android"
+                && ui.get_prefs().keyboard
+                && APP.with_borrow(|a| a.streaming)
+                && ui.get_mode_active().as_str() != "usbdirect"
+            {
+                if IOS_ARABIC.load(Relaxed) {
+                    "AR"
+                } else {
+                    "EN"
+                }
+            } else {
+                ""
+            };
+            if ui.get_ios_kb_lang().as_str() != kb_lang {
+                ui.set_ios_kb_lang(kb_lang.into());
+            }
             // The first tick sizes the window for the screen; the settings
             // slide below waits a tick, else it would resize with the old
             // height (seen: the window stayed 900 px high).

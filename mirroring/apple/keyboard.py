@@ -56,6 +56,16 @@ def clean_passcode(raw: str) -> str:
     return "".join(ch for ch in raw if ch not in "\r\n\t" and char_usage(ch) is not None)[:MAX_PASSCODE]
 
 
+def tap_reports(report: list[int]) -> list[list[int]]:
+    """The HID reports of one key tap. iOS ignores a modifier that arrives in
+    the same report as the key (iOS 27.2: Shift+A typed "a"), so modifiers go
+    down first, are held with the key, and come up last."""
+    mods = [u for u in report if u >= 0xE0]
+    if mods and len(mods) < len(report):
+        return [mods, list(report), mods, []]
+    return [list(report), []]
+
+
 def passcode_keys(code: str) -> list[list[int]]:
     """HID key reports that type `code` on the lock screen. A 4- or 6-digit
     code unlocks by itself; any other code needs Return."""
@@ -128,10 +138,10 @@ async def run(client: aiohttp.ClientSession, base: str, action: str, text: str =
         if code:
             await asyncio.sleep(0.5)
             for report in passcode_keys(code):
-                await key(report)
+                for step in tap_reports(report):
+                    await key(step)
+                    await asyncio.sleep(0.03)
                 await asyncio.sleep(0.04)
-                await key([])
-                await asyncio.sleep(0.06)
         return True, "unlocked" if code else "woken"
 
     if action in _CMD_KEYS:
@@ -155,10 +165,9 @@ async def run(client: aiohttp.ClientSession, base: str, action: str, text: str =
                 skipped += 1
                 continue
             usage, shift = mapped
-            await key([SHIFT, usage] if shift else [usage])
-            await asyncio.sleep(0.008)
-            await key([])
-            await asyncio.sleep(0.006)
+            for step in tap_reports([SHIFT, usage] if shift else [usage]):
+                await key(step)
+                await asyncio.sleep(0.006)
         note = f"{skipped} characters can't be typed on a US keyboard and were skipped." if skipped else ""
         return True, note
     return False, f"Unknown action: {action}"
