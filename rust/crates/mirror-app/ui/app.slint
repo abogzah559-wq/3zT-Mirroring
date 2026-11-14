@@ -2036,12 +2036,25 @@ component SettingsPanel inherits Glass {
                     changed(p) => { root.changed(p); }
                 }
 
+                if root.screen != "android" && root.studio: Card {
+                    title: @tr("Auto unlock");
+                    icon: "\u{E72E}";
+                    tint-a: #8e8e93;
+                    tint-b: #48484a;
+                    Text {
+                        text: @tr("Not available in Studio mode: it sends no touch or keys to the device. Change to Apple Driver mode to unlock from the PC.");
+                        font-size: 12px;
+                        color: Theme.text-2;
+                        wrap: word-wrap;
+                    }
+                }
+
                 if root.screen != "android" && !root.studio: Card {
                     title: @tr("Auto unlock");
                     icon: "\u{E72E}";
                     tint-a: #a78bfa;
                     tint-b: #7c3aed;
-                    info: @tr("Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.");
+                    info: @tr("Apple Driver mode only (not Studio mode). 3zT Mirroring types your passcode only while the iPhone/iPad is locked, then checks that it unlocked. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.");
                     Text {
                         text: root.passcode-set ? @tr("A passcode is saved on this PC.") : @tr("No passcode saved yet.");
                         font-size: 12.5px;

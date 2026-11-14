@@ -843,9 +843,6 @@ msgstr "اختر iPhone / iPad أو Android. تُوقف الجلسة الجار�
 msgid "Auto unlock"
 msgstr "فتح القفل تلقائياً"
 
-msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
-msgstr "في وضع تعريف Apple فقط (ليس وضع الاستوديو). يوقظ 3zT Mirroring جهاز iPhone/iPad ويسحب للأعلى ويكتب رمز الدخول أو كلمة السر. يُحفظ مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."
-
 msgid "A passcode is saved on this PC."
 msgstr "يوجد رمز دخول محفوظ على هذا الكمبيوتر."
 
@@ -1715,3 +1712,30 @@ msgstr "تم التبديل إلى تخطيط «{}». احذف حروف الاخ
 
 msgid "Typing {} characters on the device ({} have no key and were skipped)."
 msgstr "جارٍ كتابة {} حرف على الجهاز (تم تخطّي {} لا يوجد لها مفتاح)."
+
+msgid "Unlocked."
+msgstr "تم الفتح."
+
+msgid "The device is already unlocked."
+msgstr "الجهاز مفتوح أصلاً."
+
+msgid "No passcode is saved, so the device was only woken."
+msgstr "لا يوجد رمز محفوظ، فتم تنبيه الجهاز فقط."
+
+msgid "Passcode typed. The lock state can't be read on this connection, so check the device."
+msgstr "تمت كتابة الرمز. لا يمكن قراءة حالة القفل عبر هذا الاتصال، فتأكد من الجهاز."
+
+msgid "Couldn't tell whether the device is locked, so the passcode wasn't typed. Press Alt+U to unlock."
+msgstr "تعذّر معرفة هل الجهاز مقفل، فلم يُكتب الرمز. اضغط Alt+U للفتح."
+
+msgid "Couldn't unlock. Enter the passcode on the device."
+msgstr "تعذّر الفتح، أدخل الرمز على الجهاز."
+
+msgid "The device didn't take the unlock. Enter the passcode on the device."
+msgstr "لم يستجب الجهاز لأمر الفتح. أدخل الرمز على الجهاز."
+
+msgid "Not available in Studio mode: it sends no touch or keys to the device. Change to Apple Driver mode to unlock from the PC."
+msgstr "غير متاح في Studio mode لأنه لا يرسل لمساً ولا مفاتيح للجهاز. انتقل إلى وضع Apple Driver لتفتح القفل من الكمبيوتر."
+
+msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring types your passcode only while the iPhone/iPad is locked, then checks that it unlocked. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
+msgstr "وضع Apple Driver فقط (ليس Studio mode). يكتب 3zT Mirroring رمزك فقط عندما يكون الآيفون/الآيباد مقفلاً، ثم يتحقق أنه انفتح. يُحفظ الرمز مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."

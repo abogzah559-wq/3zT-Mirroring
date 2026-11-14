@@ -635,11 +635,12 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         // A new session: the device keyboard starts in English.
         IOS_ARABIC.store(false, Relaxed);
     }
+    // Whether a passcode is saved is checked when it fires (the first
+    // status can arrive before the passcode query answers).
     if phase == "streaming"
         && was != "streaming"
         && matches!(backend, "apple" | "hybrid")
         && ui.get_prefs().auto_unlock
-        && ui.get_passcode_set()
     {
         APP.with_borrow_mut(|a| a.unlock_at = Some(Instant::now() + Duration::from_millis(1500)));
     }
@@ -2585,12 +2586,8 @@ fn run_shortcut(
             }
             None => show_toast(ui, tr_ui(ui, "The PC clipboard has no text.")),
         },
-        Shortcut::Apple(a) => {
-            if a == "wake" {
-                device_keyboard_english(input);
-            }
-            input.send(Cmd::Action(a));
-        }
+        Shortcut::Apple("wake") => unlock_device(ui, input, false),
+        Shortcut::Apple(a) => input.send(Cmd::Action(a)),
     }
 }
 
@@ -2641,6 +2638,40 @@ fn type_on_apple(input: &Input, text: &str, layout: shortcuts::KbLayout) -> (boo
         sent = true;
     }
     (sent, skipped)
+}
+
+/// Unlock (Alt+U, or `auto` when mirroring starts): the backend only types
+/// the passcode while the device is locked, then checks that it unlocked;
+/// the toast says what really happened.
+fn unlock_device(ui: &AppWindow, input: &Input, auto: bool) {
+    device_keyboard_english(input);
+    let (tx, rx) = std::sync::mpsc::channel();
+    input.send(Cmd::Unlock(if auto { "auto-unlock" } else { "wake" }, tx));
+    show_toast(ui, tr_ui(ui, "Unlocking the device…"));
+    let weak = ui.as_weak();
+    std::thread::spawn(move || {
+        let reply = rx.recv().ok().flatten();
+        let message = reply
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let text = match message.as_str() {
+                "unlocked" => "Unlocked.",
+                "already-unlocked" if auto => return,
+                "already-unlocked" => "The device is already unlocked.",
+                "woken" => "No passcode is saved, so the device was only woken.",
+                "unverified" => "Passcode typed. The lock state can't be read on this connection, so check the device.",
+                "unknown-state" => "Couldn't tell whether the device is locked, so the passcode wasn't typed. Press Alt+U to unlock.",
+                "failed" => "Couldn't unlock. Enter the passcode on the device.",
+                _ => "The device didn't take the unlock. Enter the passcode on the device.",
+            };
+            show_toast(&ui, tr_ui(&ui, text));
+        });
+    });
 }
 
 /// Alt+G and the AR / EN mark: the device typed the other language than
@@ -4135,10 +4166,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 due
             });
-            if unlock && ui.get_phase().as_str() == "streaming" {
-                device_keyboard_english(&input);
-                input.send(Cmd::Action("wake"));
-                show_toast(&ui, tr_ui(&ui, "Unlocking the device…"));
+            if unlock && ui.get_phase().as_str() == "streaming" && ui.get_passcode_set() {
+                unlock_device(&ui, &input, true);
             }
             APP.with_borrow_mut(|a| {
                 if a.view.is_none() {

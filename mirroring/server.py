@@ -166,9 +166,15 @@ def build_app(manager: CastManager) -> web.Application:
         try:
             from mirroring import secret
 
-            passcode = secret.get_secret("passcode") if body.get("action") == "wake" else ""
+            unlocking = body.get("action") in ("wake", "auto-unlock")
+            passcode = secret.get_secret("passcode") if unlocking else ""
+            dev = files_device() if unlocking else None
+
+            async def is_locked():
+                return await keyboard.device_locked(dev["id"]) if dev else None
+
             ok, message = await keyboard.run(request.app[CLIENT_KEY], UPSTREAM, str(body.get("action")),
-                                             str(body.get("text") or ""), passcode)
+                                             str(body.get("text") or ""), passcode, is_locked)
         except (aiohttp.ClientError, RuntimeError) as error:
             ok, message = False, f"The device didn't take the shortcut ({error})."
         return web.json_response({"ok": ok, "message": message}, status=200 if ok else 502)
