@@ -391,7 +391,7 @@ const APPLE_ARABIC: &[(char, u8, bool)] = &[
     ('.', 0x37, false),
     ('/', 0x38, false),
     ('\'', 0x1d, true),
-    ('ء', 0x1b, true),
+    ('ء', 0x19, true), // Shift+V
     ('ئ', 0x06, true),
     ('أ', 0x05, true),
     ('إ', 0x11, true),
@@ -746,6 +746,12 @@ mod tests {
         assert_eq!(arabic_usage(ap, 'ذ'), Some((0x06, false)));
         assert_eq!(arabic_usage(ap, 'ة'), Some((0x30, false)));
         assert_eq!(arabic_usage(ap, 'ى'), Some((0x07, true)));
+        // CLDR: Shift+V = ء, Shift+C = ئ, Shift+B = أ, Shift+N = إ, Shift+M = ؤ.
+        assert_eq!(arabic_usage(ap, 'ء'), Some((0x19, true)));
+        assert_eq!(arabic_usage(ap, 'ئ'), Some((0x06, true)));
+        assert_eq!(arabic_usage(ap, 'أ'), Some((0x05, true)));
+        assert_eq!(arabic_usage(ap, 'إ'), Some((0x11, true)));
+        assert_eq!(arabic_usage(ap, 'ؤ'), Some((0x10, true)));
         assert_eq!(arabic_usage(ap, '٢'), Some((0x1f, false)));
         assert_eq!(
             device_key('.', true, ap),
