@@ -8,6 +8,7 @@ mod devprofiles;
 mod dots;
 mod filedrop;
 mod flow;
+mod frame;
 mod i18n;
 mod input;
 mod prefs;
@@ -220,6 +221,12 @@ struct App {
     start_h: Option<(f32, Instant)>,
     /// Apple phase seen last (auto unlock fires on the step to streaming).
     apple_phase: String,
+    /// The Apple device shown (UDID) and whether it is an iPad (no frame).
+    apple_udid: String,
+    apple_ipad: bool,
+    /// Its saved iPhone frame finish, and one being previewed in the picker.
+    frame_finish: String,
+    frame_preview: Option<String>,
     /// When to send the auto-unlock (Apple Driver mode, picture running).
     unlock_at: Option<Instant>,
     /// Whether the backend was asked if a passcode is saved.
@@ -604,6 +611,24 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         })
         .or_else(|| list.and_then(|l| l.first()));
     let first_id = first.and_then(|d| str_of(d, &["id"])).unwrap_or("");
+    // The device shown: its frame finish is kept per device (UDID).
+    let udid = str_of(st, &["device", "id"])
+        .unwrap_or(first_id)
+        .to_string();
+    let ipad = first
+        .and_then(|d| str_of(d, &["family"]))
+        .is_some_and(|f| f == "iPad");
+    if APP.with_borrow(|a| a.apple_udid != udid || a.frame_finish.is_empty()) {
+        let finish = prefs::frame_finish(&udid);
+        APP.with_borrow_mut(|a| {
+            a.apple_udid = udid.clone();
+            a.frame_finish = finish;
+            a.frame_preview = None;
+            a.fitted = None;
+        });
+        apply_frame_colours(ui);
+    }
+    APP.with_borrow_mut(|a| a.apple_ipad = ipad);
     let rows = apple_rows(ui, st, first_id);
     ui.set_apple_devices(std::rc::Rc::new(slint::VecModel::from(rows)).into());
     let device = str_of(st, &["device", "name"])
@@ -886,6 +911,77 @@ fn work_area(ui: &AppWindow) -> Option<(f32, f32, f32, f32)> {
     }
 }
 
+/// The iPhone frame is drawn now (set by the frame tick, read by window
+/// fitting, which runs while `APP` is borrowed).
+static FRAME_ON: AtomicBool = AtomicBool::new(false);
+
+/// Whether to draw the iPhone frame: Apple screen, picture running, an
+/// iPhone (no frames for iPad / Android in this version), "Whole picture"
+/// fit and the frame turned on. F2 (clean view) keeps it.
+fn frame_wanted(ui: &AppWindow, streaming: bool, ipad: bool) -> bool {
+    let p = ui.get_prefs();
+    p.frame_on
+        && streaming
+        && !ipad
+        && ui.get_screen().as_str() == "apple"
+        && p.fit.as_str() == "contain"
+}
+
+/// Frame colours: the finish being previewed, else the device's own.
+fn apply_frame_colours(ui: &AppWindow) {
+    let id = APP.with_borrow(|a| {
+        a.frame_preview
+            .clone()
+            .unwrap_or_else(|| a.frame_finish.clone())
+    });
+    let f = frame::finish(&id);
+    let c = |rgb: u32| slint::Color::from_rgb_u8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8);
+    ui.set_frame_band(c(f.band));
+    ui.set_frame_shine(c(f.shine));
+    ui.set_frame_buttons(c(f.buttons));
+    ui.set_frame_finish_custom(id.starts_with('#'));
+    ui.set_frame_finish(id.into());
+}
+
+/// Settings › iPhone frame: keep a finish for this iPhone, preview one
+/// (empty = back to the kept one), or a custom colour from the hue slider.
+fn frame_action(ui: &AppWindow, a: &str) -> bool {
+    let keep = |ui: &AppWindow, id: String| {
+        let udid = APP.with_borrow_mut(|x| {
+            x.frame_finish = id.clone();
+            x.frame_preview = None;
+            x.apple_udid.clone()
+        });
+        prefs::set_frame_finish(&udid, &id);
+        apply_frame_colours(ui);
+    };
+    if let Some(id) = a.strip_prefix("frame:") {
+        if frame::valid(id) {
+            keep(ui, id.to_string());
+        }
+    } else if let Some(id) = a.strip_prefix("frame-preview:") {
+        let id = (!id.is_empty() && frame::valid(id)).then(|| id.to_string());
+        APP.with_borrow_mut(|x| x.frame_preview = id);
+        apply_frame_colours(ui);
+    } else if let Some(h) = a.strip_prefix("frame-hue:") {
+        if let Ok(h) = h.parse::<f32>() {
+            keep(ui, frame::custom_from_hue(h));
+        }
+    } else {
+        return false;
+    }
+    true
+}
+
+/// Window fitting with the frame: the frame's size for a picture this size.
+fn framed_size(shown: (u32, u32)) -> (u32, u32) {
+    if !FRAME_ON.load(Relaxed) || shown.0 == 0 || shown.1 == 0 {
+        return shown;
+    }
+    let (w, h) = frame::outer_size(shown.0 as f32, shown.1 as f32);
+    (w.round() as u32, h.round() as u32)
+}
+
 /// Size the window around the picture (portrait or landscape).
 /// Gap between the picture and the glass stage edge (logical px).
 const PIC_INSET: f32 = 6.0;
@@ -941,6 +1037,7 @@ fn fit_prefs_key(p: &Prefs) -> String {
 
 /// Default fitted picture size (logical px, without chrome) for `shown`.
 fn default_fit(ui: &AppWindow, shown: (u32, u32)) -> Option<(f32, f32)> {
+    let shown = framed_size(shown);
     let (_, _, ww, wh) = work_area(ui)?;
     let chrome_w = ui.get_chrome_w() + 2.0 * pic_inset(ui);
     let chrome_h = ui.get_chrome_h() + 2.0 * pic_inset(ui);
@@ -2558,6 +2655,24 @@ fn run_shortcut(
         ),
         Shortcut::Lock => ui.invoke_action("lock".into()),
         Shortcut::CopyText => copy_screen_text(ui),
+        Shortcut::Frame => {
+            let mut p = ui.get_prefs();
+            p.frame_on = !p.frame_on;
+            ui.set_prefs(p.clone());
+            prefs::save(&p);
+            APP.with_borrow_mut(|a| a.fitted = None);
+            show_toast(
+                ui,
+                tr_ui(
+                    ui,
+                    if p.frame_on {
+                        "iPhone frame on"
+                    } else {
+                        "iPhone frame off"
+                    },
+                ),
+            );
+        }
         Shortcut::ClearText => {
             std::thread::spawn(|| Api::new().post("/api/ocr/clear", &json!({})));
             show_toast(
@@ -3870,6 +3985,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 return;
             }
+            if a.starts_with("frame") {
+                if let Some(ui) = weak.upgrade() {
+                    frame_action(&ui, a.as_str());
+                }
+                return;
+            }
             if matches!(a.as_str(), "restore" | "bind" | "removefilter") {
                 if let Some(ui) = weak.upgrade() {
                     confirm_driver(&ui, a.as_str());
@@ -4373,7 +4494,34 @@ fn main() -> Result<(), slint::PlatformError> {
                     h = (h - 2.0 * inset).max(1.0);
                 }
                 let pic = v.shown_size();
-                if p.fit != "cover" && p.fit != "fill" && pic.0 > 0 && pic.1 > 0 && w > 0.0 && h > 0.0 {
+                let framed = frame_wanted(&ui, streaming && !on_android, a.apple_ipad)
+                    && pic.0 > 0
+                    && pic.1 > 0
+                    && w > 0.0
+                    && h > 0.0;
+                if FRAME_ON.swap(framed, Relaxed) != framed {
+                    // The window fits the frame (or the bare picture) again.
+                    a.fitted = None;
+                }
+                let mut radius = if ui.get_clean() { 0 } else { ((22.0 - PIC_INSET) * sf).round() as i32 };
+                if framed {
+                    // The picture goes in the frame's screen, with its corners.
+                    let l = frame::fit(x, y, w, h, pic.0 as f32 / pic.1 as f32);
+                    (x, y, w, h) = l.screen;
+                    radius = l.radius.round() as i32;
+                    ui.set_frame_x(l.outer.0 / sf);
+                    ui.set_frame_y(l.outer.1 / sf);
+                    ui.set_frame_w(l.outer.2 / sf);
+                    ui.set_frame_h(l.outer.3 / sf);
+                    ui.set_frame_sw(l.screen.2 / sf);
+                    ui.set_frame_sh(l.screen.3 / sf);
+                    ui.set_frame_unit(l.unit / sf);
+                    ui.set_frame_landscape(l.landscape);
+                }
+                if framed != ui.get_frame_show() {
+                    ui.set_frame_show(framed);
+                }
+                if !framed && p.fit != "cover" && p.fit != "fill" && pic.0 > 0 && pic.1 > 0 && w > 0.0 && h > 0.0 {
                     let aspect = pic.0 as f32 / pic.1 as f32;
                     let (pw, ph) = if w / h > aspect { (h * aspect, h) } else { (w, w / aspect) };
                     x += (w - pw) / 2.0;
@@ -4406,7 +4554,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     ));
                 }
                 v.set_holes(&holes);
-                v.set_bounds(x.round() as i32, y.round() as i32, w.round() as i32, h.round() as i32, streaming, if ui.get_clean() { 0 } else { ((22.0 - PIC_INSET) * sf).round() as i32 });
+                v.set_bounds(x.round() as i32, y.round() as i32, w.round() as i32, h.round() as i32, streaming, radius);
                 let shown = v.shown_size();
                 // The clean view waits for a real frame: until then the header
                 // (Restart, Stop) stays.

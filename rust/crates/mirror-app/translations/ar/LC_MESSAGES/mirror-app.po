@@ -1757,3 +1757,63 @@ msgstr "فك الترميز عبر"
 
 msgid "Decode time"
 msgstr "زمن فك الترميز"
+
+msgid "iPhone frame"
+msgstr "إطار الآيفون"
+
+msgid "Shows the picture inside an iPhone body instead of a plain rectangle, also in full screen (F2). Point at a colour to see it on the phone, click to keep it; or click the colours and use the arrow keys, Enter to keep, Esc to go back. Each iPhone keeps its own colour. iPad gets no frame in this version."
+msgstr "يعرض الصورة داخل جسم آيفون بدل المستطيل، حتى في ملء الشاشة (F2). مرّر المؤشر على لون لتراه على الجوال، واضغط عليه لتثبيته؛ أو اضغط على الألوان واستخدم الأسهم، Enter للحفظ وEsc للتراجع. كل آيفون يحتفظ بلونه. لا إطار للآيباد في هذا الإصدار."
+
+msgid "Show the frame"
+msgstr "إظهار الإطار"
+
+msgid "Alt+F at any time"
+msgstr "أو Alt+F في أي وقت"
+
+msgid "Graphite"
+msgstr "جرافيت"
+
+msgid "Space Black"
+msgstr "أسود فلكي"
+
+msgid "Silver"
+msgstr "فضي"
+
+msgid "White"
+msgstr "أبيض"
+
+msgid "Gold"
+msgstr "ذهبي"
+
+msgid "Cosmic Orange"
+msgstr "برتقالي كوني"
+
+msgid "Red"
+msgstr "أحمر"
+
+msgid "Pink"
+msgstr "وردي"
+
+msgid "Yellow"
+msgstr "أصفر"
+
+msgid "Sage"
+msgstr "أخضر مريمي"
+
+msgid "Deep Blue"
+msgstr "أزرق داكن"
+
+msgid "Deep Purple"
+msgstr "بنفسجي داكن"
+
+msgid "Own colour (the last circle), drag to pick it:"
+msgstr "لون من اختيارك (الدائرة الأخيرة)، اسحب لاختياره:"
+
+msgid "iPhone frame on / off"
+msgstr "إظهار / إخفاء إطار الآيفون"
+
+msgid "iPhone frame on"
+msgstr "إطار الآيفون ظاهر"
+
+msgid "iPhone frame off"
+msgstr "إطار الآيفون مخفي"
