@@ -269,7 +269,7 @@ mod aac {
                 let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
                 MFStartup(MF_VERSION, MFSTARTUP_LITE)?;
                 let mft: IMFTransform =
-                    CoCreateInstance(&CLSID_AACMFTEncoder, None, CLSCTX_INPROC_SERVER)?;
+                    CoCreateInstance(&AACMFTEncoder, None, CLSCTX_INPROC_SERVER)?;
                 let block = channels * 2;
                 let input = MFCreateMediaType()?;
                 input.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Audio)?;
