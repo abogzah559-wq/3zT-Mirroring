@@ -17,6 +17,23 @@ pub enum Record {
     Config(CodecInfo),
 }
 
+/// GET `path` on the backend as a byte stream (recording reads
+/// /cast/audio.bin with it).
+pub fn open_raw(path: &str) -> Result<Box<dyn Read + Send>, String> {
+    let agent: ureq::Agent = ureq::Agent::config_builder()
+        .http_status_as_error(false)
+        .build()
+        .into();
+    let r = agent
+        .get(format!("{}{path}", base_url()))
+        .call()
+        .map_err(|e| e.to_string())?;
+    if r.status() != 200 {
+        return Err(format!("{path}: HTTP {}", r.status()));
+    }
+    Ok(Box::new(r.into_body().into_reader()))
+}
+
 pub struct StreamReader {
     reader: Box<dyn Read + Send>,
 }

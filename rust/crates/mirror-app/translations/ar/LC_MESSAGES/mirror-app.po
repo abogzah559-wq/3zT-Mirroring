@@ -1964,3 +1964,33 @@ msgstr "تم حفظ اللقطة في الصور › 3zT Screenshots."
 
 msgid "The screenshot was not saved: {}"
 msgstr "لم تُحفظ اللقطة: {}"
+
+msgid "Record the screen (Alt+O): Videos › 3zT Recordings; press again to stop"
+msgstr "تسجيل الشاشة (Alt+O): الفيديوهات › 3zT Recordings؛ اضغط مرة ثانية للإيقاف"
+
+msgid "Record"
+msgstr "تسجيل"
+
+msgid "Start / stop recording (Videos › 3zT Recordings)"
+msgstr "بدء / إيقاف التسجيل (الفيديوهات › 3zT Recordings)"
+
+msgid "Saving the recording…"
+msgstr "جارٍ حفظ التسجيل…"
+
+msgid "Recording. Press Alt+O or the red mark to stop."
+msgstr "جارٍ التسجيل. اضغط Alt+O أو العلامة الحمراء للإيقاف."
+
+msgid "Could not start recording: {}"
+msgstr "تعذّر بدء التسجيل: {}"
+
+msgid "The recording failed: {}"
+msgstr "فشل التسجيل: {}"
+
+msgid "Recording saved in Videos › 3zT Recordings (it stopped early: {})."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings (توقف مبكراً: {})."
+
+msgid "Recording saved in Videos › 3zT Recordings."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings."
+
+msgid "Recording saved in Videos › 3zT Recordings as {} parts (the device turned)."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings في {} أجزاء (الجهاز دار)."

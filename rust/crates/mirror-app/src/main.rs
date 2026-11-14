@@ -12,7 +12,9 @@ mod flow;
 mod frame;
 mod i18n;
 mod input;
+mod mp4mux;
 mod prefs;
+mod record;
 mod shortcuts;
 mod shot;
 mod tray;
@@ -226,6 +228,8 @@ struct App {
     /// The Apple device shown (UDID) and whether it is an iPad (no frame).
     apple_udid: String,
     apple_ipad: bool,
+    /// The screen recording running, if any.
+    recording: Option<record::Recording>,
     /// Folder the last import from the phone went to ("Open folder").
     import_folder: Option<std::path::PathBuf>,
     /// Its saved iPhone frame finish, and one being previewed in the picker.
@@ -2677,6 +2681,7 @@ fn run_shortcut(
         Shortcut::Lock => ui.invoke_action("lock".into()),
         Shortcut::CopyText => copy_screen_text(ui),
         Shortcut::Screenshot => take_screenshot(ui),
+        Shortcut::Record => toggle_recording(ui),
         Shortcut::Frame => {
             let mut p = ui.get_prefs();
             p.frame_on = !p.frame_on;
@@ -2860,6 +2865,78 @@ fn take_screenshot(ui: &AppWindow) {
             show_toast(&ui, tr_ui(&ui, &en));
         });
     });
+}
+
+/// Alt+O / Record: start or stop recording the iPhone/iPad picture (and its
+/// sound when it plays on this PC) into Videos › 3zT Recordings.
+fn toggle_recording(ui: &AppWindow) {
+    if APP.with_borrow(|a| a.recording.as_ref().map(|r| r.stop()).is_some()) {
+        show_toast(ui, tr_ui(ui, "Saving the recording…"));
+        return;
+    }
+    if ui.get_screen().as_str() == "android" {
+        return;
+    }
+    let size = APP.with_borrow(|a| {
+        a.streaming
+            .then(|| a.view.as_ref().map(|v| v.frame_size()))
+            .flatten()
+    });
+    let Some(size) = size.filter(|s| s.0 > 0) else {
+        show_toast(ui, tr_ui(ui, "Start mirroring first."));
+        return;
+    };
+    let sound = ui.get_prefs().audio_out.as_str() == "pc";
+    match record::start(size, sound) {
+        Ok(r) => {
+            APP.with_borrow_mut(|a| a.recording = Some(r));
+            show_toast(
+                ui,
+                tr_ui(ui, "Recording. Press Alt+O or the red mark to stop."),
+            );
+        }
+        Err(e) => show_toast(ui, tr_ui(ui, &format!("Could not start recording: {e}"))),
+    }
+}
+
+/// Once a second from the frame timer: the red mark's time, and the
+/// message when a recording has ended.
+fn recording_tick(ui: &AppWindow) {
+    let state = APP.with_borrow(|a| {
+        a.recording
+            .as_ref()
+            .map(|r| (r.started.elapsed().as_secs(), r.finished()))
+    });
+    let Some((secs, done)) = state else {
+        if !ui.get_rec_time().is_empty() {
+            ui.set_rec_time("".into());
+        }
+        return;
+    };
+    match done {
+        None => {
+            let t = format!("{:02}:{:02}", secs / 60, secs % 60);
+            if ui.get_rec_time().as_str() != t {
+                ui.set_rec_time(t.into());
+            }
+        }
+        Some((files, error)) => {
+            APP.with_borrow_mut(|a| a.recording = None);
+            ui.set_rec_time("".into());
+            let parts = files.len();
+            let en = match (parts, error) {
+                (0, Some(e)) => format!("The recording failed: {e}"),
+                (_, Some(e)) if e != "the picture stopped" => {
+                    format!("Recording saved in Videos › 3zT Recordings (it stopped early: {e}).")
+                }
+                (1, _) => "Recording saved in Videos › 3zT Recordings.".to_string(),
+                (n, _) => format!(
+                    "Recording saved in Videos › 3zT Recordings as {n} parts (the device turned)."
+                ),
+            };
+            show_toast(ui, tr_ui(ui, &en));
+        }
+    }
 }
 
 /// Alt+G and the AR / EN mark: the device typed the other language than
@@ -3897,6 +3974,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 "toggle-keyboard" => input.send(Cmd::Action("toggle-keyboard")),
                 "files-send" => filedrop::send_dialog(&ui),
                 "screenshot" => take_screenshot(&ui),
+                "record" => toggle_recording(&ui),
                 "files-import" => filedrop::import_open(&ui),
                 "mute" => {
                     let m = !ui.get_muted();
@@ -4160,6 +4238,7 @@ fn main() -> Result<(), slint::PlatformError> {
                 "close" => close_requested(&ui),
                 // The AR / EN mark: same as Alt+G.
                 "kb-lang" => switch_device_language(&input_win),
+                "rec" => toggle_recording(&ui),
                 "coffee" => open_url(SUPPORT_URL),
                 // F2 showed or hid the header and dock: fit the window again
                 // so they sit around the picture.
@@ -4323,6 +4402,7 @@ fn main() -> Result<(), slint::PlatformError> {
         let centring = std::cell::Cell::new(None::<(Instant, slint::PhysicalPosition)>);
         timer.start(slint::TimerMode::Repeated, Duration::from_millis(16), move || {
             let Some(ui) = weak.upgrade() else { return };
+            recording_tick(&ui);
             // The AR / EN mark: what 3zT Mirroring expects the device
             // keyboard to type (Apple Driver / Hybrid, PC keyboard on).
             let kb_lang = if ui.get_screen().as_str() != "android"

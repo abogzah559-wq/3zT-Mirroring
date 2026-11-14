@@ -28,6 +28,8 @@ pub enum Shortcut {
     Frame,
     /// Alt+P: screenshot.
     Screenshot,
+    /// Alt+O: start / stop recording (iPhone / iPad).
+    Record,
     /// Apple Driver mode actions (`/api/keyboard/action`).
     Apple(&'static str),
     /// Android buttons (`android::Shared::action`).
@@ -73,6 +75,7 @@ pub fn route(
             ('r', _) => Some(Shortcut::ClearText),
             ('f', false) => Some(Shortcut::Frame),
             ('p', _) => Some(Shortcut::Screenshot),
+            ('o', false) => Some(Shortcut::Record),
             (UP, true) => Some(Shortcut::Android("vol-up")),
             (DOWN, true) => Some(Shortcut::Android("vol-down")),
             _ => None,

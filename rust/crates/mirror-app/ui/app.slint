@@ -235,6 +235,8 @@ component TopBar inherits Rectangle {
     // Language the iPhone/iPad hardware keyboard types now ("" = hidden):
     // AR / EN, click (or Alt+G) when it no longer matches the device.
     in property <string> kb-lang;
+    // Recording: elapsed time ("" = not recording); click stops it.
+    in property <string> rec;
     height: 46px;
     // Empty header space moves the window; double-click maximises.
     TouchArea {
@@ -331,6 +333,26 @@ component TopBar inherits Rectangle {
                 overflow: elide;
             }
             if stats != "": Text { text: stats; font-size: 10.5px; color: Theme.text-3; overflow: elide; font-family: "Cascadia Mono"; }
+        }
+        if root.rec != "": VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: recT.preferred-width + 30px;
+                height: 22px;
+                border-radius: 11px;
+                background: recTa.has-hover ? #ef5466 : #ef546699;
+                Rectangle { x: 9px; width: 8px; height: 8px; border-radius: 4px; background: white; }
+                recT := Text {
+                    x: 22px;
+                    text: root.rec;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    color: white;
+                    font-family: "Cascadia Mono";
+                    vertical-alignment: center;
+                }
+                recTa := TouchArea { clicked => { root.window-action("rec"); } }
+            }
         }
         if root.kb-lang != "": VerticalLayout {
             alignment: center;
@@ -452,6 +474,7 @@ component BottomBar inherits Rectangle {
                 Chip { icon: "\u{E72E}"; tip: root.android ? @tr("Power button (lock / wake the screen)") : @tr("Lock screen"); label: compact ? "" : @tr("Lock"); clicked => { root.action("lock"); } }
                 if !root.android: Chip { icon: "\u{E785}"; tip: @tr("Wake and unlock (Alt+U)"); label: compact ? "" : @tr("Unlock"); clicked => { root.action("wake"); } }
                 if !root.android: Rectangle { width: 1px; background: Theme.dark ? #ffffff1f : #0000001a; }
+                if !root.android: Chip { icon: "\u{E7C8}"; tip: @tr("Record the screen (Alt+O): Videos › 3zT Recordings; press again to stop"); label: compact ? "" : @tr("Record"); clicked => { root.action("record"); } }
                 Chip { icon: "\u{E722}"; tip: @tr("Screenshot (Alt+P): saved in Pictures › 3zT Screenshots and copied"); label: compact ? "" : @tr("Screenshot"); clicked => { root.action("screenshot"); } }
                 if !root.android: Chip { icon: "\u{E898}"; tip: @tr("Send files to the phone…"); label: compact ? "" : @tr("Send"); clicked => { root.action("files-send"); } }
                 if !root.android: Chip { icon: "\u{E896}"; tip: @tr("Import photos, videos and files from the phone…"); label: compact ? "" : @tr("Import"); clicked => { root.action("files-import"); } }
@@ -2171,6 +2194,7 @@ component SettingsPanel inherits Glass {
                     info: @tr("While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.");
                     KeyRow { keys: "Alt + M"; text: @tr("Sound on the PC on / off"); }
                     KeyRow { keys: "Alt + P"; text: @tr("Screenshot (Pictures › 3zT Screenshots, also copied)"); }
+                    if root.screen != "android": KeyRow { keys: "Alt + O"; text: @tr("Start / stop recording (Videos › 3zT Recordings)"); }
                     KeyRow { keys: "F2"; text: @tr("Show / hide the controls around the picture"); }
                     KeyRow { keys: "F11 · Esc"; text: @tr("Full screen / leave"); }
                     KeyRow { keys: "Ctrl + ,"; text: @tr("Open / close Settings"); }
@@ -2739,6 +2763,7 @@ export component AppWindow inherits Window {
     callback save-passcode(string);
     // Notice sheet (driver changes).
     in property <string> ios-kb-lang;
+    in property <string> rec-time;
     // iPhone frame (Rust places it with the picture, window coordinates).
     in property <string> frame-finish;
     in property <bool> frame-finish-custom;
@@ -2950,6 +2975,7 @@ export component AppWindow inherits Window {
                 upd-busy: root.upd-busy;
                 upd-progress: root.upd-progress;
                 kb-lang: root.ios-kb-lang;
+                rec: root.rec-time;
                 update-now => { root.update-action("install"); }
                 window-action(a) => { root.window-action(a); }
                 start => {
