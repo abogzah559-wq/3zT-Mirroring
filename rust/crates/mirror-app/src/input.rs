@@ -45,9 +45,9 @@ const KEY_GAP_MS: u64 = 12;
 const KEY_HOLD_MS: u64 = 25;
 
 /// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
-/// `kb-timing.txt` ("before after gap" in ms) in the data folder overrides
-/// the pauses without a rebuild.
-fn pauses() -> (u64, u64, u64) {
+/// `kb-timing.txt` ("before after gap hold" in ms) in the data folder
+/// overrides the pauses without a rebuild.
+fn pauses() -> (u64, u64, u64, u64) {
     let tuned = mirror_core::local_data_dir()
         .and_then(|d| std::fs::read_to_string(d.join("kb-timing.txt")).ok())
         .and_then(|t| {
@@ -56,9 +56,21 @@ fn pauses() -> (u64, u64, u64) {
                 it.next()??,
                 it.next()??,
                 it.next().flatten().unwrap_or(KEY_GAP_MS),
+                it.next().flatten().unwrap_or(KEY_HOLD_MS),
             ))
         });
-    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS))
+    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS, KEY_HOLD_MS))
+}
+
+/// One key tap: each report in order, the key held `hold` ms while down.
+fn tap(api: &Api, usages: &[u8], hold: u64) {
+    for r in key_reports(usages) {
+        let down = r.iter().any(|u| *u < 0xe0);
+        api.key(&serde_json::json!({ "usages": r }));
+        if down {
+            std::thread::sleep(Duration::from_millis(hold.min(200)));
+        }
+    }
 }
 
 #[derive(Clone)]

@@ -659,9 +659,10 @@ struct Processor {
     enumr: ID3D11VideoProcessorEnumerator,
     vp: ID3D11VideoProcessor,
     key: (u32, u32, u32, u32),
+    full: bool,
 }
 
-fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Processor> {
+fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32, full: bool) -> Result<Processor> {
     unsafe {
         let desc = D3D11_VIDEO_PROCESSOR_CONTENT_DESC {
             InputFrameFormat: D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE,
@@ -684,11 +685,15 @@ fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Proce
         let vc = &gpu.video_context;
         vc.VideoProcessorSetStreamFrameFormat(&vp, 0, D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE);
         vc.VideoProcessorSetStreamAutoProcessingMode(&vp, 0, false);
-        // BT.709, studio range in; full-range RGB out.
+        // BT.709 in, studio range (16-235) or, for streams that say so in
+        // their SPS (iPhone), full range (0-255); full-range RGB out.
+        // Nominal_Range is bits 4-5: 1 = 16-235, 2 = 0-255.
         vc.VideoProcessorSetStreamColorSpace(
             &vp,
             0,
-            &D3D11_VIDEO_PROCESSOR_COLOR_SPACE { _bitfield: 0x14 },
+            &D3D11_VIDEO_PROCESSOR_COLOR_SPACE {
+                _bitfield: if full { 0x24 } else { 0x14 },
+            },
         );
         vc.VideoProcessorSetOutputColorSpace(
             &vp,
@@ -698,6 +703,7 @@ fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Proce
             enumr,
             vp,
             key: (iw, ih, ow, oh),
+            full,
         })
     }
 }
@@ -1159,7 +1165,7 @@ fn render_session(inner: &Inner) -> Result<()> {
                     Some(s) => {
                         let (n, ready) = slot.map_or((0, None), |i| r.meta[i]);
                         shown_frame = (n, ready);
-                        Some((s.tex.clone(), s.w, s.h, s.src, r.seq))
+                        Some((s.tex.clone(), s.w, s.h, s.src, r.seq, r.full_range))
                     }
                     None => None,
                 }
@@ -1172,15 +1178,15 @@ fn render_session(inner: &Inner) -> Result<()> {
                 (bg & 255) as f32 / 255.0,
             );
             match frame {
-                Some((tex, w, h, mut src, seq)) => {
+                Some((tex, w, h, mut src, seq, full)) => {
                     let c: Vec<i32> = inner.crop.iter().map(|a| a.load(Relaxed) as i32).collect();
                     let (sw, sh) = (src.right - src.left, src.bottom - src.top);
                     src.left += c[0].min(sw / 2);
                     src.right -= c[2].min(sw / 2);
                     src.top += c[1].min(sh / 2);
                     src.bottom -= c[3].min(sh / 2);
-                    if proc_.as_ref().map(|p| p.key) != Some((w, h, cw, ch)) {
-                        proc_ = match make_processor(gpu, w, h, cw, ch) {
+                    if proc_.as_ref().map(|p| (p.key, p.full)) != Some(((w, h, cw, ch), full)) {
+                        proc_ = match make_processor(gpu, w, h, cw, ch, full) {
                             Ok(p) => Some(p),
                             Err(e) => {
                                 log::warn!("processor {w}x{h} -> {cw}x{ch}: {e}");

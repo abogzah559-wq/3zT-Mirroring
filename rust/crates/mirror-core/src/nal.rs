@@ -213,6 +213,34 @@ pub fn hvcc_from_annexb(config: &[u8]) -> Option<Vec<u8>> {
 mod tests {
     use super::*;
 
+    fn hex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
+
+    fn sets(nal: &str) -> ParamSets {
+        let mut annexb = START.to_vec();
+        annexb.extend(hex(nal));
+        ParamSets {
+            annexb,
+            length_size: 4,
+        }
+    }
+
+    #[test]
+    fn full_range_comes_from_the_sps() {
+        // iPhone 12 Pro Max, iOS 27.2 (HEVC, full range).
+        let iphone = "420111016000000300b000000300000300964800a22002c05880cee45218b9fc4fc2fe86\
+                      fd43fea823f5504feaa82bf55505feaaa833f555529b8101010040";
+        assert!(full_range(&Codec::Hevc, &sets(&iphone.replace(' ', ""))));
+        // x264, studio range.
+        let x264 = "6764000dacd94141fb011000000300100000030320f1429960";
+        assert!(!full_range(&Codec::H264, &sets(x264)));
+        assert!(!full_range(&Codec::Hevc, &ParamSets::default()));
+    }
+
     #[test]
     fn hvcc_from_scrcpy_config_round_trips() {
         let mut config = vec![0, 0, 0, 1, 0x40, 0x01, 0x0c, 0x01];
@@ -299,4 +327,259 @@ mod tests {
         assert_eq!(ps.length_size, 4);
         assert_eq!(ps.annexb, vec![0, 0, 0, 1, 0x40, 1, 2]);
     }
+}
+
+/// Whether the stream's pictures use full-range YUV (0-255) rather than
+/// studio range (16-235), from the `video_full_range_flag` in the SPS's VUI.
+/// iPhone screen streams are full range; showing them as studio range
+/// stretches the contrast (harsh, over-bright colours). No VUI = studio.
+pub fn full_range(codec: &Codec, ps: &ParamSets) -> bool {
+    split_annexb(&ps.annexb)
+        .into_iter()
+        .find_map(|nal| match codec {
+            Codec::H264 if nal.first().map(|b| b & 0x1f) == Some(7) => {
+                avc_sps_full_range(&unescape(nal.get(1..)?))
+            }
+            Codec::Hevc if nal.first().map(|b| (b >> 1) & 0x3f) == Some(33) => {
+                hevc_sps_full_range(&unescape(nal.get(2..)?))
+            }
+            _ => None,
+        })
+        .unwrap_or(false)
+}
+
+/// RBSP: the NAL payload without its emulation-prevention bytes.
+fn unescape(nal: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(nal.len());
+    let mut zeros = 0;
+    for &b in nal {
+        if zeros >= 2 && b == 3 {
+            zeros = 0;
+            continue;
+        }
+        zeros = if b == 0 { zeros + 1 } else { 0 };
+        out.push(b);
+    }
+    out
+}
+
+struct Bits<'a> {
+    data: &'a [u8],
+    pos: usize,
+}
+
+impl Bits<'_> {
+    fn bit(&mut self) -> Option<u32> {
+        let b = *self.data.get(self.pos / 8)?;
+        let v = (b >> (7 - self.pos % 8)) & 1;
+        self.pos += 1;
+        Some(v as u32)
+    }
+    fn bits(&mut self, n: u32) -> Option<u32> {
+        let mut v = 0;
+        for _ in 0..n {
+            v = (v << 1) | self.bit()?;
+        }
+        Some(v)
+    }
+    fn skip(&mut self, n: usize) -> Option<()> {
+        self.pos += n;
+        (self.pos <= self.data.len() * 8).then_some(())
+    }
+    fn ue(&mut self) -> Option<u32> {
+        let mut zeros = 0;
+        while self.bit()? == 0 {
+            zeros += 1;
+            if zeros > 31 {
+                return None;
+            }
+        }
+        Some((1u32 << zeros) - 1 + self.bits(zeros)?)
+    }
+    fn se(&mut self) -> Option<i32> {
+        let k = self.ue()?;
+        Some(if k % 2 == 1 {
+            (k / 2 + 1) as i32
+        } else {
+            -((k / 2) as i32)
+        })
+    }
+    /// The VUI's start: aspect ratio, overscan, then the video signal type.
+    fn vui_full_range(&mut self) -> Option<bool> {
+        if self.bit()? == 1 && self.bits(8)? == 255 {
+            self.skip(32)?;
+        }
+        if self.bit()? == 1 {
+            self.skip(1)?;
+        }
+        if self.bit()? == 0 {
+            return Some(false);
+        }
+        self.skip(3)?;
+        Some(self.bit()? == 1)
+    }
+}
+
+fn avc_sps_full_range(rbsp: &[u8]) -> Option<bool> {
+    let mut b = Bits { data: rbsp, pos: 0 };
+    let profile = b.bits(8)?;
+    b.skip(16)?;
+    b.ue()?;
+    if [100, 110, 122, 244, 44, 83, 86, 118, 128, 138, 139, 134, 135].contains(&profile) {
+        let chroma = b.ue()?;
+        if chroma == 3 {
+            b.skip(1)?;
+        }
+        b.ue()?;
+        b.ue()?;
+        b.skip(1)?;
+        if b.bit()? == 1 {
+            for i in 0..if chroma == 3 { 12 } else { 8 } {
+                if b.bit()? == 1 {
+                    let size = if i < 6 { 16 } else { 64 };
+                    let (mut last, mut next) = (8i32, 8i32);
+                    for _ in 0..size {
+                        if next != 0 {
+                            next = (last + b.se()? + 256) % 256;
+                        }
+                        if next != 0 {
+                            last = next;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    b.ue()?;
+    match b.ue()? {
+        0 => {
+            b.ue()?;
+        }
+        1 => {
+            b.skip(1)?;
+            b.se()?;
+            b.se()?;
+            for _ in 0..b.ue()? {
+                b.se()?;
+            }
+        }
+        _ => {}
+    }
+    b.ue()?;
+    b.skip(1)?;
+    b.ue()?;
+    b.ue()?;
+    if b.bit()? == 0 {
+        b.skip(1)?;
+    }
+    b.skip(1)?;
+    if b.bit()? == 1 {
+        for _ in 0..4 {
+            b.ue()?;
+        }
+    }
+    if b.bit()? == 0 {
+        return Some(false);
+    }
+    b.vui_full_range()
+}
+
+fn hevc_sps_full_range(rbsp: &[u8]) -> Option<bool> {
+    let mut b = Bits { data: rbsp, pos: 0 };
+    b.skip(4)?;
+    let sub_layers = b.bits(3)? as usize;
+    b.skip(1)?;
+    // profile_tier_level
+    b.skip(96)?;
+    let mut present = Vec::with_capacity(sub_layers);
+    for _ in 0..sub_layers {
+        present.push((b.bit()?, b.bit()?));
+    }
+    if sub_layers > 0 {
+        b.skip(2 * (8 - sub_layers))?;
+    }
+    for (profile, level) in present {
+        b.skip(88 * profile as usize + 8 * level as usize)?;
+    }
+    b.ue()?;
+    if b.ue()? == 3 {
+        b.skip(1)?;
+    }
+    b.ue()?;
+    b.ue()?;
+    if b.bit()? == 1 {
+        for _ in 0..4 {
+            b.ue()?;
+        }
+    }
+    b.ue()?;
+    b.ue()?;
+    let poc_lsb_bits = b.ue()? + 4;
+    let all = b.bit()? == 1;
+    for _ in if all { 0 } else { sub_layers }..=sub_layers {
+        b.ue()?;
+        b.ue()?;
+        b.ue()?;
+    }
+    for _ in 0..6 {
+        b.ue()?;
+    }
+    if b.bit()? == 1 && b.bit()? == 1 {
+        for size in 0..4 {
+            let mut matrix = 0;
+            while matrix < 6 {
+                if b.bit()? == 0 {
+                    b.ue()?;
+                } else {
+                    if size > 1 {
+                        b.se()?;
+                    }
+                    for _ in 0..64.min(1 << (4 + (size << 1))) {
+                        b.se()?;
+                    }
+                }
+                matrix += if size == 3 { 3 } else { 1 };
+            }
+        }
+    }
+    b.skip(2)?;
+    if b.bit()? == 1 {
+        b.skip(8)?;
+        b.ue()?;
+        b.ue()?;
+        b.skip(1)?;
+    }
+    let sets = b.ue()? as usize;
+    let mut deltas: Vec<u32> = Vec::with_capacity(sets);
+    for i in 0..sets {
+        if i > 0 && b.bit()? == 1 {
+            b.skip(1)?;
+            b.ue()?;
+            let mut n = 0;
+            for _ in 0..=deltas[i - 1] {
+                let used = b.bit()? == 1;
+                if used || b.bit()? == 1 {
+                    n += 1;
+                }
+            }
+            deltas.push(n);
+        } else {
+            let (neg, pos) = (b.ue()?, b.ue()?);
+            for _ in 0..neg + pos {
+                b.ue()?;
+                b.skip(1)?;
+            }
+            deltas.push(neg + pos);
+        }
+    }
+    if b.bit()? == 1 {
+        for _ in 0..b.ue()? {
+            b.skip(poc_lsb_bits as usize + 1)?;
+        }
+    }
+    b.skip(2)?;
+    if b.bit()? == 0 {
+        return Some(false);
+    }
+    b.vui_full_range()
 }
