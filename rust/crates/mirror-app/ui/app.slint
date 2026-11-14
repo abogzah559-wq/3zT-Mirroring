@@ -57,6 +57,10 @@ export struct Prefs {
     update-check: bool,       // look for a new version at start
     update-channel: string,   // "" = this build's own | stable | beta
     language: string,         // "" = as Windows | en | ar
+    ios-kb-layout: string,    // iPhone/iPad hardware keyboard: arabic | arabic-pc
+    frame-on: bool,           // iPhone frame around the picture
+    shot-frame: bool,         // screenshots inside the frame (when it is shown)
+    apple-picture: string,    // iOS 27+ Apple Driver picture: apple | airplay (Hybrid, 60 fps)
 }
 
 // Window controls in the macOS style: close, minimise, zoom. The symbols
@@ -229,6 +233,11 @@ component TopBar inherits Rectangle {
     in property <bool> upd-busy;
     in property <float> upd-progress: -1;
     callback update-now();
+    // Language the iPhone/iPad hardware keyboard types now ("" = hidden):
+    // AR / EN, click (or Alt+G) when it no longer matches the device.
+    in property <string> kb-lang;
+    // Recording: elapsed time ("" = not recording); click stops it.
+    in property <string> rec;
     height: 46px;
     // Empty header space moves the window; double-click maximises.
     TouchArea {
@@ -326,6 +335,48 @@ component TopBar inherits Rectangle {
             }
             if stats != "": Text { text: stats; font-size: 10.5px; color: Theme.text-3; overflow: elide; font-family: "Cascadia Mono"; }
         }
+        if root.rec != "": VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: recT.preferred-width + 30px;
+                height: 22px;
+                border-radius: 11px;
+                background: recTa.has-hover ? #ef5466 : #ef546699;
+                Rectangle { x: 9px; width: 8px; height: 8px; border-radius: 4px; background: white; }
+                recT := Text {
+                    x: 22px;
+                    text: root.rec;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    color: white;
+                    font-family: "Cascadia Mono";
+                    vertical-alignment: center;
+                }
+                recTa := TouchArea { clicked => { root.window-action("rec"); } }
+            }
+        }
+        if root.kb-lang != "": VerticalLayout {
+            alignment: center;
+            kbPill := Rectangle {
+                width: 30px;
+                height: 22px;
+                border-radius: 11px;
+                background: kbTa.has-hover ? Theme.fill-hover : Theme.raise;
+                border-width: 1px;
+                border-color: Theme.line;
+                Text {
+                    text: root.kb-lang;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    color: Theme.text-2;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                kbTa := TouchArea {
+                    clicked => { root.window-action("kb-lang"); }
+                }
+            }
+        }
         GlassButton {
             y: (parent.height - self.height) / 2;
             icon: "\u{E72C}";
@@ -422,6 +473,13 @@ component BottomBar inherits Rectangle {
                 if root.android: Chip { icon: "\u{E993}"; tip: @tr("Phone volume down"); label: ""; clicked => { root.action("vol-down"); } }
                 if root.android: Chip { icon: "\u{E995}"; tip: @tr("Phone volume up"); label: ""; clicked => { root.action("vol-up"); } }
                 Chip { icon: "\u{E72E}"; tip: root.android ? @tr("Power button (lock / wake the screen)") : @tr("Lock screen"); label: compact ? "" : @tr("Lock"); clicked => { root.action("lock"); } }
+                if !root.android: Chip { icon: "\u{E785}"; tip: @tr("Wake and unlock (Alt+U)"); label: compact ? "" : @tr("Unlock"); clicked => { root.action("wake"); } }
+                if !root.android: Rectangle { width: 1px; background: Theme.dark ? #ffffff1f : #0000001a; }
+                if !root.android: Chip { icon: "\u{E7C8}"; tip: @tr("Record the screen (Alt+O): Videos › 3zT Recordings; press again to stop"); label: compact ? "" : @tr("Record"); clicked => { root.action("record"); } }
+                Chip { icon: "\u{E722}"; tip: @tr("Screenshot (Alt+P): saved in Pictures › 3zT Screenshots and copied"); label: compact ? "" : @tr("Screenshot"); clicked => { root.action("screenshot"); } }
+                if !root.android: Chip { icon: "\u{E898}"; tip: @tr("Send files to the phone…"); label: compact ? "" : @tr("Send"); clicked => { root.action("files-send"); } }
+                if !root.android: Chip { icon: "\u{E896}"; tip: @tr("Import photos, videos and files from the phone…"); label: compact ? "" : @tr("Import"); clicked => { root.action("files-import"); } }
+                if !root.android: Chip { icon: "\u{E92E}"; tip: @tr("Show / hide the phone's on-screen keyboard (Ctrl+K)"); label: ""; clicked => { root.action("toggle-keyboard"); } }
             }
         }
     }
@@ -1730,14 +1788,76 @@ component AndroidHome inherits Rectangle {
 }
 
 // One line of the shortcut list: key cap(s) and what they do.
+// The iPhone body around the picture (proportions: frame.rs). Drawn under
+// the native picture, which sits in the screen hole with the same corner
+// radius; clicks on the body stay here and never reach the device.
+component PhoneFrame inherits Rectangle {
+    in property <length> sw;        // screen size
+    in property <length> sh;
+    in property <length> unit;      // one point of the 402-point reference
+    in property <bool> landscape;
+    in property <color> band;
+    in property <color> shine;
+    in property <color> buttons;
+    property <length> r: min(sw, sh) * 0.137;
+    property <length> bz: 15.5 * unit;  // black border + metal band
+    property <length> bt: 3 * unit;     // button height out of the band
+    // Body: metal band with a bright edge, black border inside it.
+    body := Rectangle {
+        x: root.landscape ? 0px : root.bt;
+        y: root.landscape ? root.bt : 0px;
+        width: root.sw + 2 * root.bz;
+        height: root.sh + 2 * root.bz;
+        border-radius: root.r + root.bz;
+        background: @linear-gradient(135deg, root.shine 0%, root.band 22%, root.band 78%, root.shine 100%);
+        drop-shadow-blur: 10 * root.unit;
+        drop-shadow-offset-y: 3 * root.unit;
+        drop-shadow-color: #00000066;
+        Rectangle {
+            x: 1 * root.unit;
+            y: 1 * root.unit;
+            width: parent.width - 2 * root.unit;
+            height: parent.height - 2 * root.unit;
+            border-radius: root.r + root.bz - 1 * root.unit;
+            background: root.band;
+        }
+        Rectangle {
+            x: 6 * root.unit;
+            y: 6 * root.unit;
+            width: root.sw + 19 * root.unit;
+            height: root.sh + 19 * root.unit;
+            border-radius: root.r + 9.5 * root.unit;
+            background: #000000;
+        }
+    }
+    // Side buttons (portrait: action + volume on the left, side button on
+    // the right; turned with the phone in landscape).
+    for b in [
+        { left: true, at: 0.205, len: 0.055 },
+        { left: true, at: 0.29, len: 0.1 },
+        { left: true, at: 0.415, len: 0.1 },
+        { left: false, at: 0.31, len: 0.15 },
+    ]: Rectangle {
+        property <length> along: (root.landscape ? body.width : body.height) * b.at;
+        property <length> size: (root.landscape ? body.width : body.height) * b.len;
+        x: root.landscape ? body.x + body.width - self.along - self.size : (b.left ? 0px : body.x + body.width - 1 * root.unit);
+        y: root.landscape ? (b.left ? body.y + body.height - 1 * root.unit : 0px) : body.y + self.along;
+        width: root.landscape ? self.size : root.bt + 1 * root.unit;
+        height: root.landscape ? root.bt + 1 * root.unit : self.size;
+        border-radius: 1.5 * root.unit;
+        background: root.buttons;
+    }
+}
+
 component KeyRow inherits HorizontalLayout {
     in property <string> keys;
     in property <string> text;
     spacing: 10px;
     Rectangle {
+        layout-order: Theme.rtl ? 1 : 0;
         width: 132px;
         HorizontalLayout {
-            alignment: start;
+            alignment: Theme.rtl ? end : start;
             Rectangle {
                 height: 22px;
                 width: kt.preferred-width + 14px;
@@ -1780,6 +1900,9 @@ component SettingsPanel inherits Glass {
     property <bool> studio: root.screen != "android" && root.mode == "usbdirect";
     // Auto unlock (Apple Driver mode): a passcode is saved on this PC.
     in property <bool> passcode-set;
+    in property <string> frame-finish;
+    in property <bool> frame-custom;
+    property <float> frame-hue: 210;
     callback save-passcode(string);
     in property <string> stats-full;
     in property <bool> hevc-ok;
@@ -1848,6 +1971,119 @@ component SettingsPanel inherits Glass {
                         Toggle { checked: prefs.dots; toggled(v) => { root.prefs.dots = v; root.changed(root.prefs); } }
                     }
                 }
+
+                if root.screen != "android": Card {
+                    title: @tr("iPhone frame");
+                    icon: "\u{E8EA}";
+                    tint-a: #8e8e96;
+                    tint-b: #3a3a40;
+                    info: @tr("Shows the picture inside an iPhone body instead of a plain rectangle, also in full screen (F2). Point at a colour to see it on the phone, click to keep it; or click the colours and use the arrow keys, Enter to keep, Esc to go back. Each iPhone keeps its own colour. iPad gets no frame in this version.");
+                    Row {
+                        label: @tr("Show the frame");
+                        hint: @tr("Alt+F at any time");
+                        Toggle { checked: prefs.frame-on; toggled(v) => { root.prefs.frame-on = v; root.changed(root.prefs); } }
+                    }
+                    if prefs.frame-on: Row {
+                        label: @tr("Screenshots with the frame");
+                        Toggle { checked: prefs.shot-frame; toggled(v) => { root.prefs.shot-frame = v; root.changed(root.prefs); } }
+                    }
+                    if prefs.frame-on: swatches := FocusScope {
+                        property <[{id: string, c: color, name: string}]> list: [
+                            { id: "graphite", c: #4a4a50, name: @tr("Graphite") },
+                            { id: "space-black", c: #2a2a2d, name: @tr("Space Black") },
+                            { id: "silver", c: #c9cbce, name: @tr("Silver") },
+                            { id: "white", c: #e9e7e1, name: @tr("White") },
+                            { id: "gold", c: #d9c39b, name: @tr("Gold") },
+                            { id: "cosmic-orange", c: #e0692a, name: @tr("Cosmic Orange") },
+                            { id: "red", c: #b01e2b, name: @tr("Red") },
+                            { id: "pink", c: #edc3c9, name: @tr("Pink") },
+                            { id: "yellow", c: #efd468, name: @tr("Yellow") },
+                            { id: "sage", c: #6b8468, name: @tr("Sage") },
+                            { id: "deep-blue", c: #2d3f5e, name: @tr("Deep Blue") },
+                            { id: "deep-purple", c: #564773, name: @tr("Deep Purple") },
+                        ];
+                        // Keyboard: the colour being looked at (-1 = none).
+                        property <int> cursor: -1;
+                        height: 2 * 34px + 4px;
+                        key-pressed(e) => {
+                            if e.text == Key.RightArrow || e.text == Key.LeftArrow {
+                                // Right = next on screen (previous in the Arabic interface).
+                                self.cursor = Math.mod(max(0, self.cursor) + ((e.text == Key.RightArrow) != Theme.rtl ? 1 : self.list.length - 1), self.list.length);
+                                root.driver-action("frame-preview:" + self.list[self.cursor].id);
+                                return accept;
+                            }
+                            if e.text == Key.Return && self.cursor >= 0 {
+                                root.driver-action("frame:" + self.list[self.cursor].id);
+                                self.cursor = -1;
+                                return accept;
+                            }
+                            if e.text == Key.Escape && self.cursor >= 0 {
+                                root.driver-action("frame-preview:");
+                                self.cursor = -1;
+                                return accept;
+                            }
+                            reject
+                        }
+                        focus-changed-event => {
+                            if !self.has-focus && self.cursor >= 0 {
+                                root.driver-action("frame-preview:");
+                                self.cursor = -1;
+                            }
+                        }
+                        for f[i] in self.list: Rectangle {
+                            property <int> sw-col: Math.mod(i, 7);
+                            property <int> sw-row: i >= 7 ? 1 : 0;
+                            x: (Theme.rtl ? 6 - self.sw-col : self.sw-col) * 34px;
+                            y: self.sw-row * 36px;
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 14px;
+                            background: f.c;
+                            border-width: root.frame-finish == f.id || swatches.cursor == i ? 2.5px : 1px;
+                            border-color: root.frame-finish == f.id || swatches.cursor == i ? Theme.text : Theme.line;
+                            sw-ta := TouchArea {
+                                mouse-cursor: pointer;
+                                changed has-hover => {
+                                    root.driver-action(self.has-hover ? "frame-preview:" + f.id : "frame-preview:");
+                                }
+                                clicked => {
+                                    swatches.focus();
+                                    swatches.cursor = -1;
+                                    root.driver-action("frame:" + f.id);
+                                }
+                            }
+                        }
+                        // The 13th swatch: a colour of your own (hue slider below).
+                        Rectangle {
+                            x: (Theme.rtl ? 6 - 5 : 5) * 34px;
+                            y: 36px;
+                            width: 28px;
+                            height: 28px;
+                            border-radius: 14px;
+                            background: @linear-gradient(90deg, #b85353 0%, #b8b053 20%, #53b85c 40%, #53a6b8 60%, #6353b8 80%, #b853a6 100%);
+                            border-width: root.frame-custom ? 2.5px : 1px;
+                            border-color: root.frame-custom ? Theme.text : Theme.line;
+                            TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.driver-action("frame-hue:" + round(root.frame-hue)); }
+                            }
+                        }
+                    }
+                    if prefs.frame-on: Text {
+                        text: @tr("Own colour (the last circle), drag to pick it:");
+                        font-size: 11.5px;
+                        color: Theme.text-2;
+                        wrap: word-wrap;
+                    }
+                    if prefs.frame-on: GlassSlider {
+                        minimum: 0;
+                        maximum: 359;
+                        step: 1;
+                        value <=> root.frame-hue;
+                        changed(v) => { root.driver-action("frame-hue:" + round(v)); }
+                    }
+                }
+
 
                 Card {
                     title: @tr("Display & aspect");
@@ -1919,6 +2155,25 @@ component SettingsPanel inherits Glass {
                     }
                 }
 
+                if !root.studio && root.screen != "android": Card {
+                    title: @tr("iPhone picture");
+                    icon: "\u{E7F4}";
+                    tint-a: #34d399;
+                    tint-b: #059669;
+                    info: @tr("Apple: the picture comes over Apple's own channel; sharp, but the iPhone lowers the frame rate (often 20–40 fps). AirPlay: up to 60 fps; touch, keyboard and buttons still go over the Apple driver. With AirPlay, open Control Center on the iPhone › Screen Mirroring and pick this PC. Applies the next time mirroring starts (Restart). Experimental on iOS 27.");
+                    Row {
+                        label: @tr("Picture source");
+                        hint: @tr("AirPlay: smoother, up to 60 fps (experimental)");
+                        Seg {
+                            width: 230px;
+                            options: ["apple", "airplay"];
+                            labels: [@tr("Apple"), @tr("AirPlay · 60 fps")];
+                            value: prefs.apple-picture;
+                            changed(v) => { root.prefs.apple-picture = v; root.changed(root.prefs); }
+                        }
+                    }
+                }
+
                 if !root.studio: Card {
                     title: @tr("Control");
                     icon: "\u{E765}";
@@ -1930,6 +2185,25 @@ component SettingsPanel inherits Glass {
                     Row { label: @tr("Touch with the mouse"); Toggle { checked: prefs.touch; toggled(v) => { root.prefs.touch = v; root.changed(root.prefs); } } }
                     Row { label: @tr("PC keyboard to the device"); Toggle { checked: prefs.keyboard; toggled(v) => { root.prefs.keyboard = v; root.changed(root.prefs); } } }
                     if root.screen != "android": Row { label: @tr("Gestures (scroll, mouse Back button)"); Toggle { checked: prefs.gestures; toggled(v) => { root.prefs.gestures = v; root.changed(root.prefs); } } }
+                    if root.screen != "android": Row {
+                        label: @tr("Arabic keyboard layout on the device");
+                        hint: @tr("As set on the iPhone/iPad: Settings › General › Keyboard › Hardware Keyboard › Arabic");
+                        Seg {
+                            width: 170px;
+                            options: ["arabic", "arabic-pc"];
+                            labels: [@tr("Arabic"), @tr("Arabic – PC")];
+                            value: prefs.ios-kb-layout;
+                            changed(v) => { root.prefs.ios-kb-layout = v; root.changed(root.prefs); }
+                        }
+                    }
+                    if root.screen != "android": HorizontalLayout {
+                        alignment: start;
+                        GlassButton {
+                            label: @tr("Test the keyboard");
+                            tip: @tr("Types three Arabic letters on the device and asks whether they came out right");
+                            clicked => { root.driver-action("keyboard-test"); }
+                        }
+                    }
                 }
 
                 Card {
@@ -1939,6 +2213,10 @@ component SettingsPanel inherits Glass {
                     tint-b: #7c3aed;
                     info: @tr("While the PC keyboard types on the device, single keys (Space, M) go to the device; Alt and Ctrl shortcuts stay with 3zT Mirroring.");
                     KeyRow { keys: "Alt + M"; text: @tr("Sound on the PC on / off"); }
+                    KeyRow { keys: "Alt + P"; text: @tr("Screenshot (Pictures › 3zT Screenshots, also copied)"); }
+                    KeyRow { keys: "Ctrl + = / −"; text: @tr("Zoom in / out (Ctrl + 0 back to 100%, Ctrl + arrows move)"); }
+                    KeyRow { keys: "Ctrl + 1 / 9"; text: @tr("Actual size / fit the window"); }
+                    if root.screen != "android": KeyRow { keys: "Alt + O"; text: @tr("Start / stop recording (Videos › 3zT Recordings)"); }
                     KeyRow { keys: "F2"; text: @tr("Show / hide the controls around the picture"); }
                     KeyRow { keys: "F11 · Esc"; text: @tr("Full screen / leave"); }
                     KeyRow { keys: "Ctrl + ,"; text: @tr("Open / close Settings"); }
@@ -1958,7 +2236,8 @@ component SettingsPanel inherits Glass {
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + V"); text: @tr("Type the PC clipboard text on the device"); }
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + K"); text: @tr("Show / hide the on-screen keyboard"); }
                     if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Ctrl + C / X / V / A / Z"); text: @tr("Copy, cut, paste, select all, undo in iOS"); }
-                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + G"); text: @tr("Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"); }
+                    if root.screen != "android": KeyRow { keys: "Alt + F"; text: @tr("iPhone frame on / off"); }
+                    if root.screen != "android" && !root.studio: KeyRow { keys: @tr("Alt + G"); text: @tr("The device keyboard typed the wrong language: switch it (the AR / EN mark at the top shows which one 3zT Mirroring expects)"); }
                     if root.screen != "android": Text {
                         text: root.studio ? @tr("Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode.")
                             : @tr("Apple device shortcuts work in Apple Driver mode while mirroring.");
@@ -1991,12 +2270,25 @@ component SettingsPanel inherits Glass {
                     changed(p) => { root.changed(p); }
                 }
 
+                if root.screen != "android" && root.studio: Card {
+                    title: @tr("Auto unlock");
+                    icon: "\u{E72E}";
+                    tint-a: #8e8e93;
+                    tint-b: #48484a;
+                    Text {
+                        text: @tr("Not available in Studio mode: it sends no touch or keys to the device. Change to Apple Driver mode to unlock from the PC.");
+                        font-size: 12px;
+                        color: Theme.text-2;
+                        wrap: word-wrap;
+                    }
+                }
+
                 if root.screen != "android" && !root.studio: Card {
                     title: @tr("Auto unlock");
                     icon: "\u{E72E}";
                     tint-a: #a78bfa;
                     tint-b: #7c3aed;
-                    info: @tr("Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.");
+                    info: @tr("Apple Driver mode only (not Studio mode). 3zT Mirroring types your passcode only while the iPhone/iPad is locked, then checks that it unlocked. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time.");
                     Text {
                         text: root.passcode-set ? @tr("A passcode is saved on this PC.") : @tr("No passcode saved yet.");
                         font-size: 12.5px;
@@ -2214,6 +2506,134 @@ component SettingsPanel inherits Glass {
 // Android app launcher: a grid like the phone's app drawer, over
 // the picture while a phone is mirrored (dock › Apps). The picture leaves its
 // rectangle open (main.rs, VideoView::set_holes).
+// One item in the "Import from the phone" list: a photo, a video, a file,
+// or an app (to open its shared files).
+export struct ImportRow {
+    name: string,
+    sub: string,
+    kind: string,   // photo | video | other | app
+    checked: bool,
+}
+
+// iPhone/iPad → PC: pick photos, videos or app files and a folder.
+component ImportSheet inherits Rectangle {
+    in property <bool> open;
+    in property <string> status;
+    in property <bool> busy;
+    in property <string> source;   // media | app | apps (the app list)
+    in property <[ImportRow]> items;
+    in property <int> picked;
+    in property <string> dest;
+    callback toggle(int);
+    callback all(bool);
+    callback set-source(string);
+    callback change-dest();
+    callback start();
+    callback close();
+    border-radius: 22px;
+    background: Theme.dark ? #18181cf5 : #f6f6f9f5;
+    border-width: 0.75px;
+    border-color: Theme.dark ? #ffffff24 : #0000001c;
+    drop-shadow-blur: 24px;
+    drop-shadow-offset-y: 8px;
+    drop-shadow-color: #00000055;
+    clip: true;
+    property <float> t: root.open ? 1 : 0;
+    animate t { duration: 220ms; easing: cubic-bezier(0.2, 0.9, 0.3, 1); }
+    opacity: self.t;
+    visible: self.t > 0.01;
+    TouchArea { }
+    VerticalLayout {
+        y: 14px * (1 - root.t);
+        padding: 16px;
+        spacing: 10px;
+        HorizontalLayout {
+            spacing: 8px;
+            Text { text: @tr("Import from the phone"); font-size: 14px; font-weight: 700; color: Theme.text; vertical-alignment: center; horizontal-stretch: 1; overflow: elide; }
+            GlassButton { icon: "\u{E711}"; tip: @tr("Close"); clicked => { root.close(); } }
+        }
+        Seg {
+            options: ["media", "apps"];
+            labels: [@tr("Photos & videos"), @tr("App files")];
+            value: root.source == "app" ? "apps" : root.source;
+            changed(v) => { root.set-source(v); }
+        }
+        Text { text: root.status; font-size: 11.5px; color: Theme.text-2; wrap: word-wrap; }
+        if root.source != "apps" && root.items.length > 0: HorizontalLayout {
+            spacing: 8px;
+            Text { text: root.picked + " / " + root.items.length; font-size: 11.5px; color: Theme.text-3; vertical-alignment: center; horizontal-stretch: 1; }
+            GlassButton { label: @tr("Select all"); clicked => { root.all(true); } }
+            GlassButton { label: @tr("None"); clicked => { root.all(false); } }
+        }
+        ScrollView {
+            vertical-stretch: 1;
+            min-height: 120px;
+            VerticalLayout {
+                spacing: 2px;
+                for it[i] in root.items: Rectangle {
+                    height: 40px;
+                    border-radius: 10px;
+                    background: rowTa.has-hover ? Theme.hover : it.checked ? Theme.accent-soft : transparent;
+                    rowTa := TouchArea { mouse-cursor: pointer; clicked => { root.toggle(i); } }
+                    HorizontalLayout {
+                        padding-left: 10px;
+                        padding-right: 10px;
+                        spacing: 10px;
+                        Rectangle {
+                            layout-order: Theme.rtl ? 3 : 0;
+                            width: 18px;
+                            Rectangle {
+                                width: 18px;
+                                height: 18px;
+                                y: (parent.height - self.height) / 2;
+                                border-radius: it.kind == "app" ? 9px : 5px;
+                                border-width: 1.5px;
+                                border-color: it.checked ? Theme.accent : Theme.text-3;
+                                background: it.checked ? Theme.accent : transparent;
+                                Icon {
+                                    text: it.kind == "app" ? "\u{E76C}" : "\u{E73E}";
+                                    font-size: 10px;
+                                    color: it.kind == "app" ? Theme.text-2 : Theme.btn-text;
+                                    visible: it.checked || it.kind == "app";
+                                }
+                            }
+                        }
+                        Icon {
+                            layout-order: Theme.rtl ? 2 : 0;
+                            width: 18px;
+                            text: it.kind == "photo" ? "\u{EB9F}" : it.kind == "video" ? "\u{E714}" : it.kind == "app" ? "\u{E71D}" : "\u{E8A5}";
+                            font-size: 14px;
+                            color: Theme.text-2;
+                        }
+                        VerticalLayout {
+                            layout-order: Theme.rtl ? 1 : 0;
+                            alignment: center;
+                            horizontal-stretch: 1;
+                            Text { text: it.name; font-size: 12.5px; color: Theme.text; overflow: elide; }
+                            Text { text: it.sub; font-size: 10.5px; color: Theme.text-3; overflow: elide; }
+                        }
+                    }
+                }
+            }
+        }
+        if root.source != "apps": HorizontalLayout {
+            spacing: 8px;
+            Text { text: @tr("To: ") + root.dest; font-size: 11px; color: Theme.text-2; overflow: elide; vertical-alignment: center; horizontal-stretch: 1; }
+            GlassButton { label: @tr("Change…"); clicked => { root.change-dest(); } }
+        }
+        if root.source != "apps": HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            GlassButton {
+                primary: true;
+                label: root.picked > 0 ? @tr("Import {} file(s)", root.picked) : @tr("Import");
+                enabled: root.picked > 0 && !root.busy;
+                clicked => { root.start(); }
+            }
+        }
+    }
+}
+
 component AppLauncher inherits Rectangle {
     in property <bool> open;
     in property <string> title;
@@ -2331,7 +2751,7 @@ export component AppWindow inherits Window {
     // The header must fit; the clean view is only the picture.
     min-width: root.clean ? 160px : 520px;
     min-height: root.clean ? 160px : 420px;
-    default-font-family: "Segoe UI Variable Text";
+    default-font-family: Theme.font;
 
     in-out property <Prefs> prefs;
     in-out property <bool> settings-open: true; // Settings start open (docked at the side)
@@ -2364,6 +2784,23 @@ export component AppWindow inherits Window {
     in property <bool> passcode-set;
     callback save-passcode(string);
     // Notice sheet (driver changes).
+    in property <string> ios-kb-lang;
+    in property <string> rec-time;
+    // iPhone frame (Rust places it with the picture, window coordinates).
+    in property <string> frame-finish;
+    in property <bool> frame-finish-custom;
+    in property <bool> frame-show;
+    in property <length> frame-x;
+    in property <length> frame-y;
+    in property <length> frame-w;
+    in property <length> frame-h;
+    in property <length> frame-sw;
+    in property <length> frame-sh;
+    in property <length> frame-unit;
+    in property <bool> frame-landscape;
+    in property <color> frame-band: #4a4a50;
+    in property <color> frame-shine: #8e8e96;
+    in property <color> frame-buttons: #3a3a40;
     in property <bool> sheet-open;
     in property <string> sheet-title;
     in property <string> sheet-body;
@@ -2424,6 +2861,22 @@ export component AppWindow inherits Window {
     callback files-close();
     in property <string> transfer;
     in property <float> transfer-p: -1;
+    in property <bool> transfer-can-cancel;
+    callback transfer-cancel();
+    // Import from the iPhone/iPad (filedrop.rs).
+    in property <bool> import-open;
+    in property <string> import-status;
+    in property <bool> import-busy;
+    in property <string> import-source: "media";
+    in property <[ImportRow]> import-items;
+    in property <int> import-picked;
+    in property <string> import-dest;
+    callback import-toggle(int);
+    callback import-all(bool);
+    callback import-set-source(string);
+    callback import-change-dest();
+    callback import-start();
+    callback import-close();
     out property <length> transfer-w: min(self.width - 40px, 360px);
     callback android-app-launch(int, string);
     // Launcher rectangle (logical px), kept open in the picture by Rust.
@@ -2521,7 +2974,9 @@ export component AppWindow inherits Window {
     Rectangle {
         // Full screen has nothing behind the glass (Windows shows grey or
         // black there): solid theme colour instead, so light stays light.
-        background: root.clean ? #000000 : root.fullscreen ? (Theme.dark ? #161618 : #f2f2f7) : Theme.base;
+        // Clean view with the iPhone frame: nothing around the frame (the
+        // window is transparent there, the desktop shows).
+        background: root.clean ? (root.frame-show ? transparent : #000000) : root.fullscreen ? (Theme.dark ? #161618 : #f2f2f7) : Theme.base;
         border-radius: root.edge || root.clean ? 0px : 12px;
         clip: true;
         VerticalLayout {
@@ -2543,6 +2998,8 @@ export component AppWindow inherits Window {
                 upd-version: root.upd-switch ? "" : root.upd-version;
                 upd-busy: root.upd-busy;
                 upd-progress: root.upd-progress;
+                kb-lang: root.ios-kb-lang;
+                rec: root.rec-time;
                 update-now => { root.update-action("install"); }
                 window-action(a) => { root.window-action(a); }
                 start => {
@@ -2576,11 +3033,24 @@ export component AppWindow inherits Window {
                     stage := Rectangle {
                         vertical-stretch: 1;
                         border-radius: root.clean ? 0px : 22px;
-                        background: root.clean ? #000000 : root.picture ? Theme.stage : Theme.panel;
+                        background: root.clean ? (root.frame-show ? transparent : #000000) : root.picture ? Theme.stage : Theme.panel;
                         border-width: root.clean ? 0px : 1px;
                         border-color: Theme.edge;
                         clip: true;
                         stage-ta := TouchArea { }
+                        if root.frame-show && root.picture: PhoneFrame {
+                            x: root.frame-x - root.stage-x;
+                            y: root.frame-y - root.stage-y;
+                            width: root.frame-w;
+                            height: root.frame-h;
+                            sw: root.frame-sw;
+                            sh: root.frame-sh;
+                            unit: root.frame-unit;
+                            landscape: root.frame-landscape;
+                            band: root.frame-band;
+                            shine: root.frame-shine;
+                            buttons: root.frame-buttons;
+                        }
                         if !root.picture && root.prefs.dots: Image {
                             source: root.dots-image;
                             width: parent.width;
@@ -2672,6 +3142,8 @@ export component AppWindow inherits Window {
                     update-action(a) => { root.update-action(a); }
                     passcode-set: root.passcode-set;
                     save-passcode(c) => { root.save-passcode(c); }
+                    frame-finish: root.frame-finish;
+                    frame-custom: root.frame-finish-custom;
                     }
                 }
             }
@@ -2793,6 +3265,25 @@ export component AppWindow inherits Window {
             launch(i, where) => { root.files-pick(i); }
             close => { root.files-close(); }
         }
+        ImportSheet {
+            x: root.launcher-x;
+            y: root.launcher-y;
+            width: root.launcher-w;
+            height: root.launcher-h;
+            open: root.import-open;
+            status: root.import-status;
+            busy: root.import-busy;
+            source: root.import-source;
+            items: root.import-items;
+            picked: root.import-picked;
+            dest: root.import-dest;
+            toggle(i) => { root.import-toggle(i); }
+            all(v) => { root.import-all(v); }
+            set-source(v) => { root.import-set-source(v); }
+            change-dest => { root.import-change-dest(); }
+            start => { root.import-start(); }
+            close => { root.import-close(); }
+        }
         // Files dragged in from Explorer.
         Rectangle {
             x: root.launcher-x;
@@ -2852,7 +3343,17 @@ export component AppWindow inherits Window {
                 padding-top: 7px;
                 padding-bottom: 7px;
                 spacing: 5px;
-                Text { text: root.transfer; font-size: 12px; color: Theme.text; overflow: elide; horizontal-alignment: center; }
+                HorizontalLayout {
+                    spacing: 6px;
+                    Text { text: root.transfer; font-size: 12px; color: Theme.text; overflow: elide; horizontal-alignment: center; horizontal-stretch: 1; }
+                    if root.transfer-can-cancel: Text {
+                        text: @tr("Cancel");
+                        font-size: 11.5px;
+                        font-weight: 600;
+                        color: cancelTa.has-hover ? Theme.text : Theme.text-2;
+                        cancelTa := TouchArea { mouse-cursor: pointer; clicked => { root.transfer-cancel(); } }
+                    }
+                }
                 Rectangle {
                     height: 4px;
                     border-radius: 2px;

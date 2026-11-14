@@ -20,7 +20,9 @@ from pymobiledevice3.remote.core_device import display_service
 from pymobiledevice3.remote.core_device import media_stream_offer as mso
 
 # Bitrate cap per preset (bps); None = Apple's own table.
-PRESETS = {"best": None, "normal": 4_000_000, "performance": 2_000_000}
+PRESETS = {"best": None, "normal": 4_000_000, "performance": 2_000_000,
+           # Hybrid on iOS 27: the stream only holds the HID gate open.
+           "gate": 500_000}
 
 _ORIGINAL = mso.build_negotiator_offer_video
 

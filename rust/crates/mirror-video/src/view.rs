@@ -76,6 +76,9 @@ struct Inner {
     /// Picture snapshot (Alt+C, text from the screen): asked by `snapshot`,
     /// filled by the render thread from the picture it just drew.
     snap_asked: AtomicBool,
+    /// The snapshot asked for is at the stream's own size (screenshots),
+    /// not the view's (Alt+C).
+    snap_full: AtomicBool,
     snap: Mutex<Option<Snapshot>>,
     snap_cv: Condvar,
 }
@@ -392,6 +395,7 @@ impl VideoView {
             resized_cv: Condvar::new(),
             resize_asked: std::sync::atomic::AtomicU64::new(0),
             snap_asked: AtomicBool::new(false),
+            snap_full: AtomicBool::new(false),
             snap: Mutex::new(None),
             snap_cv: Condvar::new(),
         });
@@ -424,7 +428,18 @@ impl VideoView {
     /// applied, at the view's size). Waits for the next drawn frame, at
     /// most `timeout`; `None` without a picture.
     pub fn snapshot(&self, timeout: std::time::Duration) -> Option<Snapshot> {
+        self.snapshot_at(timeout, false)
+    }
+
+    /// The picture at the stream's own resolution (crop and rotation
+    /// applied, no scaling): screenshots.
+    pub fn snapshot_full(&self, timeout: std::time::Duration) -> Option<Snapshot> {
+        self.snapshot_at(timeout, true)
+    }
+
+    fn snapshot_at(&self, timeout: std::time::Duration, full: bool) -> Option<Snapshot> {
         let mut g = self.inner.snap.lock().unwrap();
+        self.inner.snap_full.store(full, Relaxed);
         *g = None;
         self.inner.snap_asked.store(true, Relaxed);
         // Wake a render thread that waits for a new frame.
@@ -644,9 +659,10 @@ struct Processor {
     enumr: ID3D11VideoProcessorEnumerator,
     vp: ID3D11VideoProcessor,
     key: (u32, u32, u32, u32),
+    full: bool,
 }
 
-fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Processor> {
+fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32, full: bool) -> Result<Processor> {
     unsafe {
         let desc = D3D11_VIDEO_PROCESSOR_CONTENT_DESC {
             InputFrameFormat: D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE,
@@ -669,11 +685,15 @@ fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Proce
         let vc = &gpu.video_context;
         vc.VideoProcessorSetStreamFrameFormat(&vp, 0, D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE);
         vc.VideoProcessorSetStreamAutoProcessingMode(&vp, 0, false);
-        // BT.709, studio range in; full-range RGB out.
+        // BT.709 in, studio range (16-235) or, for streams that say so in
+        // their SPS (iPhone), full range (0-255); full-range RGB out.
+        // Nominal_Range is bits 4-5: 1 = 16-235, 2 = 0-255.
         vc.VideoProcessorSetStreamColorSpace(
             &vp,
             0,
-            &D3D11_VIDEO_PROCESSOR_COLOR_SPACE { _bitfield: 0x14 },
+            &D3D11_VIDEO_PROCESSOR_COLOR_SPACE {
+                _bitfield: if full { 0x24 } else { 0x14 },
+            },
         );
         vc.VideoProcessorSetOutputColorSpace(
             &vp,
@@ -683,6 +703,7 @@ fn make_processor(gpu: &Gpu, iw: u32, ih: u32, ow: u32, oh: u32) -> Result<Proce
             enumr,
             vp,
             key: (iw, ih, ow, oh),
+            full,
         })
     }
 }
@@ -875,6 +896,94 @@ impl PacingProbe {
 }
 
 /// Copies `dest` (the picture's place in the back buffer) to the CPU.
+/// The current frame at its own size (crop and rotation applied): one more
+/// video-processor pass into an offscreen texture, read back. Used for
+/// screenshots only, so the shown picture keeps its pace.
+unsafe fn native_shot(
+    gpu: &Gpu,
+    p: &Processor,
+    tex: &ID3D11Texture2D,
+    src: RECT,
+    rot: u32,
+) -> Option<Snapshot> {
+    let (sw, sh) = (
+        (src.right - src.left).max(0) as u32,
+        (src.bottom - src.top).max(0) as u32,
+    );
+    if sw == 0 || sh == 0 {
+        return None;
+    }
+    let (ow, oh) = if rot == 90 || rot == 270 {
+        (sh, sw)
+    } else {
+        (sw, sh)
+    };
+    let desc = D3D11_TEXTURE2D_DESC {
+        Width: ow,
+        Height: oh,
+        MipLevels: 1,
+        ArraySize: 1,
+        Format: DXGI_FORMAT_B8G8R8A8_UNORM,
+        SampleDesc: DXGI_SAMPLE_DESC {
+            Count: 1,
+            Quality: 0,
+        },
+        Usage: D3D11_USAGE_DEFAULT,
+        BindFlags: D3D11_BIND_RENDER_TARGET.0 as u32,
+        CPUAccessFlags: 0,
+        MiscFlags: 0,
+    };
+    let mut out = None;
+    gpu.device
+        .CreateTexture2D(&desc, None, Some(&mut out))
+        .ok()?;
+    let out = out?;
+    let vc = &gpu.video_context;
+    let full = RECT {
+        left: 0,
+        top: 0,
+        right: ow as i32,
+        bottom: oh as i32,
+    };
+    vc.VideoProcessorSetStreamSourceRect(&p.vp, 0, true, Some(&src));
+    vc.VideoProcessorSetStreamDestRect(&p.vp, 0, true, Some(&full));
+    vc.VideoProcessorSetOutputTargetRect(&p.vp, true, Some(&full));
+    let in_desc = D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC {
+        FourCC: 0,
+        ViewDimension: D3D11_VPIV_DIMENSION_TEXTURE2D,
+        Anonymous: D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC_0 {
+            Texture2D: D3D11_TEX2D_VPIV {
+                MipSlice: 0,
+                ArraySlice: 0,
+            },
+        },
+    };
+    let mut iv = None;
+    gpu.video_device
+        .CreateVideoProcessorInputView(tex, &p.enumr, &in_desc, Some(&mut iv))
+        .ok()?;
+    let out_desc = D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC {
+        ViewDimension: D3D11_VPOV_DIMENSION_TEXTURE2D,
+        Anonymous: D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC_0 {
+            Texture2D: D3D11_TEX2D_VPOV { MipSlice: 0 },
+        },
+    };
+    let mut ov = None;
+    gpu.video_device
+        .CreateVideoProcessorOutputView(&out, &p.enumr, &out_desc, Some(&mut ov))
+        .ok()?;
+    let stream = D3D11_VIDEO_PROCESSOR_STREAM {
+        Enable: true.into(),
+        pInputSurface: ManuallyDrop::new(iv),
+        ..Default::default()
+    };
+    let mut streams = [stream];
+    let r = vc.VideoProcessorBlt(&p.vp, ov.as_ref()?, 0, &streams);
+    ManuallyDrop::drop(&mut streams[0].pInputSurface);
+    r.ok()?;
+    read_back(gpu, &out, full, ow, oh)
+}
+
 unsafe fn read_back(
     gpu: &Gpu,
     back: &ID3D11Texture2D,
@@ -1056,7 +1165,7 @@ fn render_session(inner: &Inner) -> Result<()> {
                     Some(s) => {
                         let (n, ready) = slot.map_or((0, None), |i| r.meta[i]);
                         shown_frame = (n, ready);
-                        Some((s.tex.clone(), s.w, s.h, s.src, r.seq))
+                        Some((s.tex.clone(), s.w, s.h, s.src, r.seq, r.full_range))
                     }
                     None => None,
                 }
@@ -1069,15 +1178,15 @@ fn render_session(inner: &Inner) -> Result<()> {
                 (bg & 255) as f32 / 255.0,
             );
             match frame {
-                Some((tex, w, h, mut src, seq)) => {
+                Some((tex, w, h, mut src, seq, full)) => {
                     let c: Vec<i32> = inner.crop.iter().map(|a| a.load(Relaxed) as i32).collect();
                     let (sw, sh) = (src.right - src.left, src.bottom - src.top);
                     src.left += c[0].min(sw / 2);
                     src.right -= c[2].min(sw / 2);
                     src.top += c[1].min(sh / 2);
                     src.bottom -= c[3].min(sh / 2);
-                    if proc_.as_ref().map(|p| p.key) != Some((w, h, cw, ch)) {
-                        proc_ = match make_processor(gpu, w, h, cw, ch) {
+                    if proc_.as_ref().map(|p| (p.key, p.full)) != Some(((w, h, cw, ch), full)) {
+                        proc_ = match make_processor(gpu, w, h, cw, ch, full) {
                             Ok(p) => Some(p),
                             Err(e) => {
                                 log::warn!("processor {w}x{h} -> {cw}x{ch}: {e}");
@@ -1098,6 +1207,7 @@ fn render_session(inner: &Inner) -> Result<()> {
                         rot,
                         fit_of(inner.fit.load(Relaxed)),
                     );
+                    let src_full = src;
                     let (src, dest) = clip_to_view(src, dest, cw as i32, ch as i32, rot);
                     let rotation = match rot {
                         90 => D3D11_VIDEO_PROCESSOR_ROTATION_90,
@@ -1185,7 +1295,13 @@ fn render_session(inner: &Inner) -> Result<()> {
                         new_frame = true;
                     }
                     if inner.snap_asked.swap(false, Relaxed) {
-                        let shot = read_back(gpu, &back, dest, cw, ch);
+                        let shot = if inner.snap_full.load(Relaxed) {
+                            proc_
+                                .as_ref()
+                                .and_then(|p| native_shot(gpu, p, &tex, src_full, rot))
+                        } else {
+                            read_back(gpu, &back, dest, cw, ch)
+                        };
                         if shot.is_none() {
                             log::warn!("snapshot: read back failed");
                         }

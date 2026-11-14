@@ -48,7 +48,43 @@ async def _reset_userspace_tunnel() -> None:
         log.debug("tunnel reset: %s", error)
 
 
-class AppleCastSession:
+class TunnelHooks:
+    """Work through a session's own CoreDevice tunnel (USB and Wi-Fi), for
+    sessions that keep `_loop` and `_rsd` (Apple and Hybrid)."""
+
+    _loop: asyncio.AbstractEventLoop | None = None
+    _rsd = None
+
+    def submit(self, make):
+        """Runs `make(rsd)` (a coroutine using this session's tunnel) on the
+        session's own event loop; returns a concurrent Future, or None
+        without a tunnel. Files over Wi-Fi go this way: usbmux only knows
+        USB devices."""
+        loop, rsd = self._loop, self._rsd
+        if loop is None or rsd is None or not loop.is_running():
+            return None
+        return asyncio.run_coroutine_threadsafe(make(rsd), loop)
+
+    async def device_locked(self) -> bool | None:
+        """Whether the device is locked now (lockdown's PasswordProtected,
+        read through this session's own tunnel, so USB and Wi-Fi alike), or
+        None when it can't be read. Safe to call from another event loop."""
+        loop, rsd = self._loop, self._rsd
+        if loop is None or rsd is None or not loop.is_running():
+            return None
+
+        async def query():
+            return await rsd.get_value(key="PasswordProtected")
+
+        try:
+            fut = asyncio.run_coroutine_threadsafe(query(), loop)
+            value = await asyncio.wait_for(asyncio.wrap_future(fut), 5)
+        except Exception:  # noqa: BLE001
+            return None
+        return value if isinstance(value, bool) else None
+
+
+class AppleCastSession(TunnelHooks):
     def __init__(self, udid: str, on_state: Callable[[str, str], None], options: dict,
                  on_rotation: Callable[[int | None], None] | None = None) -> None:
         self.udid = udid
@@ -59,6 +95,7 @@ class AppleCastSession:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._task: asyncio.Task | None = None
         self._server = None
+        self._rsd = None
 
     # ------------------------------------------------------------ control
 
@@ -148,6 +185,7 @@ class AppleCastSession:
 
         server._eager_stream_start = eager_video_only
         self._server = server
+        self._rsd = rsd
         orientation = asyncio.create_task(self._watch_orientation(rsd))
         self.on_state("streaming", "")
         try:
@@ -158,6 +196,7 @@ class AppleCastSession:
                 await orientation
             self.on_rotation(None)
             self._server = None
+            self._rsd = None
 
     async def _watch_orientation(self, rsd) -> None:
         """Poll SpringBoard's interface orientation (read-only, never rotates

@@ -138,6 +138,9 @@ pub struct Ring {
     pub arrived: std::sync::Arc<std::sync::Condvar>,
     /// Per slot: push number and decode-ready time (pacing measurements).
     pub meta: [(u64, Option<std::time::Instant>); SLOTS],
+    /// The stream's YUV is full range (0-255), not studio range; set by the
+    /// decoder from each stream's SPS.
+    pub full_range: bool,
 }
 
 unsafe impl Send for Ring {}

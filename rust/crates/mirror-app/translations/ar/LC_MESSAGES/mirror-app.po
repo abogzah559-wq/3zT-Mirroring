@@ -828,9 +828,6 @@ msgstr "إظهار / إخفاء لوحة المفاتيح على الشاشة"
 msgid "Copy, cut, paste, select all, undo in iOS"
 msgstr "نسخ، قص، لصق، تحديد الكل، تراجع في iOS"
 
-msgid "Switch the device keyboard between English and Arabic (Arabic needs the \"Arabic – PC\" hardware layout on the device)"
-msgstr "تبديل لوحة مفاتيح الجهاز بين الإنجليزية والعربية (العربية تحتاج تخطيط «العربية – PC» للوحة المفاتيح الخارجية على الجهاز)"
-
 msgid "Studio mode is picture and sound only: device control and its shortcuts are in Apple Driver mode."
 msgstr "وضع الاستوديو صورة وصوت فقط: التحكم بالجهاز واختصاراته في وضع تعريف Apple."
 
@@ -845,9 +842,6 @@ msgstr "اختر iPhone / iPad أو Android. تُوقف الجلسة الجار�
 
 msgid "Auto unlock"
 msgstr "فتح القفل تلقائياً"
-
-msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring wakes the iPhone/iPad, swipes up and types your passcode or password. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
-msgstr "في وضع تعريف Apple فقط (ليس وضع الاستوديو). يوقظ 3zT Mirroring جهاز iPhone/iPad ويسحب للأعلى ويكتب رمز الدخول أو كلمة السر. يُحفظ مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."
 
 msgid "A passcode is saved on this PC."
 msgstr "يوجد رمز دخول محفوظ على هذا الكمبيوتر."
@@ -1667,3 +1661,372 @@ msgstr "يسار"
 
 msgid "Right"
 msgstr "يمين"
+
+msgid "Arabic keyboard layout on the device"
+msgstr "تخطيط الكيبورد العربي في الجهاز"
+
+msgid "As set on the iPhone/iPad: Settings › General › Keyboard › Hardware Keyboard › Arabic"
+msgstr "كما هو مضبوط في الآيفون/الآيباد: الإعدادات › عام › لوحة المفاتيح › لوحة المفاتيح الخارجية › العربية"
+
+msgid "Arabic"
+msgstr "العربية"
+
+msgid "Arabic – PC"
+msgstr "العربية – PC"
+
+msgid "Test the keyboard"
+msgstr "اختبار الكيبورد"
+
+msgid "Types three Arabic letters on the device and asks whether they came out right"
+msgstr "يكتب ثلاثة حروف عربية في الجهاز ويسألك هل ظهرت صحيحة"
+
+msgid "The device keyboard typed the wrong language: switch it (the AR / EN mark at the top shows which one 3zT Mirroring expects)"
+msgstr "كتب الجهاز بلغة غير المطلوبة: بدّل لغته (علامة AR / EN في الأعلى توضّح اللغة التي يتوقعها 3zT Mirroring)"
+
+msgid "Start mirroring in Apple Driver mode with \"PC keyboard to the device\" on, then test."
+msgstr "ابدأ العرض في وضع Apple Driver مع تفعيل «لوحة مفاتيح الكمبيوتر للجهاز»، ثم اختبر."
+
+msgid "Keyboard test"
+msgstr "اختبار الكيبورد"
+
+msgid "Open an empty text field on the device (a new note, for example), then press Type. 3zT Mirroring types three Arabic letters there."
+msgstr "افتح حقل نص فارغاً في الجهاز (ملاحظة جديدة مثلاً)، ثم اضغط «اكتب». سيكتب 3zT Mirroring ثلاثة حروف عربية فيه."
+
+msgid "Type"
+msgstr "اكتب"
+
+msgid "Did these three letters appear on the device: و ز ظ ?"
+msgstr "هل ظهرت هذه الحروف الثلاثة في الجهاز: و ز ظ ؟"
+
+msgid "Yes"
+msgstr "نعم"
+
+msgid "No"
+msgstr "لا"
+
+msgid "The keyboard layout is right. You can delete the test letters."
+msgstr "تخطيط الكيبورد صحيح. تقدر تحذف حروف الاختبار."
+
+msgid "Switched to the \"{}\" layout. Delete the test letters and test again; if it is still wrong, press Alt+G once and test again."
+msgstr "تم التبديل إلى تخطيط «{}». احذف حروف الاختبار واختبر مرة ثانية؛ وإن بقي الخطأ اضغط Alt+G مرة واحدة ثم اختبر."
+
+msgid "Typing {} characters on the device ({} have no key and were skipped)."
+msgstr "جارٍ كتابة {} حرف على الجهاز (تم تخطّي {} لا يوجد لها مفتاح)."
+
+msgid "Unlocked."
+msgstr "تم الفتح."
+
+msgid "The device is already unlocked."
+msgstr "الجهاز مفتوح أصلاً."
+
+msgid "No passcode is saved, so the device was only woken."
+msgstr "لا يوجد رمز محفوظ، فتم تنبيه الجهاز فقط."
+
+msgid "Passcode typed. The lock state can't be read on this connection, so check the device."
+msgstr "تمت كتابة الرمز. لا يمكن قراءة حالة القفل عبر هذا الاتصال، فتأكد من الجهاز."
+
+msgid "Couldn't tell whether the device is locked, so the passcode wasn't typed (it could have gone into an open app). Enter it on the device."
+msgstr "تعذّر معرفة هل الجهاز مقفل، فلم يُكتب الرمز (كان ممكن ينكتب داخل تطبيق مفتوح). أدخله على الجهاز."
+
+msgid "Couldn't unlock. Enter the passcode on the device."
+msgstr "تعذّر الفتح، أدخل الرمز على الجهاز."
+
+msgid "The device didn't take the unlock. Enter the passcode on the device."
+msgstr "لم يستجب الجهاز لأمر الفتح. أدخل الرمز على الجهاز."
+
+msgid "Not available in Studio mode: it sends no touch or keys to the device. Change to Apple Driver mode to unlock from the PC."
+msgstr "غير متاح في Studio mode لأنه لا يرسل لمساً ولا مفاتيح للجهاز. انتقل إلى وضع Apple Driver لتفتح القفل من الكمبيوتر."
+
+msgid "Apple Driver mode only (not Studio mode). 3zT Mirroring types your passcode only while the iPhone/iPad is locked, then checks that it unlocked. It is stored encrypted (Windows DPAPI) for this Windows account only and never sent anywhere. Alt+U unlocks at any time."
+msgstr "وضع Apple Driver فقط (ليس Studio mode). يكتب 3zT Mirroring رمزك فقط عندما يكون الآيفون/الآيباد مقفلاً، ثم يتحقق أنه انفتح. يُحفظ الرمز مشفّراً (Windows DPAPI) لحساب Windows هذا فقط ولا يُرسل لأي مكان. Alt+U يفتح القفل في أي وقت."
+
+msgid "decode"
+msgstr "فك الترميز"
+
+msgid "Received"
+msgstr "المستلَم"
+
+msgid "Shown"
+msgstr "المعروض"
+
+msgid "Skipped frames"
+msgstr "إطارات متخطّاة"
+
+msgid "Decoder"
+msgstr "فك الترميز عبر"
+
+msgid "Decode time"
+msgstr "زمن فك الترميز"
+
+msgid "iPhone frame"
+msgstr "إطار الآيفون"
+
+msgid "Shows the picture inside an iPhone body instead of a plain rectangle, also in full screen (F2). Point at a colour to see it on the phone, click to keep it; or click the colours and use the arrow keys, Enter to keep, Esc to go back. Each iPhone keeps its own colour. iPad gets no frame in this version."
+msgstr "يعرض الصورة داخل جسم آيفون بدل المستطيل، حتى في ملء الشاشة (F2). مرّر المؤشر على لون لتراه على الجوال، واضغط عليه لتثبيته؛ أو اضغط على الألوان واستخدم الأسهم، Enter للحفظ وEsc للتراجع. كل آيفون يحتفظ بلونه. لا إطار للآيباد في هذا الإصدار."
+
+msgid "Show the frame"
+msgstr "إظهار الإطار"
+
+msgid "Alt+F at any time"
+msgstr "أو Alt+F في أي وقت"
+
+msgid "Graphite"
+msgstr "جرافيت"
+
+msgid "Space Black"
+msgstr "أسود فلكي"
+
+msgid "Silver"
+msgstr "فضي"
+
+msgid "White"
+msgstr "أبيض"
+
+msgid "Gold"
+msgstr "ذهبي"
+
+msgid "Cosmic Orange"
+msgstr "برتقالي كوني"
+
+msgid "Red"
+msgstr "أحمر"
+
+msgid "Pink"
+msgstr "وردي"
+
+msgid "Yellow"
+msgstr "أصفر"
+
+msgid "Sage"
+msgstr "أخضر مريمي"
+
+msgid "Deep Blue"
+msgstr "أزرق داكن"
+
+msgid "Deep Purple"
+msgstr "بنفسجي داكن"
+
+msgid "Own colour (the last circle), drag to pick it:"
+msgstr "لون من اختيارك (الدائرة الأخيرة)، اسحب لاختياره:"
+
+msgid "iPhone frame on / off"
+msgstr "إظهار / إخفاء إطار الآيفون"
+
+msgid "iPhone frame on"
+msgstr "إطار الآيفون ظاهر"
+
+msgid "iPhone frame off"
+msgstr "إطار الآيفون مخفي"
+
+msgid "Import from the phone"
+msgstr "استيراد من الجوال"
+
+msgid "Photos & videos"
+msgstr "الصور والفيديو"
+
+msgid "App files"
+msgstr "ملفات التطبيقات"
+
+msgid "Select all"
+msgstr "تحديد الكل"
+
+msgid "None"
+msgstr "لا شيء"
+
+msgid "To: "
+msgstr "إلى: "
+
+msgid "Change…"
+msgstr "تغيير…"
+
+msgid "Import {} file(s)"
+msgstr "استيراد {} ملف"
+
+msgid "Import"
+msgstr "استيراد"
+
+msgid "Wake and unlock (Alt+U)"
+msgstr "تنبيه وفتح القفل (Alt+U)"
+
+msgid "Unlock"
+msgstr "فتح القفل"
+
+msgid "Send files to the phone…"
+msgstr "إرسال ملفات إلى الجوال…"
+
+msgid "Send"
+msgstr "إرسال"
+
+msgid "Import photos, videos and files from the phone…"
+msgstr "استيراد صور وفيديو وملفات من الجوال…"
+
+msgid "Show / hide the phone's on-screen keyboard (Ctrl+K)"
+msgstr "إظهار / إخفاء كيبورد الجوال (Ctrl+K)"
+
+msgid "Files to and from an iPhone/iPad need Apple Driver mode (Studio mode cannot)."
+msgstr "نقل الملفات من وإلى الآيفون/الآيباد يحتاج وضع Apple Driver (لا يمكن في Studio mode)."
+
+msgid "Send {} item(s) to an app on the iPhone/iPad"
+msgstr "إرسال {} عنصر إلى تطبيق في الآيفون/الآيباد"
+
+msgid "The files were not sent."
+msgstr "لم تُرسل الملفات."
+
+msgid "{} file(s) sent to {}. Open {} or Files › On My iPhone."
+msgstr "تم إرسال {} ملف إلى {}. افتح {} أو الملفات › على الـ iPhone."
+
+msgid "Cancelled: {} of {} file(s) sent; the unfinished one was removed."
+msgstr "أُلغي النقل: تم إرسال {} من {} ملف، وحُذف الملف غير المكتمل."
+
+msgid "{} of {} file(s) sent to {}. {}"
+msgstr "تم إرسال {} من {} ملف إلى {}. {}"
+
+msgid "Sending {} ({}/{}) · {}%"
+msgstr "جارٍ إرسال {} ({}/{}) · {}%"
+
+msgid "Importing {} ({}/{}) · {}%"
+msgstr "جارٍ استيراد {} ({}/{}) · {}%"
+
+msgid "Sending {} ({}/{}) · {}% · {}/s"
+msgstr "جارٍ إرسال {} ({}/{}) · {}% · {}/ث"
+
+msgid "Importing {} ({}/{}) · {}% · {}/s"
+msgstr "جارٍ استيراد {} ({}/{}) · {}% · {}/ث"
+
+msgid "Reading the photos and videos on the device…"
+msgstr "جارٍ قراءة الصور والفيديو في الجهاز…"
+
+msgid "No app shares files (File Sharing). Apps like VLC or Documents do."
+msgstr "لا يوجد تطبيق يشارك ملفاته (File Sharing). تطبيقات مثل VLC وDocuments تشاركها."
+
+msgid "Pick an app to see the files it shares."
+msgstr "اختر تطبيقاً لترى الملفات التي يشاركها."
+
+msgid "No photos or videos on the device. Photos kept only in iCloud are not on the device and can't be imported here."
+msgstr "لا توجد صور أو فيديو في الجهاز. الصور المحفوظة في iCloud فقط ليست على الجهاز ولا يمكن استيرادها من هنا."
+
+msgid "This app shares no files."
+msgstr "هذا التطبيق لا يشارك أي ملفات."
+
+msgid "Newest first. Photos kept only in iCloud are not listed. Files come as they are (HEIC stays HEIC)."
+msgstr "الأحدث أولاً. الصور المحفوظة في iCloud فقط لا تظهر. تُنقل الملفات كما هي (HEIC يبقى HEIC)."
+
+msgid "Newest first. Files come as they are."
+msgstr "الأحدث أولاً. تُنقل الملفات كما هي."
+
+msgid "Reading the app's files…"
+msgstr "جارٍ قراءة ملفات التطبيق…"
+
+msgid "Folder for files from the phone"
+msgstr "مجلد الملفات القادمة من الجوال"
+
+msgid "Send to the phone"
+msgstr "إرسال إلى الجوال"
+
+msgid "Nothing was imported."
+msgstr "لم يُستورد شيء."
+
+msgid "{} file(s) saved in {}."
+msgstr "تم حفظ {} ملف في {}."
+
+msgid "Cancelled: {} of {} file(s) saved; the unfinished one was removed."
+msgstr "أُلغي النقل: تم حفظ {} من {} ملف، وحُذف الملف غير المكتمل."
+
+msgid "{} of {} file(s) saved. {}"
+msgstr "تم حفظ {} من {} ملف. {}"
+
+msgid "Open folder"
+msgstr "فتح المجلد"
+
+msgid "Another transfer is running."
+msgstr "يوجد نقل آخر قيد التنفيذ."
+
+msgid "Screenshot (Alt+P): saved in Pictures › 3zT Screenshots and copied"
+msgstr "لقطة شاشة (Alt+P): تُحفظ في الصور › 3zT Screenshots وتُنسخ"
+
+msgid "Screenshot"
+msgstr "لقطة"
+
+msgid "Screenshots with the frame"
+msgstr "لقطات الشاشة مع الإطار"
+
+msgid "Screenshot (Pictures › 3zT Screenshots, also copied)"
+msgstr "لقطة شاشة (الصور › 3zT Screenshots، وتُنسخ أيضاً)"
+
+msgid "No picture to save yet."
+msgstr "لا توجد صورة لحفظها بعد."
+
+msgid "Screenshot saved in Pictures › 3zT Screenshots and copied."
+msgstr "تم حفظ اللقطة في الصور › 3zT Screenshots ونسخها."
+
+msgid "Screenshot saved in Pictures › 3zT Screenshots."
+msgstr "تم حفظ اللقطة في الصور › 3zT Screenshots."
+
+msgid "The screenshot was not saved: {}"
+msgstr "لم تُحفظ اللقطة: {}"
+
+msgid "Record the screen (Alt+O): Videos › 3zT Recordings; press again to stop"
+msgstr "تسجيل الشاشة (Alt+O): الفيديوهات › 3zT Recordings؛ اضغط مرة ثانية للإيقاف"
+
+msgid "Record"
+msgstr "تسجيل"
+
+msgid "Start / stop recording (Videos › 3zT Recordings)"
+msgstr "بدء / إيقاف التسجيل (الفيديوهات › 3zT Recordings)"
+
+msgid "Saving the recording…"
+msgstr "جارٍ حفظ التسجيل…"
+
+msgid "Recording. Press Alt+O or the red mark to stop."
+msgstr "جارٍ التسجيل. اضغط Alt+O أو العلامة الحمراء للإيقاف."
+
+msgid "Could not start recording: {}"
+msgstr "تعذّر بدء التسجيل: {}"
+
+msgid "The recording failed: {}"
+msgstr "فشل التسجيل: {}"
+
+msgid "Recording saved in Videos › 3zT Recordings (it stopped early: {})."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings (توقف مبكراً: {})."
+
+msgid "Recording saved in Videos › 3zT Recordings."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings."
+
+msgid "Recording saved in Videos › 3zT Recordings as {} parts (the device turned)."
+msgstr "تم حفظ التسجيل في الفيديوهات › 3zT Recordings في {} أجزاء (الجهاز دار)."
+
+msgid "Zoom {}%"
+msgstr "التكبير {}%"
+
+msgid "Actual size (as far as the screen allows)"
+msgstr "الحجم الفعلي (بقدر ما تسمح الشاشة)"
+
+msgid "Fit to the window"
+msgstr "ملاءمة النافذة"
+
+msgid "Zoom in / out (Ctrl + 0 back to 100%, Ctrl + arrows move)"
+msgstr "تكبير / تصغير (Ctrl + 0 للعودة إلى 100%، Ctrl + الأسهم للتحريك)"
+
+msgid "Actual size / fit the window"
+msgstr "الحجم الفعلي / ملاءمة النافذة"
+
+msgid "The device's files can't be reached right now. Check the cable or Wi-Fi and try again."
+msgstr "لا يمكن الوصول لملفات الجهاز الآن. تأكد من الكيبل أو الواي فاي وحاول مرة ثانية."
+
+msgid "iPhone picture"
+msgstr "صورة الآيفون"
+
+msgid "Apple: the picture comes over Apple's own channel; sharp, but the iPhone lowers the frame rate (often 20–40 fps). AirPlay: up to 60 fps; touch, keyboard and buttons still go over the Apple driver. With AirPlay, open Control Center on the iPhone › Screen Mirroring and pick this PC. Applies the next time mirroring starts (Restart). Experimental on iOS 27."
+msgstr "Apple: الصورة تجي من قناة Apple نفسها؛ واضحة، لكن الآيفون ينزّل عدد الإطارات (غالباً 20–40 إطار بالثانية). AirPlay: حتى 60 إطار بالثانية، واللمس والكيبورد والأزرار تظل عن طريق تعريف Apple. مع AirPlay افتح مركز التحكم في الآيفون › انعكاس الشاشة واختر هذا الكمبيوتر. يتطبّق في المرة الجاية اللي يبدأ فيها العرض (إعادة تشغيل). تجريبي على iOS 27."
+
+msgid "Picture source"
+msgstr "مصدر الصورة"
+
+msgid "AirPlay: smoother, up to 60 fps (experimental)"
+msgstr "AirPlay: أنعم، حتى 60 إطار بالثانية (تجريبي)"
+
+msgid "Apple"
+msgstr "Apple"
+
+msgid "AirPlay · 60 fps"
+msgstr "AirPlay · ‏60 إطار"

@@ -6,9 +6,11 @@ Actions:
   paste-pc                             type the PC clipboard text (US layout)
   toggle-keyboard                      show / hide the on-screen keyboard (Eject)
   lock                                 restore brightness if dimmed, then sleep
-  wake                                 wake, swipe up and type the saved passcode
+  wake / auto-unlock                   unlock: only when the device is locked,
+                                       wake, swipe up, type the saved passcode
                                        (a numeric code, or an alphanumeric
-                                       password followed by Return)
+                                       password followed by Return), then check
+                                       that it unlocked (one retry at most)
   stealth                              dim the device's own screen to 0% / restore
                                        (the mirrored picture stays full quality)
 """
@@ -16,6 +18,7 @@ Actions:
 from __future__ import annotations
 
 import asyncio
+from typing import Awaitable, Callable, Optional
 
 import aiohttp
 
@@ -56,6 +59,16 @@ def clean_passcode(raw: str) -> str:
     return "".join(ch for ch in raw if ch not in "\r\n\t" and char_usage(ch) is not None)[:MAX_PASSCODE]
 
 
+def tap_reports(report: list[int]) -> list[list[int]]:
+    """The HID reports of one key tap. iOS ignores a modifier that arrives in
+    the same report as the key (iOS 27.2: Shift+A typed "a"), so modifiers go
+    down first, are held with the key, and come up last."""
+    mods = [u for u in report if u >= 0xE0]
+    if mods and len(mods) < len(report):
+        return [mods, list(report), mods, []]
+    return [list(report), []]
+
+
 def passcode_keys(code: str) -> list[list[int]]:
     """HID key reports that type `code` on the lock screen. A 4- or 6-digit
     code unlocks by itself; any other code needs Return."""
@@ -81,7 +94,72 @@ def install_buttons() -> None:
     _state["dimmed"] = False
 
 
-async def run(client: aiohttp.ClientSession, base: str, action: str, text: str = "", passcode: str = "") -> tuple[bool, str]:
+# Seconds between the swipe up and the first passcode key. Face ID devices
+# try the face first and show the keypad after it; keys sent earlier are lost.
+UNLOCK_KEYPAD_WAIT = (1.2, 2.0)  # first try, retry
+UNLOCK_CHECK_SECONDS = 4.0
+
+LockCheck = Callable[[], Awaitable[Optional[bool]]]
+
+
+async def _no_lock_check() -> Optional[bool]:
+    return None
+
+
+async def unlock(button, touch, key, passcode: str, is_locked: LockCheck, auto: bool = False) -> tuple[bool, str]:
+    """Wake → keypad → passcode → check. Messages: "already-unlocked",
+    "woken" (no passcode saved), "unlocked", "unverified" (typed, but the
+    lock state can't be read), "unknown-state" (automatic unlock skipped:
+    the lock state can't be read, and typing the passcode into an unlocked
+    device would put it in whatever app is open), "failed". At most one
+    retry: wrong attempts count on the device and too many disable it."""
+    locked = await is_locked()
+    if locked is False:
+        return True, "already-unlocked"
+    if locked is None:
+        # Typing the passcode into an unlocked device would put it in
+        # whatever app is open, so without a readable lock state nothing is
+        # typed (manual Alt+U too).
+        return False, "unknown-state"
+    code = clean_passcode(passcode)
+
+    async def swipe_up():
+        await button("home")
+        await asyncio.sleep(0.45)
+        await touch("contact", 32768, 58000)
+        for i in range(1, 9):
+            await asyncio.sleep(0.025)
+            await touch("contact", 32768, int(58000 - 46000 * i / 8))
+        await touch("release", 32768, 12000)
+
+    await swipe_up()
+    if not code:
+        return True, "woken"
+    for attempt, wait in enumerate(UNLOCK_KEYPAD_WAIT):
+        if attempt:
+            await swipe_up()
+        await asyncio.sleep(wait)
+        for report in passcode_keys(code):
+            for step in tap_reports(report):
+                await key(step)
+                await asyncio.sleep(0.03)
+            await asyncio.sleep(0.04)
+        state = None
+        deadline = asyncio.get_running_loop().time() + UNLOCK_CHECK_SECONDS
+        while asyncio.get_running_loop().time() < deadline:
+            await asyncio.sleep(0.4)
+            state = await is_locked()
+            if state is not True:
+                break
+        if state is False:
+            return True, "unlocked"
+        if state is None:
+            return True, "unverified"
+    return False, "failed"
+
+
+async def run(client: aiohttp.ClientSession, base: str, action: str, text: str = "", passcode: str = "",
+              is_locked: LockCheck = _no_lock_check) -> tuple[bool, str]:
     async def key(usages):
         async with client.post(f"{base}/key", json={"usages": usages}) as r:
             if r.status >= 400:
@@ -116,23 +194,8 @@ async def run(client: aiohttp.ClientSession, base: str, action: str, text: str =
             await run(client, base, "stealth")
         await button("lock")
         return True, ""
-    if action == "wake":
-        await button("home")
-        await asyncio.sleep(0.45)
-        await touch("contact", 32768, 58000)
-        for i in range(1, 9):
-            await asyncio.sleep(0.025)
-            await touch("contact", 32768, int(58000 - 46000 * i / 8))
-        await touch("release", 32768, 12000)
-        code = clean_passcode(passcode)
-        if code:
-            await asyncio.sleep(0.5)
-            for report in passcode_keys(code):
-                await key(report)
-                await asyncio.sleep(0.04)
-                await key([])
-                await asyncio.sleep(0.06)
-        return True, "unlocked" if code else "woken"
+    if action in ("wake", "auto-unlock"):
+        return await unlock(button, touch, key, passcode, is_locked, auto=action == "auto-unlock")
 
     if action in _CMD_KEYS:
         await key([])
@@ -155,10 +218,30 @@ async def run(client: aiohttp.ClientSession, base: str, action: str, text: str =
                 skipped += 1
                 continue
             usage, shift = mapped
-            await key([SHIFT, usage] if shift else [usage])
-            await asyncio.sleep(0.008)
-            await key([])
-            await asyncio.sleep(0.006)
+            for step in tap_reports([SHIFT, usage] if shift else [usage]):
+                await key(step)
+                await asyncio.sleep(0.006)
         note = f"{skipped} characters can't be typed on a US keyboard and were skipped." if skipped else ""
         return True, note
     return False, f"Unknown action: {action}"
+
+
+async def device_locked(udid: str) -> Optional[bool]:
+    """Whether the device is locked now (lockdown's PasswordProtected, which
+    reflects the current lock state), or None when it can't be read."""
+    try:
+        from pymobiledevice3.lockdown import create_using_usbmux
+
+        lockdown = await asyncio.wait_for(create_using_usbmux(serial=udid, autopair=False), 5)
+    except Exception:  # noqa: BLE001 - no usbmux route (Wi-Fi only), not paired...
+        return None
+    try:
+        value = await asyncio.wait_for(lockdown.get_value(key="PasswordProtected"), 5)
+        return value if isinstance(value, bool) else None
+    except Exception:  # noqa: BLE001
+        return None
+    finally:
+        try:
+            await lockdown.close()
+        except Exception:  # noqa: BLE001
+            pass

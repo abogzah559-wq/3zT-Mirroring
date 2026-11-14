@@ -19,11 +19,58 @@ pub enum Cmd {
     Action(&'static str),
     /// Apple hardware keyboard: one key tap (HID usages held, then none).
     Keys(Vec<u8>),
-    /// Apple `paste-pc`: type this text on the device.
-    TypeText(String),
+    /// Unlock ("wake" = Alt+U, "auto-unlock" = when mirroring starts): in
+    /// the same queue as the keys so a language switch before it is done
+    /// first. The backend's reply goes to the sender.
+    Unlock(&'static str, Sender<Option<serde_json::Value>>),
     /// Apple hardware keyboard: switch the device's keyboard language
     /// (Ctrl+Space), then wait until iOS has switched its layout.
     SwitchLanguage,
+}
+
+/// Pauses around Ctrl+Space (ms). iOS switches the layout on its own
+/// schedule: keys still on their way are typed in the new layout and keys
+/// right after it in the old one (seen on iOS 27.2 with fast typing), so
+/// the switch waits for the keys before it and the keys after it wait for
+/// the switch.
+const SWITCH_BEFORE_MS: u64 = 150;
+const SWITCH_AFTER_MS: u64 = 300;
+/// Pause after each key tap (ms): iOS dropped keys (Space, Return, ء) when
+/// they came back to back (a fast burst or Alt+V paste); with a short gap
+/// none were lost.
+const KEY_GAP_MS: u64 = 12;
+/// How long a key stays down (ms). Pressed and released in the same instant,
+/// iOS typed letters but dropped Space and Return (iOS 27.2, even with gaps
+/// between taps); the upstream touch tap holds 50 ms for the same reason.
+const KEY_HOLD_MS: u64 = 25;
+
+/// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
+/// `kb-timing.txt` ("before after gap hold" in ms) in the data folder
+/// overrides the pauses without a rebuild.
+fn pauses() -> (u64, u64, u64, u64) {
+    let tuned = mirror_core::local_data_dir()
+        .and_then(|d| std::fs::read_to_string(d.join("kb-timing.txt")).ok())
+        .and_then(|t| {
+            let mut it = t.split_whitespace().map(|n| n.parse::<u64>().ok());
+            Some((
+                it.next()??,
+                it.next()??,
+                it.next().flatten().unwrap_or(KEY_GAP_MS),
+                it.next().flatten().unwrap_or(KEY_HOLD_MS),
+            ))
+        });
+    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS, KEY_HOLD_MS))
+}
+
+/// One key tap: each report in order, the key held `hold` ms while down.
+fn tap(api: &Api, usages: &[u8], hold: u64) {
+    for r in key_reports(usages) {
+        let down = r.iter().any(|u| *u < 0xe0);
+        api.key(&serde_json::json!({ "usages": r }));
+        if down {
+            std::thread::sleep(Duration::from_millis(hold.min(200)));
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -48,6 +95,23 @@ impl Input {
     pub fn send(&self, c: Cmd) {
         let _ = self.tx.send(c);
     }
+}
+
+/// The HID reports of one key tap. iOS ignores a modifier that arrives in the
+/// same report as the key (tested on iOS 27.2: Shift+A typed "a"), so the
+/// modifiers go down first, are held with the key, and come up last.
+pub fn key_reports(usages: &[u8]) -> Vec<Vec<u8>> {
+    let mods: Vec<u8> = usages.iter().copied().filter(|u| *u >= 0xe0).collect();
+    let mut out = Vec::with_capacity(4);
+    if !mods.is_empty() && mods.len() < usages.len() {
+        out.push(mods.clone());
+        out.push(usages.to_vec());
+        out.push(mods);
+    } else {
+        out.push(usages.to_vec());
+    }
+    out.push(Vec::new());
+    out
 }
 
 fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
@@ -105,19 +169,41 @@ fn worker(api: Api, rx: Receiver<Cmd>, rot: Arc<AtomicU32>) {
                 }
             }
             Cmd::Action(a) => api.keyboard_action(a),
-            Cmd::Keys(usages) => {
-                api.key(&serde_json::json!({ "usages": usages }));
-                api.key(&serde_json::json!({ "usages": [] }));
+            Cmd::Unlock(a, reply) => {
+                let r = api.post_slow(
+                    "/api/keyboard/action",
+                    &serde_json::json!({ "action": a }),
+                    30,
+                );
+                let _ = reply.send(r);
             }
-            Cmd::TypeText(text) => {
-                let _ = api.keyboard_text("paste-pc", &text);
+            Cmd::Keys(usages) => {
+                let (_, _, gap, hold) = pauses();
+                tap(&api, &usages, hold);
+                std::thread::sleep(Duration::from_millis(gap.min(200)));
             }
             Cmd::SwitchLanguage => {
-                let usages = [crate::shortcuts::HID_CTRL, 0x2c];
-                api.key(&serde_json::json!({ "usages": usages }));
-                api.key(&serde_json::json!({ "usages": [] }));
-                std::thread::sleep(Duration::from_millis(150));
+                let (before, after, _, hold) = pauses();
+                std::thread::sleep(Duration::from_millis(before.min(2000)));
+                tap(&api, &[crate::shortcuts::HID_CTRL, 0x2c], hold);
+                std::thread::sleep(Duration::from_millis(after.min(2000)));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::key_reports;
+
+    #[test]
+    fn modifiers_go_down_before_the_key_and_up_after_it() {
+        assert_eq!(key_reports(&[0x04]), vec![vec![0x04], vec![]]);
+        assert_eq!(
+            key_reports(&[0xe1, 0x04]),
+            vec![vec![0xe1], vec![0xe1, 0x04], vec![0xe1], vec![]]
+        );
+        // A modifier on its own is just pressed and released.
+        assert_eq!(key_reports(&[0xe0]), vec![vec![0xe0], vec![]]);
     }
 }

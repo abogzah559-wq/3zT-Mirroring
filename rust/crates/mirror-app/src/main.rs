@@ -5,13 +5,18 @@ mod android;
 mod appwin;
 mod backdrop;
 mod devprofiles;
+mod dialogs;
 mod dots;
 mod filedrop;
 mod flow;
+mod frame;
 mod i18n;
 mod input;
+mod mp4mux;
 mod prefs;
+mod record;
 mod shortcuts;
+mod shot;
 mod tray;
 mod updater;
 mod usbphones;
@@ -220,6 +225,20 @@ struct App {
     start_h: Option<(f32, Instant)>,
     /// Apple phase seen last (auto unlock fires on the step to streaming).
     apple_phase: String,
+    /// The Apple device shown (UDID) and whether it is an iPad (no frame).
+    apple_udid: String,
+    apple_ipad: bool,
+    /// Zoom (1 = whole picture, up to 4) and the centre of the zoomed part
+    /// (0..1 of the picture, in the device's own orientation).
+    zoom: f32,
+    pan: (f32, f32),
+    /// The screen recording running, if any.
+    recording: Option<record::Recording>,
+    /// Folder the last import from the phone went to ("Open folder").
+    import_folder: Option<std::path::PathBuf>,
+    /// Its saved iPhone frame finish, and one being previewed in the picker.
+    frame_finish: String,
+    frame_preview: Option<String>,
     /// When to send the auto-unlock (Apple Driver mode, picture running).
     unlock_at: Option<Instant>,
     /// Whether the backend was asked if a passcode is saved.
@@ -604,6 +623,24 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         })
         .or_else(|| list.and_then(|l| l.first()));
     let first_id = first.and_then(|d| str_of(d, &["id"])).unwrap_or("");
+    // The device shown: its frame finish is kept per device (UDID).
+    let udid = str_of(st, &["device", "id"])
+        .unwrap_or(first_id)
+        .to_string();
+    let ipad = first
+        .and_then(|d| str_of(d, &["family"]))
+        .is_some_and(|f| f == "iPad");
+    if APP.with_borrow(|a| a.apple_udid != udid || a.frame_finish.is_empty()) {
+        let finish = prefs::frame_finish(&udid);
+        APP.with_borrow_mut(|a| {
+            a.apple_udid = udid.clone();
+            a.frame_finish = finish;
+            a.frame_preview = None;
+            a.fitted = None;
+        });
+        apply_frame_colours(ui);
+    }
+    APP.with_borrow_mut(|a| a.apple_ipad = ipad);
     let rows = apple_rows(ui, st, first_id);
     ui.set_apple_devices(std::rc::Rc::new(slint::VecModel::from(rows)).into());
     let device = str_of(st, &["device", "name"])
@@ -635,11 +672,12 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         // A new session: the device keyboard starts in English.
         IOS_ARABIC.store(false, Relaxed);
     }
+    // Whether a passcode is saved is checked when it fires (the first
+    // status can arrive before the passcode query answers).
     if phase == "streaming"
         && was != "streaming"
         && matches!(backend, "apple" | "hybrid")
         && ui.get_prefs().auto_unlock
-        && ui.get_passcode_set()
     {
         APP.with_borrow_mut(|a| a.unlock_at = Some(Instant::now() + Duration::from_millis(1500)));
     }
@@ -830,6 +868,8 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
         if live != a.streaming {
             a.streaming = live;
             a.fitted = None;
+            a.zoom = 1.0;
+            a.pan = (0.5, 0.5);
             if let Some(v) = a.view.as_mut() {
                 if live {
                     v.start(api.clone());
@@ -883,6 +923,84 @@ fn work_area(ui: &AppWindow) -> Option<(f32, f32, f32, f32)> {
             (r.bottom - r.top) as f32 / sf,
         ))
     }
+}
+
+/// The iPhone frame is drawn now (set by the frame tick, read by window
+/// fitting, which runs while `APP` is borrowed).
+static FRAME_ON: AtomicBool = AtomicBool::new(false);
+
+/// Whether to draw the iPhone frame: Apple screen, picture running, an
+/// iPhone (no frames for iPad / Android in this version), "Whole picture"
+/// fit and the frame turned on. F2 (clean view) keeps it.
+/// Session options for the backend: where an iOS 27+ device's picture comes
+/// from in Apple Driver mode ("airplay" = Hybrid: AirPlay picture at up to
+/// 60 fps, touch and keys over the Apple driver).
+fn cast_options(p: &Prefs) -> Value {
+    serde_json::json!({ "picture": p.apple_picture.as_str() })
+}
+
+fn frame_wanted(ui: &AppWindow, streaming: bool, ipad: bool) -> bool {
+    let p = ui.get_prefs();
+    p.frame_on
+        && streaming
+        && !ipad
+        && ui.get_screen().as_str() == "apple"
+        && p.fit.as_str() == "contain"
+}
+
+/// Frame colours: the finish being previewed, else the device's own.
+fn apply_frame_colours(ui: &AppWindow) {
+    let id = APP.with_borrow(|a| {
+        a.frame_preview
+            .clone()
+            .unwrap_or_else(|| a.frame_finish.clone())
+    });
+    let f = frame::finish(&id);
+    let c = |rgb: u32| slint::Color::from_rgb_u8((rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8);
+    ui.set_frame_band(c(f.band));
+    ui.set_frame_shine(c(f.shine));
+    ui.set_frame_buttons(c(f.buttons));
+    ui.set_frame_finish_custom(id.starts_with('#'));
+    ui.set_frame_finish(id.into());
+}
+
+/// Settings › iPhone frame: keep a finish for this iPhone, preview one
+/// (empty = back to the kept one), or a custom colour from the hue slider.
+fn frame_action(ui: &AppWindow, a: &str) -> bool {
+    let keep = |ui: &AppWindow, id: String| {
+        let udid = APP.with_borrow_mut(|x| {
+            x.frame_finish = id.clone();
+            x.frame_preview = None;
+            x.apple_udid.clone()
+        });
+        prefs::set_frame_finish(&udid, &id);
+        apply_frame_colours(ui);
+    };
+    if let Some(id) = a.strip_prefix("frame:") {
+        if frame::valid(id) {
+            keep(ui, id.to_string());
+        }
+    } else if let Some(id) = a.strip_prefix("frame-preview:") {
+        let id = (!id.is_empty() && frame::valid(id)).then(|| id.to_string());
+        APP.with_borrow_mut(|x| x.frame_preview = id);
+        apply_frame_colours(ui);
+    } else if let Some(h) = a.strip_prefix("frame-hue:") {
+        if let Ok(h) = h.parse::<f32>() {
+            keep(ui, frame::custom_from_hue(h));
+        }
+    } else {
+        return false;
+    }
+    true
+}
+
+/// Window fitting with the frame: the frame's size for a picture this size.
+fn framed_size(shown: (u32, u32)) -> (u32, u32) {
+    if !FRAME_ON.load(Relaxed) || shown.0 == 0 || shown.1 == 0 {
+        return shown;
+    }
+    let (w, h) = frame::outer_size(shown.0 as f32, shown.1 as f32);
+    (w.round() as u32, h.round() as u32)
 }
 
 /// Size the window around the picture (portrait or landscape).
@@ -940,6 +1058,7 @@ fn fit_prefs_key(p: &Prefs) -> String {
 
 /// Default fitted picture size (logical px, without chrome) for `shown`.
 fn default_fit(ui: &AppWindow, shown: (u32, u32)) -> Option<(f32, f32)> {
+    let shown = framed_size(shown);
     let (_, _, ww, wh) = work_area(ui)?;
     let chrome_w = ui.get_chrome_w() + 2.0 * pic_inset(ui);
     let chrome_h = ui.get_chrome_h() + 2.0 * pic_inset(ui);
@@ -1104,6 +1223,23 @@ fn check_media_foundation(ui: &AppWindow) {
         tr_ui(ui, "This Windows (an N or KN edition) has no Windows video components, so 3zT Mirroring cannot show the picture. Add the free \"Media Feature Pack\" from Microsoft: Settings › Apps › Optional features › View features › Media Feature Pack. Then restart the PC."),
         tr_ui(ui, "Open Optional features"),
         tr_ui(ui, "Later"),
+    );
+}
+
+/// After an import from the phone: what arrived, and "Open folder".
+fn import_done_sheet(ui: &AppWindow, body: String, any: bool, folder: std::path::PathBuf) {
+    APP.with_borrow_mut(|a| a.import_folder = Some(folder));
+    open_sheet(
+        ui,
+        "import-done",
+        tr_ui(ui, "Import from the phone"),
+        body,
+        if any {
+            tr_ui(ui, "Open folder")
+        } else {
+            String::new()
+        },
+        tr_ui(ui, "Close"),
     );
 }
 
@@ -2557,6 +2693,72 @@ fn run_shortcut(
         ),
         Shortcut::Lock => ui.invoke_action("lock".into()),
         Shortcut::CopyText => copy_screen_text(ui),
+        Shortcut::Screenshot => take_screenshot(ui),
+        Shortcut::Record => toggle_recording(ui),
+        Shortcut::Zoom(d) => {
+            let z = APP.with_borrow_mut(|a| {
+                let z = if a.zoom < 1.0 { 1.0 } else { a.zoom };
+                a.zoom = match d {
+                    1 => (z * 1.25).min(4.0),
+                    -1 => (z / 1.25).max(1.0),
+                    _ => 1.0,
+                };
+                if a.zoom <= 1.0 {
+                    a.pan = (0.5, 0.5);
+                }
+                a.zoom
+            });
+            show_toast(ui, tr_ui(ui, &format!("Zoom {}%", (z * 100.0).round())));
+        }
+        Shortcut::Pan(dx, dy) => APP.with_borrow_mut(|a| {
+            if a.zoom > 1.0 {
+                let (dx, dy) = (dx as f32, dy as f32);
+                let step = 0.1;
+                a.pan.0 = (a.pan.0 + dx * step).clamp(0.0, 1.0);
+                a.pan.1 = (a.pan.1 + dy * step).clamp(0.0, 1.0);
+            }
+        }),
+        Shortcut::ActualSize => {
+            let size = APP.with_borrow(|a| a.view.as_ref().map(|v| v.shown_size()));
+            let sf = ui.window().scale_factor();
+            if let Some(shown) = size.filter(|s| s.0 > 0) {
+                if let Some((_, dh)) = default_fit(ui, shown) {
+                    let native_h = framed_size(shown).1 as f32 / sf;
+                    APP.with_borrow_mut(|a| {
+                        a.user_scale = (native_h / dh).clamp(0.2, 4.0);
+                        a.fitted = None;
+                    });
+                    show_toast(ui, tr_ui(ui, "Actual size (as far as the screen allows)"));
+                }
+            }
+        }
+        Shortcut::FitWindow => {
+            APP.with_borrow_mut(|a| {
+                a.user_scale = 0.0;
+                a.zoom = 1.0;
+                a.pan = (0.5, 0.5);
+                a.fitted = None;
+            });
+            show_toast(ui, tr_ui(ui, "Fit to the window"));
+        }
+        Shortcut::Frame => {
+            let mut p = ui.get_prefs();
+            p.frame_on = !p.frame_on;
+            ui.set_prefs(p.clone());
+            prefs::save(&p);
+            APP.with_borrow_mut(|a| a.fitted = None);
+            show_toast(
+                ui,
+                tr_ui(
+                    ui,
+                    if p.frame_on {
+                        "iPhone frame on"
+                    } else {
+                        "iPhone frame off"
+                    },
+                ),
+            );
+        }
         Shortcut::ClearText => {
             std::thread::spawn(|| Api::new().post("/api/ocr/clear", &json!({})));
             show_toast(
@@ -2568,21 +2770,335 @@ fn run_shortcut(
         Shortcut::Apple(_) if !apple_live => need_apple(),
         Shortcut::Apple("paste-pc") => match pc_clipboard_text() {
             Some(t) => {
-                let n = t.chars().count();
-                device_keyboard_english(input);
-                input.send(Cmd::TypeText(t));
-                show_toast(
-                    ui,
-                    tr_ui(ui, &format!("Typing {n} characters on the device.")),
-                );
+                // Arabic and English alike, on the device's own layout.
+                let t: String = t.chars().take(MAX_PASTE).collect();
+                let layout = shortcuts::KbLayout::from_pref(ui.get_prefs().ios_kb_layout.as_str());
+                let n = t.chars().filter(|c| *c != '\r').count();
+                let (_, skipped) = type_on_apple(input, &t, layout);
+                let msg = if skipped > 0 {
+                    format!(
+                        "Typing {} characters on the device ({skipped} have no key and were skipped).",
+                        n - skipped
+                    )
+                } else {
+                    format!("Typing {n} characters on the device.")
+                };
+                show_toast(ui, tr_ui(ui, &msg));
             }
             None => show_toast(ui, tr_ui(ui, "The PC clipboard has no text.")),
         },
-        Shortcut::Apple(a) => {
-            if a == "wake" {
-                device_keyboard_english(input);
+        Shortcut::Apple("wake") => unlock_device(ui, input, false),
+        Shortcut::Apple(a) => input.send(Cmd::Action(a)),
+    }
+}
+
+/// Types `text` with the Apple device's hardware keyboard (Apple Driver /
+/// Hybrid), switching the device keyboard language whenever the script
+/// changes. `layout`: the device's Arabic hardware layout. Returns whether
+/// anything was typed and how many characters have no key.
+fn type_on_apple(input: &Input, text: &str, layout: shortcuts::KbLayout) -> (bool, usize) {
+    let mut sent = false;
+    let mut skipped = 0;
+    for c in text.chars() {
+        let c = if c == '\r' { continue } else { c };
+        let arabic_now = IOS_ARABIC.load(Relaxed);
+        let Some((script, mut usage, mut shifted)) = shortcuts::device_key(c, arabic_now, layout)
+        else {
+            skipped += 1;
+            continue;
+        };
+        // Switch the device keyboard when the PC starts typing in the other
+        // script; the key may then sit elsewhere.
+        let want = match script {
+            shortcuts::Script::Arabic => Some(true),
+            shortcuts::Script::English => Some(false),
+            shortcuts::Script::Either => None,
+        };
+        if let Some(want) = want.filter(|w| *w != arabic_now) {
+            IOS_ARABIC.store(want, Relaxed);
+            input.send(Cmd::SwitchLanguage);
+            if let Some((_, u, sh)) = shortcuts::device_key(c, want, layout) {
+                (usage, shifted) = (u, sh);
             }
-            input.send(Cmd::Action(a));
+        }
+        let mut usages = Vec::with_capacity(2);
+        if shifted {
+            usages.push(shortcuts::HID_SHIFT);
+        }
+        usages.push(usage);
+        input.send(Cmd::Keys(usages));
+        sent = true;
+    }
+    (sent, skipped)
+}
+
+/// Unlock (Alt+U, or `auto` when mirroring starts): the backend only types
+/// the passcode while the device is locked, then checks that it unlocked;
+/// the toast says what really happened.
+fn unlock_device(ui: &AppWindow, input: &Input, auto: bool) {
+    device_keyboard_english(input);
+    let (tx, rx) = std::sync::mpsc::channel();
+    input.send(Cmd::Unlock(if auto { "auto-unlock" } else { "wake" }, tx));
+    show_toast(ui, tr_ui(ui, "Unlocking the device…"));
+    let weak = ui.as_weak();
+    std::thread::spawn(move || {
+        let reply = rx.recv().ok().flatten();
+        let message = reply
+            .as_ref()
+            .and_then(|v| v.get("message"))
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let text = match message.as_str() {
+                "unlocked" => "Unlocked.",
+                "already-unlocked" if auto => return,
+                "already-unlocked" => "The device is already unlocked.",
+                "woken" => "No passcode is saved, so the device was only woken.",
+                "unverified" => "Passcode typed. The lock state can't be read on this connection, so check the device.",
+                "unknown-state" => "Couldn't tell whether the device is locked, so the passcode wasn't typed (it could have gone into an open app). Enter it on the device.",
+                "failed" => "Couldn't unlock. Enter the passcode on the device.",
+                _ => "The device didn't take the unlock. Enter the passcode on the device.",
+            };
+            show_toast(&ui, tr_ui(&ui, text));
+        });
+    });
+}
+
+/// Screenshot (Alt+P, dock): the picture at the stream's own size as PNG in
+/// Pictures › 3zT Screenshots, also on the clipboard; inside the iPhone
+/// frame when the frame is shown and "Screenshots with the frame" is on.
+fn take_screenshot(ui: &AppWindow) {
+    let live = APP.with_borrow(|a| a.streaming || a.android_live);
+    if !live {
+        show_toast(ui, tr_ui(ui, "Start mirroring first."));
+        return;
+    }
+    let shot = APP.with_borrow(|a| a.view.as_ref()?.snapshot_full(Duration::from_millis(800)));
+    let Some(shot) = shot else {
+        show_toast(ui, tr_ui(ui, "No picture to save yet."));
+        return;
+    };
+    let framed = FRAME_ON.load(Relaxed) && ui.get_prefs().shot_frame;
+    let finish = APP.with_borrow(|a| a.frame_finish.clone());
+    let weak = ui.as_weak();
+    std::thread::spawn(move || {
+        let mut pic = shot::Picture {
+            width: shot.width,
+            height: shot.height,
+            bgra: shot.bgra,
+        };
+        if framed {
+            pic = shot::framed(&pic, frame::finish(&finish));
+        }
+        let dir = shot::folder();
+        let saved = std::fs::create_dir_all(&dir)
+            .map_err(|e| e.to_string())
+            .and_then(|()| shot::png(&pic))
+            .and_then(|bytes| {
+                let path = shot::file_name(&dir, &shot::stamp_now(), "png");
+                std::fs::write(&path, bytes)
+                    .map(|()| path)
+                    .map_err(|e| e.to_string())
+            });
+        let copied = shot::to_clipboard(&pic);
+        let _ = slint::invoke_from_event_loop(move || {
+            let Some(ui) = weak.upgrade() else { return };
+            let en = match (&saved, copied) {
+                (Ok(_), true) => {
+                    "Screenshot saved in Pictures › 3zT Screenshots and copied.".to_string()
+                }
+                (Ok(_), false) => "Screenshot saved in Pictures › 3zT Screenshots.".to_string(),
+                (Err(e), _) => format!("The screenshot was not saved: {e}"),
+            };
+            show_toast(&ui, tr_ui(&ui, &en));
+        });
+    });
+}
+
+/// Alt+O / Record: start or stop recording the iPhone/iPad picture (and its
+/// sound when it plays on this PC) into Videos › 3zT Recordings.
+fn toggle_recording(ui: &AppWindow) {
+    if APP.with_borrow(|a| a.recording.as_ref().map(|r| r.stop()).is_some()) {
+        show_toast(ui, tr_ui(ui, "Saving the recording…"));
+        return;
+    }
+    if ui.get_screen().as_str() == "android" {
+        return;
+    }
+    let size = APP.with_borrow(|a| {
+        a.streaming
+            .then(|| a.view.as_ref().map(|v| v.frame_size()))
+            .flatten()
+    });
+    let Some(size) = size.filter(|s| s.0 > 0) else {
+        show_toast(ui, tr_ui(ui, "Start mirroring first."));
+        return;
+    };
+    let sound = ui.get_prefs().audio_out.as_str() == "pc";
+    match record::start(size, sound) {
+        Ok(r) => {
+            APP.with_borrow_mut(|a| a.recording = Some(r));
+            show_toast(
+                ui,
+                tr_ui(ui, "Recording. Press Alt+O or the red mark to stop."),
+            );
+        }
+        Err(e) => show_toast(ui, tr_ui(ui, &format!("Could not start recording: {e}"))),
+    }
+}
+
+/// Once a second from the frame timer: the red mark's time, and the
+/// message when a recording has ended.
+fn recording_tick(ui: &AppWindow) {
+    let state = APP.with_borrow(|a| {
+        a.recording
+            .as_ref()
+            .map(|r| (r.started.elapsed().as_secs(), r.finished()))
+    });
+    let Some((secs, done)) = state else {
+        if !ui.get_rec_time().is_empty() {
+            ui.set_rec_time("".into());
+        }
+        return;
+    };
+    match done {
+        None => {
+            let t = format!("{:02}:{:02}", secs / 60, secs % 60);
+            if ui.get_rec_time().as_str() != t {
+                ui.set_rec_time(t.into());
+            }
+        }
+        Some((files, error)) => {
+            APP.with_borrow_mut(|a| a.recording = None);
+            ui.set_rec_time("".into());
+            let parts = files.len();
+            let en = match (parts, error) {
+                (0, Some(e)) => format!("The recording failed: {e}"),
+                (_, Some(e)) if e != "the picture stopped" => {
+                    format!("Recording saved in Videos › 3zT Recordings (it stopped early: {e}).")
+                }
+                (1, _) => "Recording saved in Videos › 3zT Recordings.".to_string(),
+                (n, _) => format!(
+                    "Recording saved in Videos › 3zT Recordings as {n} parts (the device turned)."
+                ),
+            };
+            show_toast(ui, tr_ui(ui, &en));
+        }
+    }
+}
+
+/// The crop that shows the zoomed part: the user's own crop plus what
+/// zoom `z` leaves out around the centre `pan` (0..1). The view's touch
+/// mapping already accounts for the crop, so taps land where they point.
+fn zoom_crop(
+    frame: (u32, u32),
+    user: (u32, u32, u32, u32),
+    z: f32,
+    pan: (f32, f32),
+) -> (u32, u32, u32, u32) {
+    let (l, t, r, b) = user;
+    if z <= 1.0 || frame.0 == 0 || frame.1 == 0 {
+        return user;
+    }
+    let w = frame.0.saturating_sub(l + r) as f32;
+    let h = frame.1.saturating_sub(t + b) as f32;
+    let (fw, fh) = (w - w / z, h - h / z);
+    let el = (fw * pan.0.clamp(0.0, 1.0)).round();
+    let et = (fh * pan.1.clamp(0.0, 1.0)).round();
+    (
+        l + el as u32,
+        t + et as u32,
+        r + (fw - el).max(0.0) as u32,
+        b + (fh - et).max(0.0) as u32,
+    )
+}
+
+/// Alt+G and the AR / EN mark: the device typed the other language than
+/// 3zT Mirroring expected, so switch it (and what 3zT Mirroring expects).
+fn switch_device_language(input: &Input) {
+    IOS_ARABIC.fetch_xor(true, Relaxed);
+    input.send(Cmd::SwitchLanguage);
+}
+
+/// Letters only the right layout types right: و ز ظ were the keys reported
+/// as punctuation with the wrong one.
+const KB_TEST_TEXT: &str = "وزظ";
+
+enum KbTest {
+    /// Settings › Test the keyboard: ask for a text field first.
+    Start,
+    /// The user has a text field open: type the letters, ask what came out.
+    Type,
+    /// The answer: did the letters come out right?
+    Answer(bool),
+}
+
+/// Settings › Control › Test the keyboard. Types و ز ظ with the chosen
+/// Arabic layout and asks one question; a "no" switches to the other layout
+/// (iOS has two Arabic hardware layouts, and nothing tells 3zT Mirroring
+/// which one the device uses).
+fn keyboard_test(ui: &AppWindow, input: &Input, step: KbTest) {
+    let apple_live = ui.get_screen().as_str() != "android" && APP.with_borrow(|a| a.streaming);
+    if !apple_live || !ui.get_prefs().keyboard {
+        show_toast(
+            ui,
+            tr_ui(
+                ui,
+                "Start mirroring in Apple Driver mode with \"PC keyboard to the device\" on, then test.",
+            ),
+        );
+        return;
+    }
+    let mut p = ui.get_prefs();
+    let layout = shortcuts::KbLayout::from_pref(p.ios_kb_layout.as_str());
+    match step {
+        KbTest::Start => open_sheet(
+            ui,
+            "kbtest",
+            tr_ui(ui, "Keyboard test"),
+            tr_ui(
+                ui,
+                "Open an empty text field on the device (a new note, for example), then press Type. 3zT Mirroring types three Arabic letters there.",
+            ),
+            tr_ui(ui, "Type"),
+            tr_ui(ui, "Cancel"),
+        ),
+        KbTest::Type => {
+            type_on_apple(input, KB_TEST_TEXT, layout);
+            open_sheet(
+                ui,
+                "kbcheck",
+                tr_ui(ui, "Keyboard test"),
+                tr_ui(ui, "Did these three letters appear on the device: و ز ظ ?"),
+                tr_ui(ui, "Yes"),
+                tr_ui(ui, "No"),
+            );
+        }
+        KbTest::Answer(true) => show_toast(
+            ui,
+            tr_ui(ui, "The keyboard layout is right. You can delete the test letters."),
+        ),
+        KbTest::Answer(false) => {
+            let other = layout.other();
+            p.ios_kb_layout = other.pref().into();
+            ui.set_prefs(p.clone());
+            prefs::save(&p);
+            let name = match other {
+                shortcuts::KbLayout::Arabic => "Arabic",
+                shortcuts::KbLayout::ArabicPc => "Arabic – PC",
+            };
+            show_toast(
+                ui,
+                tr_ui(
+                    ui,
+                    &format!(
+                        "Switched to the \"{}\" layout. Delete the test letters and test again; if it is still wrong, press Alt+G once and test again.",
+                        tr_ui(ui, name)
+                    ),
+                ),
+            );
         }
     }
 }
@@ -2599,8 +3115,9 @@ fn device_keyboard_english(input: &Input) {
 /// what the next session assumes.
 fn device_keyboard_reset_now(api: &Api) {
     if IOS_ARABIC.swap(false, Relaxed) && APP.with_borrow(|a| a.streaming) {
-        api.key(&json!({ "usages": [0xe0, 0x2c] }));
-        api.key(&json!({ "usages": [] }));
+        for r in input::key_reports(&[shortcuts::HID_CTRL, 0x2c]) {
+            api.key(&json!({ "usages": r }));
+        }
     }
 }
 
@@ -2786,6 +3303,9 @@ fn update_check(ui: &AppWindow, manual: bool) {
     });
 }
 
+/// Longest PC clipboard text Alt+V types on an iPhone/iPad.
+const MAX_PASTE: usize = 4000;
+
 /// The iPhone/iPad hardware keyboard is set to Arabic (as far as 3zT Mirroring
 /// switched it; Alt+G switches by hand when they disagree).
 static IOS_ARABIC: AtomicBool = AtomicBool::new(false);
@@ -2938,6 +3458,7 @@ fn main() -> Result<(), slint::PlatformError> {
         .set_version(env!("CARGO_PKG_VERSION").into());
     ui.set_prefs(prefs::load());
     i18n::apply(ui.get_prefs().language.as_str());
+    ui.global::<Theme>().set_rtl(i18n::is_arabic());
     {
         let weak = ui.as_weak();
         tray::install(move |e| {
@@ -3035,7 +3556,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             }
             let a = api.clone();
-            std::thread::spawn(move || a.start_cast());
+            let options = cast_options(&prefs::load());
+            std::thread::spawn(move || a.start_cast(options));
         });
     }
     {
@@ -3096,6 +3618,7 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak = ui.as_weak();
         let api = api.clone();
+        let input_sheet = input.clone();
         ui.on_sheet_answer(move |yes| {
             let Some(ui) = weak.upgrade() else { return };
             let kind = APP.with_borrow_mut(|a| a.sheet.take()).unwrap_or_default();
@@ -3104,10 +3627,19 @@ fn main() -> Result<(), slint::PlatformError> {
                 return; // no buttons while the change runs
             }
             ui.set_sheet_open(false);
+            match (kind.as_str(), yes) {
+                ("kbtest", true) => return keyboard_test(&ui, &input_sheet, KbTest::Type),
+                ("kbcheck", _) => return keyboard_test(&ui, &input_sheet, KbTest::Answer(yes)),
+                _ => {}
+            }
             if !yes {
                 return;
             }
-            if kind == "mfp" {
+            if kind == "import-done" {
+                if let Some(dir) = APP.with_borrow(|a| a.import_folder.clone()) {
+                    let _ = std::process::Command::new("explorer.exe").arg(dir).spawn();
+                }
+            } else if kind == "mfp" {
                 // Windows' own Settings page (no download by 3zT Mirroring).
                 let _ = std::process::Command::new("explorer.exe")
                     .arg("ms-settings:optionalfeatures")
@@ -3129,8 +3661,9 @@ fn main() -> Result<(), slint::PlatformError> {
             IOS_ARABIC.store(false, Relaxed);
             std::thread::spawn(move || {
                 if arabic {
-                    a.key(&json!({ "usages": [0xe0, 0x2c] }));
-                    a.key(&json!({ "usages": [] }));
+                    for r in input::key_reports(&[shortcuts::HID_CTRL, 0x2c]) {
+                        a.key(&json!({ "usages": r }));
+                    }
                 }
                 a.stop_cast()
             });
@@ -3157,7 +3690,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     }
                 }
                 std::thread::sleep(Duration::from_millis(300));
-                a.start_cast();
+                a.start_cast(cast_options(&prefs::load()));
             });
         });
     }
@@ -3171,6 +3704,9 @@ fn main() -> Result<(), slint::PlatformError> {
             devprofiles::normalize(&last.borrow(), &mut p);
             if p.language != last.borrow().language {
                 i18n::apply(p.language.as_str());
+                if let Some(ui) = weak.upgrade() {
+                    ui.global::<Theme>().set_rtl(i18n::is_arabic());
+                }
             }
             if p.start_with_windows != last.borrow().start_with_windows && !test_mode {
                 tray::set_start_with_windows(p.start_with_windows, true);
@@ -3511,6 +4047,12 @@ fn main() -> Result<(), slint::PlatformError> {
                 "control-center" => input.send(Cmd::Stroke(0.92, 0.0, 0.92, 0.62, 12, 16)),
                 "notifications" => input.send(Cmd::Stroke(0.22, 0.0, 0.22, 0.62, 12, 16)),
                 "lock" => input.send(Cmd::Action("lock")),
+                "wake" => unlock_device(&ui, &input, false),
+                "toggle-keyboard" => input.send(Cmd::Action("toggle-keyboard")),
+                "files-send" => filedrop::send_dialog(&ui),
+                "screenshot" => take_screenshot(&ui),
+                "record" => toggle_recording(&ui),
+                "files-import" => filedrop::import_open(&ui),
                 "mute" => {
                     let m = !ui.get_muted();
                     ui.set_muted(m);
@@ -3672,7 +4214,20 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let api = api.clone();
         let weak = ui.as_weak();
+        let input_kb = input.clone();
         ui.on_driver_action(move |a: slint::SharedString| {
+            if a.as_str() == "keyboard-test" {
+                if let Some(ui) = weak.upgrade() {
+                    keyboard_test(&ui, &input_kb, KbTest::Start);
+                }
+                return;
+            }
+            if a.starts_with("frame") {
+                if let Some(ui) = weak.upgrade() {
+                    frame_action(&ui, a.as_str());
+                }
+                return;
+            }
             if matches!(a.as_str(), "restore" | "bind" | "removefilter") {
                 if let Some(ui) = weak.upgrade() {
                     confirm_driver(&ui, a.as_str());
@@ -3751,12 +4306,16 @@ fn main() -> Result<(), slint::PlatformError> {
     {
         let weak = ui.as_weak();
         let last_drag = std::cell::Cell::new(None::<Instant>);
+        let input_win = input.clone();
         ui.on_window_action(move |a| {
             use slint::winit_030::winit::window::ResizeDirection as R;
             let Some(ui) = weak.upgrade() else { return };
             let w = ui.window();
             match a.as_str() {
                 "close" => close_requested(&ui),
+                // The AR / EN mark: same as Alt+G.
+                "kb-lang" => switch_device_language(&input_win),
+                "rec" => toggle_recording(&ui),
                 "coffee" => open_url(SUPPORT_URL),
                 // F2 showed or hid the header and dock: fit the window again
                 // so they sit around the picture.
@@ -3871,8 +4430,7 @@ fn main() -> Result<(), slint::PlatformError> {
             // Alt+G: switch the iPhone/iPad keyboard language by hand, for
             // when it no longer matches what the PC types.
             if alt && !ctrl && apple_live && keyboard && route_text.eq_ignore_ascii_case("g") {
-                IOS_ARABIC.fetch_xor(true, Relaxed);
-                input_keys.send(Cmd::SwitchLanguage);
+                switch_device_language(&input_keys);
                 return true;
             }
             if let Some(s) = shortcuts::route(android_screen, &route_text, ctrl, shift, alt, typing)
@@ -3889,36 +4447,8 @@ fn main() -> Result<(), slint::PlatformError> {
                     return false;
                 }
                 // Every character: the Arabic "لا" key types two.
-                let mut sent = false;
-                for c in text.chars() {
-                    let arabic_now = IOS_ARABIC.load(Relaxed);
-                    let Some((script, mut usage, mut shifted)) =
-                        shortcuts::device_key(c, arabic_now)
-                    else {
-                        continue;
-                    };
-                    // Switch the device keyboard when the PC starts typing in
-                    // the other script; the key may then sit elsewhere.
-                    let want = match script {
-                        shortcuts::Script::Arabic => Some(true),
-                        shortcuts::Script::English => Some(false),
-                        shortcuts::Script::Either => None,
-                    };
-                    if let Some(want) = want.filter(|w| *w != arabic_now) {
-                        IOS_ARABIC.store(want, Relaxed);
-                        input_keys.send(Cmd::SwitchLanguage);
-                        if let Some((_, u, sh)) = shortcuts::device_key(c, want) {
-                            (usage, shifted) = (u, sh);
-                        }
-                    }
-                    let mut usages = Vec::with_capacity(2);
-                    if shifted {
-                        usages.push(shortcuts::HID_SHIFT);
-                    }
-                    usages.push(usage);
-                    input_keys.send(Cmd::Keys(usages));
-                    sent = true;
-                }
+                let layout = shortcuts::KbLayout::from_pref(ui.get_prefs().ios_kb_layout.as_str());
+                let (sent, _) = type_on_apple(&input_keys, &text, layout);
                 return sent;
             }
             let Some(sh) = android::active() else {
@@ -3949,6 +4479,25 @@ fn main() -> Result<(), slint::PlatformError> {
         let centring = std::cell::Cell::new(None::<(Instant, slint::PhysicalPosition)>);
         timer.start(slint::TimerMode::Repeated, Duration::from_millis(16), move || {
             let Some(ui) = weak.upgrade() else { return };
+            recording_tick(&ui);
+            // The AR / EN mark: what 3zT Mirroring expects the device
+            // keyboard to type (Apple Driver / Hybrid, PC keyboard on).
+            let kb_lang = if ui.get_screen().as_str() != "android"
+                && ui.get_prefs().keyboard
+                && APP.with_borrow(|a| a.streaming)
+                && ui.get_mode_active().as_str() != "usbdirect"
+            {
+                if IOS_ARABIC.load(Relaxed) {
+                    "AR"
+                } else {
+                    "EN"
+                }
+            } else {
+                ""
+            };
+            if ui.get_ios_kb_lang().as_str() != kb_lang {
+                ui.set_ios_kb_lang(kb_lang.into());
+            }
             // The first tick sizes the window for the screen; the settings
             // slide below waits a tick, else it would resize with the old
             // height (seen: the window stayed 900 px high).
@@ -3981,10 +4530,8 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
                 due
             });
-            if unlock && ui.get_phase().as_str() == "streaming" {
-                device_keyboard_english(&input);
-                input.send(Cmd::Action("wake"));
-                show_toast(&ui, tr_ui(&ui, "Unlocking the device…"));
+            if unlock && ui.get_phase().as_str() == "streaming" && ui.get_passcode_set() {
+                unlock_device(&ui, &input, true);
             }
             APP.with_borrow_mut(|a| {
                 if a.view.is_none() {
@@ -4160,7 +4707,13 @@ fn main() -> Result<(), slint::PlatformError> {
                 // scrcpy sends the picture already turned; Apple reports the angle separately.
                 let device_rotation = if on_android { 0 } else { a.device_rotation };
                 let Some(v) = a.view.as_ref() else { return };
-                v.set_crop(p.crop_l as u32, p.crop_t as u32, p.crop_r as u32, p.crop_b as u32);
+                let (zl, zt, zr, zb) = zoom_crop(
+                    v.frame_size(),
+                    (p.crop_l as u32, p.crop_t as u32, p.crop_r as u32, p.crop_b as u32),
+                    a.zoom,
+                    a.pan,
+                );
+                v.set_crop(zl, zt, zr, zb);
                 v.set_fit(match p.fit.as_str() {
                     "cover" => Fit::Cover,
                     "fill" => Fit::Fill,
@@ -4186,7 +4739,34 @@ fn main() -> Result<(), slint::PlatformError> {
                     h = (h - 2.0 * inset).max(1.0);
                 }
                 let pic = v.shown_size();
-                if p.fit != "cover" && p.fit != "fill" && pic.0 > 0 && pic.1 > 0 && w > 0.0 && h > 0.0 {
+                let framed = frame_wanted(&ui, streaming && !on_android, a.apple_ipad)
+                    && pic.0 > 0
+                    && pic.1 > 0
+                    && w > 0.0
+                    && h > 0.0;
+                if FRAME_ON.swap(framed, Relaxed) != framed {
+                    // The window fits the frame (or the bare picture) again.
+                    a.fitted = None;
+                }
+                let mut radius = if ui.get_clean() { 0 } else { ((22.0 - PIC_INSET) * sf).round() as i32 };
+                if framed {
+                    // The picture goes in the frame's screen, with its corners.
+                    let l = frame::fit(x, y, w, h, pic.0 as f32 / pic.1 as f32);
+                    (x, y, w, h) = l.screen;
+                    radius = l.radius.round() as i32;
+                    ui.set_frame_x(l.outer.0 / sf);
+                    ui.set_frame_y(l.outer.1 / sf);
+                    ui.set_frame_w(l.outer.2 / sf);
+                    ui.set_frame_h(l.outer.3 / sf);
+                    ui.set_frame_sw(l.screen.2 / sf);
+                    ui.set_frame_sh(l.screen.3 / sf);
+                    ui.set_frame_unit(l.unit / sf);
+                    ui.set_frame_landscape(l.landscape);
+                }
+                if framed != ui.get_frame_show() {
+                    ui.set_frame_show(framed);
+                }
+                if !framed && p.fit != "cover" && p.fit != "fill" && pic.0 > 0 && pic.1 > 0 && w > 0.0 && h > 0.0 {
                     let aspect = pic.0 as f32 / pic.1 as f32;
                     let (pw, ph) = if w / h > aspect { (h * aspect, h) } else { (w, w / aspect) };
                     x += (w - pw) / 2.0;
@@ -4210,7 +4790,11 @@ fn main() -> Result<(), slint::PlatformError> {
                     let tw = ui.get_transfer_w();
                     holes.push((px((ww - tw) / 2.0), px(wh - 150.0), px(tw), px(40.0)));
                 }
-                if (ui.get_android_apps_open() && on_android) || ui.get_drop_hover() || ui.get_files_open() {
+                if (ui.get_android_apps_open() && on_android)
+                    || ui.get_drop_hover()
+                    || ui.get_files_open()
+                    || ui.get_import_open()
+                {
                     holes.push((
                         px(ui.get_launcher_x()),
                         px(ui.get_launcher_y()),
@@ -4219,7 +4803,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     ));
                 }
                 v.set_holes(&holes);
-                v.set_bounds(x.round() as i32, y.round() as i32, w.round() as i32, h.round() as i32, streaming, if ui.get_clean() { 0 } else { ((22.0 - PIC_INSET) * sf).round() as i32 });
+                v.set_bounds(x.round() as i32, y.round() as i32, w.round() as i32, h.round() as i32, streaming, radius);
                 let shown = v.shown_size();
                 // The clean view waits for a real frame: until then the header
                 // (Restart, Stop) stays.
@@ -4296,20 +4880,37 @@ fn main() -> Result<(), slint::PlatformError> {
                             .and_then(|sh| sh.audio_ms())
                             .map(|ms| format!("  ·  {} {ms} ms", tr_ui_static(&ui, "sound")))
                             .unwrap_or_default();
-                        ui.set_stats_line(format!("{}×{}  ·  {:.0} fps  ·  {:.1} Mbps  ·  decode {:.1} ms{sound}", s.width, s.height, s.presented_fps.min(s.decoded_fps), s.mbps, s.decode_ms).into());
-                        ui.set_stats_full(
+                        // Received (decoded) and shown frame rates side by
+                        // side: the device's own rate is the first number.
+                        let dec = if s.hardware { "GPU" } else { "CPU" };
+                        ui.set_stats_line(
                             format!(
-                                "Resolution    {}×{}\nDecode        {:.1} fps ({})\nPresented     {:.1} fps\nSkipped       {}\nDecode frame  {:.1} ms\nBitrate       {:.1} Mbps",
+                                "{}×{}  ·  {:.0}/{:.0} fps  ·  {:.1} Mbps  ·  {dec}  ·  {} {:.1} ms{sound}",
                                 s.width,
                                 s.height,
                                 s.decoded_fps,
-                                if s.hardware { "GPU" } else { "CPU" },
                                 s.presented_fps,
-                                s.replaced,
-                                s.decode_ms,
-                                s.mbps
+                                s.mbps,
+                                tr_ui_static(&ui, "decode"),
+                                s.decode_ms
                             )
                             .into(),
+                        );
+                        let rows = [
+                            (tr_ui_static(&ui, "Resolution"), format!("{}×{}", s.width, s.height)),
+                            (tr_ui_static(&ui, "Received"), format!("{:.1} fps", s.decoded_fps)),
+                            (tr_ui_static(&ui, "Shown"), format!("{:.1} fps", s.presented_fps)),
+                            (tr_ui_static(&ui, "Skipped frames"), s.replaced.to_string()),
+                            (tr_ui_static(&ui, "Decoder"), dec.to_string()),
+                            (tr_ui_static(&ui, "Decode time"), format!("{:.1} ms", s.decode_ms)),
+                            (tr_ui_static(&ui, "Bitrate"), format!("{:.1} Mbps", s.mbps)),
+                        ];
+                        ui.set_stats_full(
+                            rows.iter()
+                                .map(|(k, v)| format!("{k}: {v}"))
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                                .into(),
                         );
                     } else {
                         ui.set_stats_line("".into());

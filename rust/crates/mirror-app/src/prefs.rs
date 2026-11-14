@@ -52,6 +52,10 @@ pub fn defaults() -> Prefs {
         update_check: true,
         update_channel: "".into(),
         language: "".into(),
+        ios_kb_layout: "arabic".into(),
+        frame_on: true,
+        shot_frame: true,
+        apple_picture: "apple".into(),
     }
 }
 
@@ -136,6 +140,14 @@ pub fn from_value(v: &Value) -> Prefs {
     b("updateCheck", &mut p.update_check);
     s("updateChannel", &mut p.update_channel, &["stable", "beta"]);
     s("language", &mut p.language, &["en", "ar"]);
+    s(
+        "iosKbLayout",
+        &mut p.ios_kb_layout,
+        &["arabic", "arabic-pc"],
+    );
+    b("frameOn", &mut p.frame_on);
+    b("shotFrame", &mut p.shot_frame);
+    s("applePicture", &mut p.apple_picture, &["apple", "airplay"]);
     // Android picture: scrcpy server options.
     s(
         "androidMaxSize",
@@ -206,8 +218,54 @@ pub fn to_value(p: &Prefs) -> Value {
         "androidBitrate": p.android_bitrate.as_str(), "androidCodec": p.android_codec.as_str(),
         "androidProfile": p.android_profile.as_str(), "androidEncoder": p.android_encoder.as_str(),
         "updateCheck": p.update_check, "updateChannel": p.update_channel.as_str(),
-        "language": p.language.as_str(),
+        "language": p.language.as_str(), "iosKbLayout": p.ios_kb_layout.as_str(),
+        "frameOn": p.frame_on, "shotFrame": p.shot_frame,
+        "applePicture": p.apple_picture.as_str(),
     })
+}
+
+/// iPhone frame finish per device (UDID → finish id or "#rrggbb"), in
+/// `iphone-frames.json` next to the settings (`<MIRROR_PREFS>.frames.json`
+/// in tests). Kept apart from settings.json so older versions keep reading it.
+fn frames_path() -> Option<std::path::PathBuf> {
+    if let Some(p) = std::env::var_os("MIRROR_PREFS") {
+        let mut s = p;
+        s.push(".frames.json");
+        return Some(s.into());
+    }
+    path().map(|p| p.with_file_name("iphone-frames.json"))
+}
+
+fn frames_load() -> serde_json::Map<String, Value> {
+    frames_path()
+        .and_then(|f| std::fs::read(f).ok())
+        .and_then(|b| parse(&b))
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default()
+}
+
+/// The saved finish of a device (the default for one never set).
+pub fn frame_finish(udid: &str) -> String {
+    frames_load()
+        .get(udid)
+        .and_then(Value::as_str)
+        .filter(|f| crate::frame::valid(f))
+        .unwrap_or(crate::frame::DEFAULT)
+        .to_string()
+}
+
+pub fn set_frame_finish(udid: &str, finish: &str) {
+    if udid.is_empty() || !crate::frame::valid(finish) {
+        return;
+    }
+    let mut m = frames_load();
+    m.insert(udid.to_string(), Value::from(finish));
+    if let Some(f) = frames_path() {
+        let _ = std::fs::write(
+            f,
+            serde_json::to_vec_pretty(&Value::Object(m)).unwrap_or_default(),
+        );
+    }
 }
 
 #[cfg(test)]
@@ -247,6 +305,9 @@ mod tests {
         p.remember_platform = true;
         let back = from_value(&to_value(&p));
         assert_eq!(back.platform.as_str(), "android");
+        assert_eq!(back.ios_kb_layout.as_str(), "arabic");
+        let pc = from_value(&json!({"iosKbLayout": "arabic-pc"}));
+        assert_eq!(pc.ios_kb_layout.as_str(), "arabic-pc");
         assert!(back.remember_platform);
         let bad = from_value(&json!({"platform": "windows-phone"}));
         assert_eq!(bad.platform.as_str(), "");
