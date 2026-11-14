@@ -2001,10 +2001,10 @@ component SettingsPanel inherits Glass {
                             }
                         }
                         for f[i] in self.list: Rectangle {
-                            property <int> col: Math.mod(i, 7);
-                            property <int> row: i >= 7 ? 1 : 0;
-                            x: (Theme.rtl ? 6 - self.col : self.col) * 34px;
-                            y: self.row * 36px;
+                            property <int> sw-col: Math.mod(i, 7);
+                            property <int> sw-row: i >= 7 ? 1 : 0;
+                            x: (Theme.rtl ? 6 - self.sw-col : self.sw-col) * 34px;
+                            y: self.sw-row * 36px;
                             width: 28px;
                             height: 28px;
                             border-radius: 14px;
