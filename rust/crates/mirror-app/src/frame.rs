@@ -21,33 +21,43 @@ pub struct Finish {
     pub buttons: u32,
 }
 
-/// The twelve finishes: id, English name, colours.
+/// The twelve finishes: id, English name, colours. The colours follow
+/// Apple's own finishes (polished stainless steel on the Pro models,
+/// anodised aluminium on the others), bright like on the real phone.
+/// "white" is kept for frames saved before (it shows as Silver).
 pub const FINISHES: [(&str, &str, Finish); 12] = [
-    ("graphite", "Graphite", f(0x4a4a50, 0x8e8e96, 0x3a3a40)),
+    ("graphite", "Graphite", f(0x5b5a57, 0xb4b2ad, 0x4a4946)),
+    ("silver", "Silver", f(0xdcdde0, 0xffffff, 0xbfc1c5)),
+    ("gold", "Gold", f(0xe8c48f, 0xfff0d2, 0xc9a26b)),
+    (
+        "pacific-blue",
+        "Pacific Blue",
+        f(0x2f5d78, 0x86b4cc, 0x234a61),
+    ),
     (
         "space-black",
         "Space Black",
-        f(0x2a2a2d, 0x5e5e64, 0x1f1f22),
+        f(0x3a3937, 0x8d8b88, 0x2b2a28),
     ),
-    ("silver", "Silver", f(0xc9cbce, 0xf6f7f8, 0xa9abaf)),
-    ("white", "White", f(0xe9e7e1, 0xffffff, 0xcfccc4)),
-    ("gold", "Gold", f(0xd9c39b, 0xf8ead0, 0xbea77d)),
-    (
-        "cosmic-orange",
-        "Cosmic Orange",
-        f(0xe0692a, 0xffae78, 0xbf541b),
-    ),
-    ("red", "Red", f(0xb01e2b, 0xe8636d, 0x8c1621)),
-    ("pink", "Pink", f(0xedc3c9, 0xfdeaec, 0xd6a5ad)),
-    ("yellow", "Yellow", f(0xefd468, 0xfff1ad, 0xd3b74c)),
-    ("sage", "Sage", f(0x6b8468, 0xa9c0a6, 0x566c54)),
-    ("deep-blue", "Deep Blue", f(0x2d3f5e, 0x7186ad, 0x22314a)),
     (
         "deep-purple",
         "Deep Purple",
-        f(0x564773, 0x9a89bf, 0x43375c),
+        f(0x5f4b75, 0xa892c2, 0x4a3a5c),
     ),
+    ("deep-blue", "Deep Blue", f(0x2c4370, 0x7d97c9, 0x213459)),
+    (
+        "cosmic-orange",
+        "Cosmic Orange",
+        f(0xf26b1d, 0xffb27a, 0xcf5510),
+    ),
+    ("red", "(PRODUCT)RED", f(0xd31f33, 0xff6b78, 0xa8141f)),
+    ("pink", "Pink", f(0xf3a6cc, 0xffe0f0, 0xd987b0)),
+    ("yellow", "Yellow", f(0xf6d84a, 0xfff3a6, 0xd8b92c)),
+    ("sage", "Sage", f(0x9cb38c, 0xd6e5c9, 0x7f976f)),
 ];
+
+/// Ids saved by older versions, and what they show now.
+const OLD_IDS: [(&str, &str); 1] = [("white", "silver")];
 
 const fn f(band: u32, shine: u32, buttons: u32) -> Finish {
     Finish {
@@ -66,6 +76,7 @@ pub fn finish(id: &str) -> Finish {
     if let Some(rgb) = parse_hex(id) {
         return custom(rgb);
     }
+    let id = canonical(id);
     FINISHES
         .iter()
         .find(|(k, _, _)| *k == id)
@@ -73,9 +84,19 @@ pub fn finish(id: &str) -> Finish {
         .unwrap_or(FINISHES[0].2)
 }
 
+/// A finish id as it is called now (older ids are renamed).
+pub fn canonical(id: &str) -> &str {
+    OLD_IDS
+        .iter()
+        .find(|(old, _)| *old == id)
+        .map_or(id, |(_, new)| new)
+}
+
 /// Whether `id` is something [`finish`] knows (kept when read from a file).
 pub fn valid(id: &str) -> bool {
-    parse_hex(id).is_some() || FINISHES.iter().any(|(k, _, _)| *k == id)
+    parse_hex(id).is_some()
+        || FINISHES.iter().any(|(k, _, _)| *k == id)
+        || OLD_IDS.iter().any(|(k, _)| *k == id)
 }
 
 fn parse_hex(s: &str) -> Option<u32> {
@@ -87,12 +108,12 @@ fn parse_hex(s: &str) -> Option<u32> {
 }
 
 /// A custom colour: the band is the colour itself; the shine is it mixed
-/// 45% toward white and the buttons 20% toward black, like the presets.
+/// 50% toward white and the buttons 18% toward black, like the presets.
 pub fn custom(rgb: u32) -> Finish {
     Finish {
         band: rgb,
-        shine: mix(rgb, 0xffffff, 0.45),
-        buttons: mix(rgb, 0x000000, 0.2),
+        shine: mix(rgb, 0xffffff, 0.5),
+        buttons: mix(rgb, 0x000000, 0.18),
     }
 }
 
@@ -105,7 +126,7 @@ fn mix(a: u32, b: u32, t: f32) -> u32 {
 /// "#rrggbb" for a colour picked from the hue slider (0..360°).
 pub fn custom_from_hue(hue: f32) -> String {
     // Saturation and value close to the coloured finishes.
-    let (s, v) = (0.55, 0.72);
+    let (s, v) = (0.68, 0.86);
     let h = hue.rem_euclid(360.0) / 60.0;
     let c = v * s;
     let x = c * (1.0 - (h % 2.0 - 1.0).abs());
@@ -195,6 +216,124 @@ pub fn fit(bx: f32, by: f32, bw: f32, bh: f32, aspect: f32) -> Layout {
     }
 }
 
+/// The camera cut-out at the top of the screen, in points of the phone's
+/// own screen (from Apple's design resources).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CutSpec {
+    /// A pill floating under the top edge (iPhone 14 Pro and later)
+    /// rather than a notch hanging from it.
+    pub island: bool,
+    pub width: f32,
+    pub height: f32,
+    /// Gap between the screen's top edge and an island.
+    pub top: f32,
+    /// Round corners (bottom corners of a notch, the ends of an island).
+    pub radius: f32,
+    /// The screen's width in points.
+    pub screen: f32,
+}
+
+/// The cut-out of the iPhone shown, from its model name and UDID, or
+/// `None` (iPad, iPhone SE / 8, landscape). `aspect` is the picture's
+/// width / height.
+pub fn cutout(model: &str, udid: &str, aspect: f32) -> Option<CutSpec> {
+    // Phones with a cut-out are taller than 9:19 and in portrait; the
+    // iPhone SE / 8 (9:16) and iPads have none.
+    if !(aspect > 0.0 && aspect < 0.5) {
+        return None;
+    }
+    let n = model.to_ascii_lowercase();
+    let has = |k: &str| n.contains(k);
+    // The UDID starts with the chip: 8120 (A16) and later have the island,
+    // except the iPhone 16e (A18, notch).
+    let cpid = udid
+        .strip_prefix("0000")
+        .and_then(|r| r.get(..4))
+        .unwrap_or("");
+    let island = if has("16e") {
+        false
+    } else if matches!(cpid, "8120" | "8130" | "8140" | "8150") {
+        true
+    } else if matches!(cpid, "8020" | "8030" | "8101" | "8110") {
+        false
+    } else {
+        ["14 pro", "15", "16", "17", "air"].iter().any(|k| has(k))
+    };
+    // The iPhone 13, 14 and 16e notch is a fifth narrower than before.
+    let small_notch = has("16e") || cpid == "8110" || (has("13") || has("14")) && !has("14 pro");
+    let screen = screen_points(&n, island);
+    Some(if island {
+        CutSpec {
+            island,
+            width: 126.0,
+            height: 37.33,
+            top: 11.33,
+            radius: 18.67,
+            screen,
+        }
+    } else if small_notch {
+        CutSpec {
+            island,
+            width: 162.0,
+            height: 33.0,
+            top: 0.0,
+            radius: 20.0,
+            screen,
+        }
+    } else {
+        CutSpec {
+            island,
+            width: 210.0,
+            height: 31.0,
+            top: 0.0,
+            radius: 20.0,
+            screen,
+        }
+    })
+}
+
+/// Screen width in points by model name (a usual size when unknown).
+fn screen_points(n: &str, island: bool) -> f32 {
+    let has = |k: &str| n.contains(k);
+    if has("mini") {
+        375.0
+    } else if has("air") {
+        420.0
+    } else if has("16 pro max") || has("17 pro max") {
+        440.0
+    } else if has("xs max") || has("11 pro max") || has("xr") || n.trim_end() == "iphone 11" {
+        414.0
+    } else if has("pro max") || has("plus") {
+        if island {
+            430.0
+        } else {
+            428.0
+        }
+    } else if has("16 pro") || has("17") {
+        402.0
+    } else if has("iphone x") || has("11 pro") {
+        375.0
+    } else if island {
+        393.0
+    } else {
+        390.0
+    }
+}
+
+/// The cut-out placed on a screen `(x, y, width, height)`: x, y, width,
+/// height and radius in the screen's units.
+pub fn place_cutout(spec: &CutSpec, screen: (f32, f32, f32, f32)) -> (f32, f32, f32, f32, f32) {
+    let k = screen.2 / spec.screen;
+    let (w, h) = (spec.width * k, spec.height * k);
+    (
+        screen.0 + (screen.2 - w) / 2.0,
+        screen.1 + spec.top * k,
+        w,
+        h,
+        spec.radius * k,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -244,19 +383,42 @@ mod tests {
 
     #[test]
     fn finishes_and_custom_colours() {
-        assert_eq!(finish("graphite").band, 0x4a4a50);
-        assert_eq!(finish("deep-purple").buttons, 0x43375c);
+        assert_eq!(finish("graphite").band, 0x5b5a57);
+        assert_eq!(finish("deep-purple").buttons, 0x4a3a5c);
+        assert_eq!(finish("white"), finish("silver"));
+        assert!(valid("white"));
         assert_eq!(finish("nonsense"), FINISHES[0].2);
         assert_eq!(finish("#ff0000").band, 0xff0000);
         assert!(valid("#00ff7f") && valid("gold") && !valid("#12345") && !valid("blue"));
         let c = custom(0x336699);
         assert!(c.shine > c.band && c.buttons < c.band);
-        assert_eq!(custom_from_hue(0.0), "#b85353");
+        assert_eq!(custom_from_hue(0.0), "#db4646");
         assert_eq!(custom_from_hue(360.0), custom_from_hue(0.0));
         assert!(valid(&custom_from_hue(200.0)));
         // Ids are unique.
         for (i, a) in FINISHES.iter().enumerate() {
             assert!(FINISHES[i + 1..].iter().all(|b| b.0 != a.0));
         }
+    }
+
+    #[test]
+    fn cutouts_by_model() {
+        let tall = 1284.0 / 2778.0;
+        // iPhone 12 Pro Max: wide notch on a 428-point screen.
+        let c = cutout("iPhone 12 Pro Max", "00008101-0001415A1E60001E", tall).unwrap();
+        assert!(!c.island && c.width == 210.0 && c.screen == 428.0);
+        // Unknown name: the chip decides.
+        assert!(!cutout("My phone", "00008101-00", tall).unwrap().island);
+        assert!(cutout("My phone", "00008120-00", tall).unwrap().island);
+        assert!(cutout("iPhone 15 Pro", "", tall).unwrap().island);
+        let e = cutout("iPhone 16e", "00008140-00", tall).unwrap();
+        assert!(!e.island && e.width == 162.0);
+        // No cut-out on 16:9 phones, iPads or in landscape.
+        assert!(cutout("iPhone SE", "", 9.0 / 16.0).is_none());
+        assert!(cutout("iPhone 12 Pro Max", "", 2778.0 / 1284.0).is_none());
+        // Placed centred at the top, scaled with the screen.
+        let (x, y, w, h, r) = place_cutout(&c, (10.0, 20.0, 856.0, 1852.0));
+        assert!((w - 420.0).abs() < 0.01 && (h - 62.0).abs() < 0.01 && (r - 40.0).abs() < 0.01);
+        assert!((x - (10.0 + (856.0 - 420.0) / 2.0)).abs() < 0.01 && y == 20.0);
     }
 }

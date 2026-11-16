@@ -250,6 +250,7 @@ pub fn frame_finish(udid: &str) -> String {
         .get(udid)
         .and_then(Value::as_str)
         .filter(|f| crate::frame::valid(f))
+        .map(crate::frame::canonical)
         .unwrap_or(crate::frame::DEFAULT)
         .to_string()
 }

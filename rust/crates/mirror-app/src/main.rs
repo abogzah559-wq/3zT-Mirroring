@@ -228,6 +228,9 @@ struct App {
     /// The Apple device shown (UDID) and whether it is an iPad (no frame).
     apple_udid: String,
     apple_ipad: bool,
+    /// Its model name ("iPhone 12 Pro Max", or a series), for the frame's
+    /// notch or Dynamic Island.
+    apple_model: String,
     /// Zoom (1 = whole picture, up to 4) and the centre of the zoomed part
     /// (0..1 of the picture, in the device's own orientation).
     zoom: f32,
@@ -646,6 +649,9 @@ fn on_state(ui: &AppWindow, api: &Api, st: &Value) {
     let device = str_of(st, &["device", "name"])
         .or_else(|| first.and_then(|d| str_of(d, &["name"])))
         .unwrap_or("");
+    if APP.with_borrow(|a| a.apple_model != device) {
+        APP.with_borrow_mut(|a| a.apple_model = device.to_string());
+    }
     let wifi = first
         .and_then(|d| d.get("wifi"))
         .and_then(Value::as_bool)
@@ -2882,6 +2888,13 @@ fn take_screenshot(ui: &AppWindow) {
     };
     let framed = FRAME_ON.load(Relaxed) && ui.get_prefs().shot_frame;
     let finish = APP.with_borrow(|a| a.frame_finish.clone());
+    let cut = APP.with_borrow(|a| {
+        frame::cutout(
+            &a.apple_model,
+            &a.apple_udid,
+            shot.width as f32 / shot.height.max(1) as f32,
+        )
+    });
     let weak = ui.as_weak();
     std::thread::spawn(move || {
         let mut pic = shot::Picture {
@@ -2890,7 +2903,7 @@ fn take_screenshot(ui: &AppWindow) {
             bgra: shot.bgra,
         };
         if framed {
-            pic = shot::framed(&pic, frame::finish(&finish));
+            pic = shot::framed(&pic, frame::finish(&finish), cut);
         }
         let dir = shot::folder();
         let saved = std::fs::create_dir_all(&dir)
@@ -4749,9 +4762,29 @@ fn main() -> Result<(), slint::PlatformError> {
                     a.fitted = None;
                 }
                 let mut radius = if ui.get_clean() { 0 } else { ((22.0 - PIC_INSET) * sf).round() as i32 };
+                // The notch or Dynamic Island: cut out of the picture so the
+                // frame's black glass, camera and speaker show there.
+                let mut cutout = None;
                 if framed {
                     // The picture goes in the frame's screen, with its corners.
                     let l = frame::fit(x, y, w, h, pic.0 as f32 / pic.1 as f32);
+                    let cut = frame::cutout(&a.apple_model, &a.apple_udid, l.screen.2 / l.screen.3)
+                        .map(|spec| (spec.island, frame::place_cutout(&spec, l.screen)));
+                    if let Some((island, (cx, cy, cw, ch, cr))) = cut {
+                        ui.set_frame_cut_island(island);
+                        ui.set_frame_cut_x((cx - l.outer.0) / sf);
+                        ui.set_frame_cut_y((cy - l.outer.1) / sf);
+                        ui.set_frame_cut_w(cw / sf);
+                        ui.set_frame_cut_h(ch / sf);
+                        cutout = Some((
+                            cx.round() as i32,
+                            cy.round() as i32,
+                            cw.round() as i32,
+                            ch.round() as i32,
+                            cr.round() as i32,
+                            !island,
+                        ));
+                    }
                     (x, y, w, h) = l.screen;
                     radius = l.radius.round() as i32;
                     ui.set_frame_x(l.outer.0 / sf);
@@ -4762,6 +4795,9 @@ fn main() -> Result<(), slint::PlatformError> {
                     ui.set_frame_sh(l.screen.3 / sf);
                     ui.set_frame_unit(l.unit / sf);
                     ui.set_frame_landscape(l.landscape);
+                }
+                if cutout.is_some() != ui.get_frame_cut_show() {
+                    ui.set_frame_cut_show(cutout.is_some());
                 }
                 if framed != ui.get_frame_show() {
                     ui.set_frame_show(framed);
@@ -4803,6 +4839,7 @@ fn main() -> Result<(), slint::PlatformError> {
                     ));
                 }
                 v.set_holes(&holes);
+                v.set_cutout(cutout);
                 v.set_bounds(x.round() as i32, y.round() as i32, w.round() as i32, h.round() as i32, streaming, radius);
                 let shown = v.shown_size();
                 // The clean view waits for a real frame: until then the header

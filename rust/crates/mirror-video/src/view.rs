@@ -146,10 +146,18 @@ pub struct VideoView {
     /// Parent-window rectangles (x, y, w, h) the picture leaves open, so
     /// the window's toast and tooltips drawn there stay visible.
     holes: Mutex<Vec<Hole>>,
+    /// The iPhone's camera cut-out (notch or Dynamic Island), cut out of
+    /// the picture so the frame's black glass shows there.
+    cutout: Mutex<Option<Cutout>>,
 }
 
 /// A rectangle in the parent window's client pixels: x, y, width, height.
 pub type Hole = (i32, i32, i32, i32);
+
+/// The camera cut-out in the parent window's client pixels: x, y, width,
+/// height, corner radius, and whether it is a notch (square top flush with
+/// the screen edge, round bottom corners) rather than an island (a pill).
+pub type Cutout = (i32, i32, i32, i32, i32, bool);
 
 /// Last `set_bounds`: x, y, width, height, visible, corner radius.
 type Bounds = (i32, i32, i32, i32, bool, i32);
@@ -417,6 +425,7 @@ impl VideoView {
             meter,
             bounds: Mutex::new(None),
             holes: Mutex::new(Vec::new()),
+            cutout: Mutex::new(None),
         })
     }
 
@@ -472,10 +481,11 @@ impl VideoView {
         let moved = last.map(|l| (l.0, l.1) != (x, y)).unwrap_or(true);
         *last = Some(key);
         let holes = self.holes.lock().unwrap().clone();
+        let cutout = *self.cutout.lock().unwrap();
         unsafe {
             let hwnd = HWND(self.inner.hwnd as _);
-            if size_changed || (moved && !holes.is_empty()) {
-                apply_region(hwnd, key, &holes);
+            if size_changed || (moved && (!holes.is_empty() || cutout.is_some())) {
+                apply_region(hwnd, key, &holes, cutout);
             }
             let flags = if visible {
                 SWP_SHOWWINDOW
@@ -511,8 +521,25 @@ impl VideoView {
         *h = holes.to_vec();
         let holes = h.clone();
         drop(h);
+        let cutout = *self.cutout.lock().unwrap();
         if let Some(key) = *self.bounds.lock().unwrap() {
-            unsafe { apply_region(HWND(self.inner.hwnd as _), key, &holes) };
+            unsafe { apply_region(HWND(self.inner.hwnd as _), key, &holes, cutout) };
+        }
+    }
+
+    /// Cuts the iPhone's notch or Dynamic Island (parent client pixels) out
+    /// of the picture; `None` shows the whole picture. Does nothing when
+    /// nothing changed.
+    pub fn set_cutout(&self, cutout: Option<Cutout>) {
+        let mut c = self.cutout.lock().unwrap();
+        if *c == cutout {
+            return;
+        }
+        *c = cutout;
+        drop(c);
+        let holes = self.holes.lock().unwrap().clone();
+        if let Some(key) = *self.bounds.lock().unwrap() {
+            unsafe { apply_region(HWND(self.inner.hwnd as _), key, &holes, cutout) };
         }
     }
 
@@ -1344,7 +1371,7 @@ fn render_session(inner: &Inner) -> Result<()> {
 
 /// Rounded rectangle of the view minus the holes (converted to the view's
 /// own coordinates). The system owns the region after SetWindowRgn.
-unsafe fn apply_region(hwnd: HWND, key: Bounds, holes: &[Hole]) {
+unsafe fn apply_region(hwnd: HWND, key: Bounds, holes: &[Hole], cutout: Option<Cutout>) {
     use windows::Win32::Graphics::Gdi::{
         CombineRgn, CreateRectRgn, CreateRoundRectRgn, DeleteObject, SetWindowRgn, RGN_DIFF,
     };
@@ -1359,6 +1386,17 @@ unsafe fn apply_region(hwnd: HWND, key: Bounds, holes: &[Hole]) {
             let cut = CreateRectRgn(l, t, l + hw, t + hh);
             CombineRgn(Some(rgn), Some(rgn), Some(cut), RGN_DIFF);
             let _ = DeleteObject(cut.into());
+        }
+        if let Some((cx, cy, cw, ch, r, notch)) = cutout {
+            let (l, t) = (cx - x, cy - y);
+            if cw > 0 && ch > 0 && l < w && t < h && l + cw > 0 && t + ch > 0 {
+                // A notch hangs from the top edge: its rounded rectangle
+                // starts above the view so only the bottom corners show.
+                let top = if notch { t - r } else { t };
+                let cut = CreateRoundRectRgn(l, top, l + cw + 1, t + ch + 1, r * 2, r * 2);
+                CombineRgn(Some(rgn), Some(rgn), Some(cut), RGN_DIFF);
+                let _ = DeleteObject(cut.into());
+            }
         }
         SetWindowRgn(hwnd, Some(rgn), true);
     }

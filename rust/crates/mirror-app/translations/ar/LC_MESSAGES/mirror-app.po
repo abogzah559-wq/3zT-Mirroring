@@ -1803,6 +1803,12 @@ msgstr "أخضر مريمي"
 msgid "Deep Blue"
 msgstr "أزرق داكن"
 
+msgid "Pacific Blue"
+msgstr "أزرق باسيفيكي"
+
+msgid "(PRODUCT)RED"
+msgstr "أحمر (PRODUCT)RED"
+
 msgid "Deep Purple"
 msgstr "بنفسجي داكن"
 

@@ -105,8 +105,9 @@ fn rgb(c: u32) -> [f32; 3] {
     ]
 }
 
-/// The screenshot inside the iPhone frame, on a transparent background.
-pub fn framed(p: &Picture, finish: Finish) -> Picture {
+/// The screenshot inside the iPhone frame, on a transparent background,
+/// with the phone's notch or Dynamic Island (`cut`) as in the window.
+pub fn framed(p: &Picture, finish: Finish, cut: Option<frame::CutSpec>) -> Picture {
     let (ow, oh) = frame::outer_size(p.width as f32, p.height as f32);
     let l = frame::fit(0.0, 0.0, ow, oh, p.width as f32 / p.height as f32);
     let (w, h) = (ow.ceil() as u32, oh.ceil() as u32);
@@ -119,6 +120,8 @@ pub fn framed(p: &Picture, finish: Finish) -> Picture {
     let band = rgb(finish.band);
     let shine = rgb(finish.shine);
     let buttons = rgb(finish.buttons);
+    let seam: [f32; 3] = std::array::from_fn(|i| buttons[i] * 0.6);
+    let cut = cut.map(|c| (c.island, frame::place_cutout(&c, l.screen)));
     // Side buttons, as in the window (PhoneFrame in app.slint).
     let mut keys = Vec::new();
     for (left, at, len) in [
@@ -161,8 +164,14 @@ pub fn framed(p: &Picture, finish: Finish) -> Picture {
             let rim_mix = (1.0 - (t - 0.5).abs() * 2.0).clamp(0.0, 1.0);
             let rim: [f32; 3] = std::array::from_fn(|i| shine[i] + (band[i] - shine[i]) * rim_mix);
             over(rim, body);
+            // Polished band: light sweeping across it near two corners.
+            let d = (((px - bx) / bw) * 0.34 + ((py - by) / bh) * 0.94) / 1.28;
+            let glint = (1.0 - (d - 0.14).abs() / 0.14)
+                .max(1.0 - (d - 0.86).abs() / 0.14)
+                .clamp(0.0, 1.0);
+            let metal: [f32; 3] = std::array::from_fn(|i| band[i] + (shine[i] - band[i]) * glint);
             over(
-                band,
+                metal,
                 rrect(
                     px,
                     py,
@@ -171,6 +180,18 @@ pub fn framed(p: &Picture, finish: Finish) -> Picture {
                     bw - 2.0 * u,
                     bh - 2.0 * u,
                     l.radius + border - u,
+                ),
+            );
+            over(
+                seam,
+                rrect(
+                    px,
+                    py,
+                    bx + 5.3 * u,
+                    by + 5.3 * u,
+                    sw + 20.4 * u,
+                    sh + 20.4 * u,
+                    l.radius + 10.2 * u,
                 ),
             );
             over(
@@ -196,6 +217,65 @@ pub fn framed(p: &Picture, finish: Finish) -> Picture {
                     [p.bgra[o + 2] as f32, p.bgra[o + 1] as f32, p.bgra[o] as f32],
                     scov,
                 );
+            }
+            // Notch or Dynamic Island: black glass, earpiece and camera.
+            if let Some((island, (cx, cy, cw, ch, cr))) = cut {
+                let glass = if island {
+                    rrect(px, py, cx, cy, cw, ch, cr)
+                } else {
+                    rrect(px, py, cx, cy - cr, cw, ch + cr, cr)
+                };
+                over([0.0; 3], glass.min(scov));
+                if glass > 0.0 {
+                    if !island {
+                        let (gw, gh) = (cw * 0.2, (cw * 0.026).max(2.0));
+                        over(
+                            [29.0, 29.0, 32.0],
+                            rrect(
+                                px,
+                                py,
+                                cx + (cw - gw) / 2.0,
+                                cy + ch * 0.2,
+                                gw,
+                                gh,
+                                gh / 2.0,
+                            ),
+                        );
+                    }
+                    let dia = if island {
+                        ch * 0.44
+                    } else {
+                        (cw * 0.055).max(4.0)
+                    };
+                    let (lx, ly) = if island {
+                        (cx + cw - ch / 2.0, cy + ch / 2.0)
+                    } else {
+                        (cx + cw * 0.71, cy + ch * 0.42)
+                    };
+                    let rr = dia / 2.0;
+                    over(
+                        [32.0, 40.0, 58.0],
+                        rrect(px, py, lx - rr, ly - rr, dia, dia, rr),
+                    );
+                    let ri = rr * 0.84;
+                    over(
+                        [14.0, 17.0, 28.0],
+                        rrect(px, py, lx - ri, ly - ri, 2.0 * ri, 2.0 * ri, ri),
+                    );
+                    let rh = dia * 0.11;
+                    over(
+                        [74.0, 95.0, 154.0],
+                        0.55 * rrect(
+                            px,
+                            py,
+                            lx - rr * 0.45 - rh,
+                            ly - rr * 0.45 - rh,
+                            2.0 * rh,
+                            2.0 * rh,
+                            rh,
+                        ),
+                    );
+                }
             }
             let o = ((yy * w + xx) * 4) as usize;
             // Straight (not premultiplied) BGRA.
@@ -297,7 +377,7 @@ mod tests {
             height: 87,
             bgra: [10u8, 20, 30, 255].repeat(40 * 87),
         };
-        let f = framed(&p, frame::finish("red"));
+        let f = framed(&p, frame::finish("red"), None);
         let (ow, oh) = frame::outer_size(40.0, 87.0);
         assert_eq!((f.width, f.height), (ow.ceil() as u32, oh.ceil() as u32));
         // Top-left corner: outside the rounded body.
@@ -307,5 +387,35 @@ mod tests {
         assert_eq!(&f.bgra[c..c + 4], &[10, 20, 30, 255]);
         let png = png(&f).unwrap();
         assert_eq!(&png[1..4], b"PNG");
+    }
+
+    #[test]
+    fn framed_picture_shows_the_notch() {
+        let (pw, ph) = (428u32, 926u32);
+        let p = Picture {
+            width: pw,
+            height: ph,
+            bgra: [200u8, 200, 200, 255].repeat((pw * ph) as usize),
+        };
+        let cut = frame::cutout("iPhone 12 Pro Max", "", pw as f32 / ph as f32);
+        let f = framed(&p, frame::finish("graphite"), cut);
+        let l = frame::fit(
+            0.0,
+            0.0,
+            f.width as f32,
+            f.height as f32,
+            pw as f32 / ph as f32,
+        );
+        let (sx, sy, sw, _) = l.screen;
+        let at = |x: f32, y: f32| {
+            let o = ((y as u32 * f.width + x as u32) * 4) as usize;
+            f.bgra[o..o + 4].to_vec()
+        };
+        // Under the notch, left of the speaker: black glass.
+        assert_eq!(at(sx + sw * 0.32, sy + 8.0), vec![0, 0, 0, 255]);
+        // Beside the notch: the picture.
+        assert_eq!(at(sx + sw * 0.15, sy + 8.0), vec![200, 200, 200, 255]);
+        // Below the notch: the picture.
+        assert_eq!(at(sx + sw * 0.5, sy + 40.0), vec![200, 200, 200, 255]);
     }
 }
