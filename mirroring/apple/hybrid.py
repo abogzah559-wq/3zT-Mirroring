@@ -37,6 +37,8 @@ from typing import Callable
 
 from mirroring import capability
 
+from .session import TunnelHooks
+
 log = logging.getLogger(__name__)
 
 # Lets Hybrid open the HID-gate stream on iOS < 27 without changing what the
@@ -69,7 +71,7 @@ _ORIENTATION_TO_ROTATION = {1: 0, 2: 180, 3: 270, 4: 90}
 INPUT_PATHS = ("touch", "key", "button")
 
 
-class HybridSession:
+class HybridSession(TunnelHooks):
     """Same contract as the other backends: run() blocks, stop() ends it."""
 
     def __init__(self, udid: str, hub, on_state: Callable[[str, str], None], options: dict,
@@ -216,8 +218,13 @@ class HybridSession:
 
         from . import keyboard
 
+        from . import offer
+
         keyboard.install_buttons()
         _install_gate_bypass()
+        # iOS 27 sends real frames on this stream; nobody watches them, so the
+        # device's encoder is held to a trickle (AirPlay carries the picture).
+        offer.install("gate")
         display = DisplayService(rsd)
         await display.__aenter__()
         transport = None
@@ -240,10 +247,12 @@ class HybridSession:
             self._indigo = IndigoHIDService(rsd)
             await self._indigo.connect()
             orientation = asyncio.create_task(self._watch_orientation(rsd))
+            self._rsd = rsd
             self._report("hybrid", True, "Touch, keyboard and buttons go over the Apple driver. Experimental: "
                                          "not yet confirmed on every iOS version.")
             await asyncio.Event().wait()
         finally:
+            self._rsd = None
             for task in (orientation, drain):
                 if task is not None:
                     task.cancel()

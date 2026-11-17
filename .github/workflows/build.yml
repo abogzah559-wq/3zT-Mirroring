@@ -144,6 +144,16 @@ jobs:
           name: 3zT-Mirroring-Setup
           path: release/*
 
+      # Pull requests: the unpacked program too, to test on a PC next to the
+      # installed version without replacing it. Never published.
+      - name: Portable test build
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 3zT-Mirroring-portable-test
+          path: dist/MirroringService
+          retention-days: 7
+
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
         env:

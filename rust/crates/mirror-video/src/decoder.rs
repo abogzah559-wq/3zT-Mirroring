@@ -15,7 +15,7 @@ use windows::Win32::Media::MediaFoundation::*;
 use windows::Win32::System::Com::{CoInitializeEx, CoTaskMemFree, COINIT_MULTITHREADED};
 
 use mirror_core::api::{Codec, CodecInfo};
-use mirror_core::nal::{parse_config, to_annexb, ParamSets};
+use mirror_core::nal::{full_range, parse_config, to_annexb, ParamSets};
 use mirror_core::source::{RecordStream, VideoSource};
 use mirror_core::stream::Record;
 
@@ -439,6 +439,7 @@ fn session(
     stream: &mut dyn RecordStream,
 ) -> Result<()> {
     let mut ps: ParamSets = parse_config(&info.codec, &info.description).unwrap_or_default();
+    ring.lock().unwrap().full_range = full_range(&info.codec, &ps);
     let mut mft = match Mft::new(gpu, &info.codec) {
         Ok(m) => m,
         // Windows without Microsoft's HEVC extension: the built-in decoder.
@@ -477,6 +478,7 @@ fn session(
             Record::Config(c) => {
                 info = c;
                 ps = parse_config(&info.codec, &info.description).unwrap_or_default();
+                ring.lock().unwrap().full_range = full_range(&info.codec, &ps);
                 mft = Mft::new(gpu, &info.codec)?;
                 stats.hardware.store(mft.hardware, Relaxed);
                 got_key = false;
@@ -603,6 +605,7 @@ fn session_ff(
         })
     };
     let mut ps: ParamSets = parse_config(&info.codec, &info.description).unwrap_or_default();
+    ring.lock().unwrap().full_range = full_range(&info.codec, &ps);
     let mut dec = open()?;
     stats.hardware.store(dec.hardware, Relaxed);
     log::info!("decoder Hevc (videodec) hardware={}", dec.hardware);
@@ -616,6 +619,7 @@ fn session_ff(
             Record::Config(c) => {
                 info = c;
                 ps = parse_config(&info.codec, &info.description).unwrap_or_default();
+                ring.lock().unwrap().full_range = full_range(&info.codec, &ps);
                 if !matches!(info.codec, Codec::Hevc) {
                     // The stream switched codec: Media Foundation takes over.
                     return Ok(());

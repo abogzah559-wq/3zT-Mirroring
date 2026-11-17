@@ -63,6 +63,54 @@ Not bundled. When it is missing, Setup downloads Apple's own
 `AppleMobileDeviceSupport64.msi` from Apple's servers (checked against its
 SHA-256) and installs it. It is Apple software under Apple's licence.
 
+## IBM Plex Sans Arabic, in `rust/crates/mirror-app/ui/fonts`
+
+Copyright © 2017 IBM Corp., with Reserved Font Name "Plex". The Arabic
+interface font (Regular, Medium, SemiBold, Bold), embedded in the window
+unmodified. Licence: **SIL Open Font License 1.1** — full text in
+`rust/crates/mirror-app/ui/fonts/IBMPlexSansArabic-OFL.txt`. Source:
+https://github.com/IBM/plex
+
+## terminal-phone 0.4.0 (iPhone frame values)
+
+The iPhone frame in `rust/crates/mirror-app/src/frame.rs` and `ui/app.slint`
+is our own Rust/Slint code; its proportions (border 9.5, band 6, buttons 3
+on a 402-point screen, corner radius 0.137 × width) and the twelve finish
+colours come from terminal-phone 0.4.0, `Sources/TerminalPhoneCore/
+PhoneDisplay.swift`. No Swift code was copied.
+
+```
+MIT License
+
+Copyright (c) 2026 Govijr
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Unicode CLDR keyboard data
+
+The Shift layer of the iPhone/iPad "Arabic" hardware keyboard in
+`rust/crates/mirror-app/src/shortcuts.rs` follows Apple's macOS "Arabic"
+layout as published in Unicode CLDR (`keyboards/osx/ar-t-k0-osx.xml`,
+release 43), checked key by key on an iPhone. Copyright © 1991-2023 Unicode,
+Inc.; Unicode License v3 (https://www.unicode.org/license.txt).
+
 ## Design references
 
 Motion constants and the glass look are re-implemented from these projects

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2.1.0
+
+- **Arabic typing on iPhone / iPad**: the complete Apple Arabic hardware
+  layout (letters, hamza forms, punctuation and digits), or Arabic – PC. The
+  device keyboard switches between English and Arabic as you type; the AR /
+  EN mark and `Alt + G` show and change the expected language, and
+  **Test the keyboard** checks the layout in one step. Fast typing and
+  `Alt + V` paste no longer drop spaces or line breaks.
+- **Auto unlock** (`Alt + U`): types the saved passcode only when the device
+  is actually locked, over the cable and Wi-Fi, and says when it fails.
+- **iPhone frame**: twelve of Apple's own finishes or your own colour, kept
+  per iPhone, with the notch or Dynamic Island, front camera and earpiece of
+  the real model. Zoom (`Ctrl + =` / `-`), move (`Ctrl + arrows`), actual
+  size (`Ctrl + 1`) and fit (`Ctrl + 9`). Full screen with the frame shows
+  nothing around it.
+- **Files with iPhone / iPad**: send files and folders to an app, import
+  photos, videos and app files to the PC, over the cable or Wi-Fi.
+- **Screenshots** (`Alt + P`) at the stream's own size, with or without the
+  frame, also copied to the clipboard; **screen recording** (`Alt + O`) to
+  MP4 with sound, without re-encoding.
+- **Colours**: iPhone streams are shown in their full range, no longer with
+  boosted contrast and colours.
+- **Picture on iOS 27**: Settings › iPhone picture can take the picture over
+  AirPlay (up to 60 fps; pick 3zT Mirroring in Screen Mirroring on the
+  device). The default stays Apple's own channel, which connects by itself.
+- The stats line shows the received and shown frame rate and the decoder.
+- Clearer Arabic interface font (IBM Plex Sans Arabic) and right-to-left
+  settings rows.
+- Exact model names for iPhone X to iPhone 12.
+
 ## 2.0.2
 
 - Updates no longer stop at "Closing applications": Setup now closes

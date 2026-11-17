@@ -26,8 +26,15 @@
 - **Clean view** — while mirroring, the window is only the device screen.
   Press **F2** to show or hide the controls; they appear around the picture,
   never on top of it. `Alt` + drag moves the window.
+- **iPhone frame** around the picture with the notch or Dynamic Island of
+  your model, in twelve of Apple's finishes or your own colour, kept per
+  iPhone; zoom and move the picture.
+- **Files both ways with iPhone / iPad** — send files and folders to an app,
+  import photos, videos and app files to the PC.
+- **Screenshots** (PNG at the stream's own size, with or without the frame)
+  and **screen recording** to MP4 with sound.
 - Hardware video decoding, a capture-friendly window for OBS, OCR copy of the
-  device screen, and a soft-black interface.
+  device screen, an Arabic interface (right to left), and a soft-black look.
 - **One installer** — everything the app needs is inside Setup. Apple's USB
   driver is downloaded from Apple and installed for you when it is missing.
 - **Signed updates** — the app tells you when a new version is out; one click
@@ -62,16 +69,49 @@
 | Move the window in the clean view | `Alt` + drag the picture |
 | Full screen | `F11` (`Esc` to leave) |
 | Settings | `Ctrl + ,` |
-| Switch the device keyboard (English / Arabic) | `Alt + G` |
+| Switch the device keyboard (English / Arabic) | `Alt + G` or the AR / EN mark |
+| Unlock the iPhone / iPad with the saved passcode | `Alt + U` |
+| Screenshot | `Alt + P` |
+| Start / stop recording (iPhone / iPad) | `Alt + O` |
+| iPhone frame on / off | `Alt + F` |
+| Zoom in / out · 100% · move | `Ctrl + =` / `Ctrl + -` · `Ctrl + 0` · `Ctrl + arrows` |
+| Actual size · fit the window | `Ctrl + 1` · `Ctrl + 9` |
 | Copy the text on the device screen (OCR) | `Alt + C` |
 | Back / Home / Control Center | `Alt + ←` · dock buttons · `Alt + Q` |
 | Sound on the PC on / off | `Alt + M` |
 
 **Arabic typing on iPhone / iPad:** on the device keep two keyboards,
-English and Arabic, then open **Settings › General › Keyboard › Hardware
-Keyboard › Arabic** and choose **Arabic – PC**. Type with the Windows Arabic
-(101) layout; 3zT Mirroring switches the device keyboard between English and
-Arabic as you type. If the two ever disagree, press `Alt + G` once.
+English and Arabic. Type with the Windows Arabic (101) layout; 3zT Mirroring
+switches the device keyboard between English and Arabic as you type and
+sends each letter on the key the device's own Arabic hardware layout uses —
+**Arabic** (iOS's default) or **Arabic – PC** (Settings › Control › Arabic
+keyboard layout on the device; **Test the keyboard** checks it in one step).
+The AR / EN mark at the top shows which language 3zT Mirroring expects; if
+the device ever types the other one, click it or press `Alt + G` once.
+
+**Files with iPhone / iPad (Apple Driver mode):** iOS gives a PC no general
+access to its files. **Send** puts files and folders into the Documents
+folder of an app that shares files (File Sharing, e.g. VLC or Documents);
+they then show in the Files app › On My iPhone — photos cannot go straight
+into the Photos app. **Import** copies photos and videos from the camera roll
+(only what is on the device: photos kept only in iCloud are not) or the
+files an app shares, as they are (HEIC stays HEIC), to
+`Pictures\3zT Imports` or a folder you pick.
+
+**Screenshots and recordings:** screenshots go to `Pictures\3zT Screenshots`
+(and the clipboard); recordings to `Videos\3zT Recordings`. Recordings keep
+the device's own video (HEVC on iOS 27, so Windows' player needs the HEVC
+Video Extensions; VLC plays it as is).
+
+**Picture quality on iPhone / iPad:** in Apple Driver mode the device itself
+picks the size and frame rate of its stream; 3zT Mirroring cannot raise them.
+On iOS 27 and newer, **Settings › iPhone picture › AirPlay** takes the
+picture over AirPlay instead (up to 60 fps, touch and keyboard still work);
+it needs **3zT Mirroring** picked in Screen Mirroring on the device each
+time, so the default stays Apple's channel, which connects by itself.
+Studio mode gives the highest bitrate, without touch or keyboard control.
+The stats line (Settings › stats) shows the size, the received / shown frame
+rate, the bitrate and the decoder.
 
 **Connection trouble:** press **Restart** in the header. A Wi-Fi session that
 goes silent is closed by itself after a minute, so the next attempt starts
@@ -89,8 +129,8 @@ platform-tools (adb) for Windows. The steps match
 ```powershell
 # Native DLLs (see native\aacdec, native\videodec and native\playfair)
 #   MSYS2: bash native/build_ffmpeg.sh <ffmpeg-9.0.2-src> <build-dir> <prefix>
-#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.2
-#          bash native/videodec/build_videodec.sh <prefix> native/out 2.0.2
+#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.1.0
+#          bash native/videodec/build_videodec.sh <prefix> native/out 2.1.0
 native\playfair\build.bat
 # The scrcpy server is pinned in third_party\scrcpy (see SHA256SUMS.txt)
 Invoke-WebRequest https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-server-v5.0.1 `
