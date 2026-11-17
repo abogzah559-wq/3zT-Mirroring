@@ -26,8 +26,9 @@
 - **Clean view** — while mirroring, the window is only the device screen.
   Press **F2** to show or hide the controls; they appear around the picture,
   never on top of it. `Alt` + drag moves the window.
-- **iPhone frame** around the picture in twelve finishes or your own colour,
-  kept per iPhone; zoom and move the picture.
+- **iPhone frame** around the picture with the notch or Dynamic Island of
+  your model, in twelve of Apple's finishes or your own colour, kept per
+  iPhone; zoom and move the picture.
 - **Files both ways with iPhone / iPad** — send files and folders to an app,
   import photos, videos and app files to the PC.
 - **Screenshots** (PNG at the stream's own size, with or without the frame)
@@ -104,6 +105,10 @@ Video Extensions; VLC plays it as is).
 
 **Picture quality on iPhone / iPad:** in Apple Driver mode the device itself
 picks the size and frame rate of its stream; 3zT Mirroring cannot raise them.
+On iOS 27 and newer, **Settings › iPhone picture › AirPlay** takes the
+picture over AirPlay instead (up to 60 fps, touch and keyboard still work);
+it needs **3zT Mirroring** picked in Screen Mirroring on the device each
+time, so the default stays Apple's channel, which connects by itself.
 Studio mode gives the highest bitrate, without touch or keyboard control.
 The stats line (Settings › stats) shows the size, the received / shown frame
 rate, the bitrate and the decoder.
@@ -124,8 +129,8 @@ platform-tools (adb) for Windows. The steps match
 ```powershell
 # Native DLLs (see native\aacdec, native\videodec and native\playfair)
 #   MSYS2: bash native/build_ffmpeg.sh <ffmpeg-9.0.2-src> <build-dir> <prefix>
-#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.0.2
-#          bash native/videodec/build_videodec.sh <prefix> native/out 2.0.2
+#          bash native/aacdec/build_aacdec.sh <prefix> mirroring 2.1.0
+#          bash native/videodec/build_videodec.sh <prefix> native/out 2.1.0
 native\playfair\build.bat
 # The scrcpy server is pinned in third_party\scrcpy (see SHA256SUMS.txt)
 Invoke-WebRequest https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-server-v5.0.1 `

@@ -44,22 +44,9 @@ const KEY_GAP_MS: u64 = 12;
 /// between taps); the upstream touch tap holds 50 ms for the same reason.
 const KEY_HOLD_MS: u64 = 25;
 
-/// TEMPORARY (2.1 keyboard tuning on a test PC, removed before the release):
-/// `kb-timing.txt` ("before after gap hold" in ms) in the data folder
-/// overrides the pauses without a rebuild.
+/// Pauses around a layout switch, after each tap, and the key hold (ms).
 fn pauses() -> (u64, u64, u64, u64) {
-    let tuned = mirror_core::local_data_dir()
-        .and_then(|d| std::fs::read_to_string(d.join("kb-timing.txt")).ok())
-        .and_then(|t| {
-            let mut it = t.split_whitespace().map(|n| n.parse::<u64>().ok());
-            Some((
-                it.next()??,
-                it.next()??,
-                it.next().flatten().unwrap_or(KEY_GAP_MS),
-                it.next().flatten().unwrap_or(KEY_HOLD_MS),
-            ))
-        });
-    tuned.unwrap_or((SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS, KEY_HOLD_MS))
+    (SWITCH_BEFORE_MS, SWITCH_AFTER_MS, KEY_GAP_MS, KEY_HOLD_MS)
 }
 
 /// One key tap: each report in order, the key held `hold` ms while down.

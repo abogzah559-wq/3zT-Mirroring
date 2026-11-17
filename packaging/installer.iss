@@ -1,10 +1,10 @@
 ; 3zT Mirroring installer (Inno Setup 6.6 or newer, for the dark wizard).
 ; Built by packaging\build.ps1.
 #ifndef AppVersion
-  #define AppVersion "2.0.2"
+  #define AppVersion "2.1.0"
 #endif
 #ifndef AppVersionNum
-  #define AppVersionNum "2.0.2"
+  #define AppVersionNum "2.1.0"
 #endif
 #ifndef SourceDir
   #define SourceDir "..\dist\MirroringService"
